@@ -11,5 +11,5 @@ class DcopType(Enum):
 
 
 class Algorithm(Enum):
-    branch_and_bound_by_index = 1
+    branch_and_bound = 1
     dsa_c = 2
