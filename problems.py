@@ -2,6 +2,7 @@ import random
 import threading
 
 from agents import *
+from branch_and_bound import BranchAndBound
 from globals import *
 from enums import *
 from abc import ABC, abstractmethod
@@ -61,21 +62,19 @@ class Neighbors():
 class UnboundedBuffer():
 
     def __init__(self):
-
         self.buffer = []
-
         self.cond = threading.Condition(threading.RLock())
 
     def insert(self, list_of_msgs):
-        with self.cond:
-            self.buffer.append(list_of_msgs)
-            self.cond.notify_all()
+        #with self.cond:
+        for msg in list_of_msgs:
+            self.buffer.append(msg)
+        #    self.cond.notify_all()
 
     def extract(self):
-        with self.cond:
-
-            while len(self.buffer) == 0:
-                self.cond.wait()
+       #with self.cond:
+        #    while len(self.buffer) == 0:
+        #        self.cond.wait()
         ans = []
         for msg in self.buffer:
             if msg is None:
@@ -93,12 +92,28 @@ class UnboundedBuffer():
 class Mailer():
     def __init__(self,agents):
         self.inbox = UnboundedBuffer()
-        self.agents = {}
+        self.agents_outbox = {}
         for a in agents:
             outbox = UnboundedBuffer()
-            self.agents[a.id_] = outbox
+            self.agents_outbox[a.id_] = outbox
             a.inbox = outbox
             a.outbox = self.inbox
+
+    def place_messages_in_agents_inbox(self):
+        msgs_to_send = self.inbox.extract()
+        if len(msgs_to_send) == 0: return True
+        msgs_by_receiver_dict = self.create_msgs_by_receiver_dict(msgs_to_send)
+        for receiver,msgs_list in msgs_by_receiver_dict.items():
+            self.agents_outbox[receiver].insert(msgs_list)
+
+    def create_msgs_by_receiver_dict(self,msgs_to_send):
+        msgs_by_receiver_dict = {}
+        for msg in msgs_to_send:
+            receiver = msg.receiver
+            if receiver not in msgs_by_receiver_dict.keys():
+                msgs_by_receiver_dict[receiver] = []
+            msgs_by_receiver_dict[receiver].append(msg)
+        return msgs_by_receiver_dict
 
 class DCOP(ABC):
     def __init__(self,id_,A,D,dcop_name):
@@ -114,20 +129,20 @@ class DCOP(ABC):
         self.create_neighbors()
         self.connect_agents_to_neighbors()
         self.mailer = Mailer(self.agents)
+        self.global_clock = 0
+        self.inform_root()
+
 
     def create_agents(self):
         for i in range(self.A):
             if algorithm == Algorithm.branch_and_bound:
-                if i == 0:
-                    self.agents.append(BranchAndBound(i+1,self.D,is_root=True))
-                else:
-                    self.agents.append(BranchAndBound(i+1,self.D,is_root=False))
+                self.agents.append(BranchAndBound(i+1,self.D))
+
+
 
 
     def most_dense_agent(self):
-        # Sort agents by the number of neighbors (descending) and then by id_ (ascending)
         sorted_agents = sorted(self.agents, key=lambda x: (-len(x.neighbors_obj), x.id_))
-        # Return the agent with the most neighbors
         return sorted_agents[0]
 
 
@@ -144,15 +159,51 @@ class DCOP(ABC):
         return ans
 
     def execute(self):
-        for i in
+        self.global_clock = 0
+        self.agents_init()
+        while not self.all_agents_complete():
+            self.global_clock = self.global_clock + 1
+            is_empty = self.mailer.place_messages_in_agents_inbox() #TODO
+            if is_empty:
+                print("DCOP:",str(self.dcop_id),"global clock:",str(self.global_clock), "is over because there are no messages in system ")
+                break
+            self.agents_perform_iteration()
+
+
+
+    def agents_init(self):
+        for a in self.agents:
+            a.initialize()
 
     @abstractmethod
-    def create_neighbors(self): pass
+    def create_neighbors(self):
+        pass
+
+
+    def all_agents_complete(self):
+        for a in self.agents:
+            if not a.is_algorithm_complete():
+                return False
+        return True
+
+    def inform_root(self):
+        if algorithm == Algorithm.branch_and_bound:
+            root_agent = self.most_dense_agent()
+            for a in self.agents:
+                if root_agent.id_ ==a.id_:
+                    root_agent.is_root = True
+                else:
+                    a.is_root = False
+
+
+    def agents_perform_iteration(self):
+        for a in self.agents:
+            a.execute_iteration()
+
+
 class DCOP_RandomUniform(DCOP):
     def __init__(self, id_,A,D,dcop_name):
         DCOP.__init__(self,id_,A,D,dcop_name)
-
-
 
     def create_neighbors(self):
         for i in range(self.A):

@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 dcop_type = DcopType.sparse_random_uniform
-algorithm = Algorithm.branch_and_bound_by_index
+algorithm = Algorithm.branch_and_bound
 
 is_complete = None
 repetitions = 2
@@ -144,7 +144,7 @@ def get_neighbor_str_tuple(neighbors):
 
 def draw_dcop_graph(dcop):
     plt.figure()  # Create a new figure
-    agents = [get_agent_id(item) for item in dcop.agents]
+    agents = [get_agent_id(item) for item in dcop.agents_outbox]
     neighbors = {get_neighbor_str_tuple(item) for item in dcop.neighbors}
     G = nx.Graph()
     G.add_nodes_from(agents)
@@ -168,12 +168,11 @@ def draw_dcop_dense_agent(dcop):
 
 class Msg():
 
-    def __init__(self, sender, receiver, information):
+    def __init__(self, sender, receiver, information,msg_type):
         self.sender = sender
-
         self.receiver = receiver
-
         self.information = information
+        self.msg_type = msg_type
 
 
 

@@ -16,6 +16,7 @@ def draw_dcop(dcop):
 
 def solve_dcops(dcops):
     for dcop in dcops:
+        dcop.execute()
         #draw_dcop(dcop)
 
 
