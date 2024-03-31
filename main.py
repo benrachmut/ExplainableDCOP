@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 
 from globals import *
 from problems import *
@@ -10,14 +11,15 @@ def create_selected_dcop(i,A,D,dcop_name):
 
 def draw_dcop(dcop):
     draw_dcop_graph(dcop)
-    draw_dcop_dense_agent(dcop)
+    #draw_dcop_dense_agent(dcop)
     plt.show()
 
 
 def solve_dcops(dcops):
     for dcop in dcops:
+        draw_dcop(dcop)
+
         dcop.execute()
-        #draw_dcop(dcop)
 
 
 if __name__ == '__main__':

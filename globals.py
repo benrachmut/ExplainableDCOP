@@ -16,7 +16,7 @@ incomplete_iterations = 1000
 #*******************************************#
 # dcop_type = DcopType.sparse_random_uniform
 #*******************************************#
-sparse_p1 = 0.2
+sparse_p1 = 0.5
 sparse_p2 = 1
 sparse_min_cost = 1
 sparse_max_cost = 100
@@ -94,7 +94,7 @@ meeting_schedule_meet_amount = 20
 def given_dcop_create_input():
 
     if dcop_type == DcopType.sparse_random_uniform:
-        A = 50
+        A = 10
         D = 10
         dcop_name = "Sparse Uniform"
 
@@ -144,7 +144,7 @@ def get_neighbor_str_tuple(neighbors):
 
 def draw_dcop_graph(dcop):
     plt.figure()  # Create a new figure
-    agents = [get_agent_id(item) for item in dcop.agents_outbox]
+    agents = [get_agent_id(item) for item in dcop.agents]
     neighbors = {get_neighbor_str_tuple(item) for item in dcop.neighbors}
     G = nx.Graph()
     G.add_nodes_from(agents)
@@ -177,3 +177,5 @@ class Msg():
 
 
 
+
+bnb_tree_debug = True

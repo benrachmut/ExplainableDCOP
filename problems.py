@@ -191,10 +191,9 @@ class DCOP(ABC):
             root_agent = self.most_dense_agent()
             for a in self.agents:
                 if root_agent.id_ ==a.id_:
-                    root_agent.is_root = True
+                    root_agent.dfs_tree_token = []
                 else:
-                    a.is_root = False
-
+                    a.dfs_tree_token = None
 
     def agents_perform_iteration(self):
         for a in self.agents:
