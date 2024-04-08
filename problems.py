@@ -1,9 +1,11 @@
 import random
 import threading
 
+import globals_
+from Algorithm_BnB import BranchAndBound
 from agents import *
-from branch_and_bound import BranchAndBound
-from globals import *
+from globals_ import *
+
 from enums import *
 from abc import ABC, abstractmethod
 
@@ -136,7 +138,7 @@ class DCOP(ABC):
     def create_agents(self):
         for i in range(self.A):
             if algorithm == Algorithm.branch_and_bound:
-                self.agents.append(BranchAndBound(i+1,self.D))
+                self.agents.append(BranchAndBound(i + 1, self.D))
 
 
 
@@ -163,11 +165,14 @@ class DCOP(ABC):
         self.agents_init()
         while not self.all_agents_complete():
             self.global_clock = self.global_clock + 1
+
             is_empty = self.mailer.place_messages_in_agents_inbox() #TODO
             if is_empty:
                 print("DCOP:",str(self.dcop_id),"global clock:",str(self.global_clock), "is over because there are no messages in system ")
                 break
             self.agents_perform_iteration()
+            self.draw_global_things()
+
 
 
 
@@ -199,6 +204,10 @@ class DCOP(ABC):
         for a in self.agents:
             a.execute_iteration()
 
+    def draw_global_things(self):
+        if globals_.draw_dfs_tree_flag:
+            draw_dfs_tree(self.agents)
+            globals_.draw_dfs_tree_flag = False
 
 class DCOP_RandomUniform(DCOP):
     def __init__(self, id_,A,D,dcop_name):

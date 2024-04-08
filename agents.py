@@ -2,13 +2,12 @@
 
 from abc import ABC, abstractmethod
 
-from globals import *
-
-is_complete
+from globals_ import *
 
 
 
-class Agent():
+
+class Agent(ABC):
 
     def __init__(self,id_,D):
         self.variable = None
@@ -44,6 +43,7 @@ class Agent():
                 if self.should_record_this_iteration():
                     self.record()
                 self.send_msgs()
+                self.change_status_after_send_msgs()
 
     def __str__(self):
         return "A_"+str(self.id_)
@@ -69,19 +69,27 @@ class Agent():
     @abstractmethod
     def send_msgs(self): pass
 
-    @abstractmethod
-    def is_algorithm_complete(self): pass
+
 
     @abstractmethod
     def change_status_after_update_msgs_in_context(self, msgs): pass
 
 
+    @abstractmethod
+    def change_status_after_send_msgs(self):pass
 
-class CompleteAlgorithm(ABC,Agent):
-    def __init__(self,id_,D):
-        Agent.__init__(self,id_,D,)
 
-class IncompleteAlgorithm(ABC,Agent):
+class Completeness(ABC):
+
+    @abstractmethod
+    def is_algorithm_complete(self): pass
+
+class CompleteAlgorithm(Completeness,ABC):
+
+    def is_algorithm_complete(self): pass
+
+
+class IncompleteAlgorithm(Completeness,ABC):
     def is_algorithm_complete(self):
         if self.local_clock == incomplete_iterations:
             return True

@@ -7,8 +7,9 @@ dcop_type = DcopType.sparse_random_uniform
 algorithm = Algorithm.branch_and_bound
 
 is_complete = None
-repetitions = 2
+repetitions = 1
 incomplete_iterations = 1000
+draw_dfs_tree_flag = False
 
 
 #### DCOPS_INPUT ####
@@ -176,6 +177,44 @@ class Msg():
 
 
 
+def draw_dfs_tree(dfs_nodes):
+    # Create a directed graph
+    G = nx.DiGraph()
+
+    # Add nodes to the graph
+    for node in dfs_nodes:
+        G.add_node(node.id_)
+
+    # Add edges to the graph
+    for node in dfs_nodes:
+        if node.dfs_father is not None:
+            G.add_edge(node.dfs_father, node.id_)
+
+    # Manually assign positions based on depth
+    positions = {}
+    for node in dfs_nodes:
+        depth = get_depth(node, dfs_nodes)
+        positions[node.id_] = (depth, -node.id_)  # Assign positions based on depth and node ID
+
+    # Draw the graph with full lines for edges in the tree
+    nx.draw(G, positions, with_labels=True, arrows=True, node_color='lightblue', node_size=1000, edge_color='black')
+
+    # Draw node labels
+    node_labels = {node.id_: node.id_ for node in dfs_nodes}  # Use the node ID as label
+    nx.draw_networkx_labels(G, positions, labels=node_labels)
+
+    # Show the plot
+    plt.show()
+
+def get_depth(node, dfs_nodes):
+    depth = 0
+    while node.dfs_father is not None:
+        depth += 1
+        node = next((n for n in dfs_nodes if n.id_ == node.dfs_father), None)
+    return depth
 
 
-bnb_tree_debug = True
+debug_draw_graph = False
+debug_DFS_tree = True
+debug_DFS_draw_tree = False
+debug_BNB = True

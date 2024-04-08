@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 
-from globals import *
+from globals_ import *
 from problems import *
-
 
 def create_selected_dcop(i,A,D,dcop_name):
     if dcop_type == DcopType.sparse_random_uniform:
@@ -10,15 +9,15 @@ def create_selected_dcop(i,A,D,dcop_name):
 
 
 def draw_dcop(dcop):
-    draw_dcop_graph(dcop)
-    #draw_dcop_dense_agent(dcop)
-    plt.show()
+    if debug_draw_graph:
+        draw_dcop_graph(dcop)
+        #draw_dcop_dense_agent(dcop)
+
 
 
 def solve_dcops(dcops):
     for dcop in dcops:
         draw_dcop(dcop)
-
         dcop.execute()
 
 
