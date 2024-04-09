@@ -191,12 +191,23 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def compute_tree_add_your_variable_to_token(self):
         current_context = self.bnb_token.get_variable_dict(self.above_me)
         self.calc_local_price(current_context)
+        add to lower bound of token what i will get from down is the first upperbound
 
     def calc_local_price(self, current_context):
         local_cost = 0
         for n_id,current_value in current_context.items():
-            self.neighbors_obj
-            stopped here need to get neighbor obj to get the local cost
+            neighbor_obj = self.get_n_obj(n_id)
+            local_cost = local_cost + neighbor_obj.get_cost(self.id_, self.variable, n_id, current_value)
+        return local_cost
+
+    def get_n_obj(self, n_id):
+        for ans in self.neighbors_obj:
+            if ans.is_agent_in_obj(agent_id_input = n_id):
+                return ans
+
+        if ans is None:
+            raise Exception("n_id is not correct")
+
 
 
 

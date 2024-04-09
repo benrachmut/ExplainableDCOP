@@ -26,11 +26,30 @@ class AgentPair():
 
     def __str__(self):
         return "<"+self.a1_id+":"+self.a1_domain+"> <"+self.a2_id+":"+self.a2_domain+">"
+    def __repr__(self):
+        return self.__str__()
+
+
+    def __hash__(self):
+        return 0
+
+    def __eq__(self, other):
+        first = other.a1_id == self.a1_id
+        second = other.a2_id == self.a2_id
+        third = other.a1_domain == self.a1_domain
+        forth = other.a2_domain == self.a2_domain
+        return first and second and third and forth
 
 class Neighbors():
     def __init__(self, a1:Agent, a2:Agent, cost_generator,dcop_id):
-        self.a1 = a1
-        self.a2 = a2
+
+        if a1.id_<a2.id_:
+            self.a1 = a1
+            self.a2 = a2
+        else:
+            self.a1 = a2
+            self.a2 = a1
+
         self.dcop_id = dcop_id
         self.rnd_cost = random.Random(((dcop_id+1)+99)+((a1.id_+1)*19)+((a1.id_+8)*19))
         self.cost_table = {}
@@ -38,11 +57,20 @@ class Neighbors():
 
 
 
+    def get_cost(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
+
+        if first_agent_id_input<second_agent_id_input:
+            ap =(first_agent_id_input,first_agent_variable,second_agent_id_input,second_agent_variable)
+        else:
+            ap =(second_agent_id_input, second_agent_variable, first_agent_id_input,first_agent_variable)
+        ans = self.cost_table[ap]
+        return ans
+
 
     def create_dictionary_of_costs(self,cost_generator):
         for d_a1 in self.a1.domain:
             for d_a2 in self.a2.domain:
-                ap = AgentPair(self.a1.id_, d_a1, self.a2.id_, d_a2)
+                ap = (self.a1.id_,d_a1,self.a2.id_,d_a2)#AgentPair(self.a1.id_, d_a1, self.a2.id_, d_a2)
                 cost = cost_generator(self.rnd_cost,self.a1,self.a2,d_a1,d_a2)
                 self.cost_table[ap] = cost
 
@@ -59,6 +87,7 @@ class Neighbors():
             return self.a2.id_
         else:
             return self.a1.id_
+
 
 
 class UnboundedBuffer():
