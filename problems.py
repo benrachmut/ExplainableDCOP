@@ -51,7 +51,9 @@ class Neighbors():
             self.a2 = a1
 
         self.dcop_id = dcop_id
-        self.rnd_cost = random.Random(((dcop_id+1)+99)+((a1.id_+1)*19)+((a1.id_+8)*19))
+        self.rnd_cost = random.Random((((dcop_id+1)+100)+((a1.id_+1)+10)+((a2.id_+1)*1))*17)
+        for _ in range(5):
+            self.rnd_cost.random()
         self.cost_table = {}
         self.create_dictionary_of_costs(cost_generator)
 

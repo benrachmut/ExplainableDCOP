@@ -152,7 +152,7 @@ def draw_dcop_graph(dcop):
     G.add_edges_from(neighbors)
     nx.draw(G, with_labels=True, node_color='skyblue', node_size=700, edge_color='k', linewidths=1, font_size=15,
             pos=nx.spring_layout(G))
-    #plt.show()
+    plt.show()
 
 def draw_dcop_dense_agent(dcop):
     plt.figure()  # Create a new figure
