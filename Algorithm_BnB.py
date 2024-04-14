@@ -73,24 +73,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
 
 
-    def compute_select_value_for_variable(self):
-        self.domain_index = self.domain_index + 1
-        if debug_BNB:
-            print(self,  "domain index is ",self.domain_index)
-        while self.domain_index<len(self.domain):
-            self.variable = self.domain[self.domain_index]
-            if self.dfs_father is None:
-                return
-
-            else:
-                current_context = self.bnb_token.get_variable_dict(self.above_me)
-                local_cost = self.calc_local_price(current_context)
-                self.update_token(local_cost)
-
-        else:
-            print(self.__str__(),"finished moving over all domain - TODO")
-            return False
-
 #################
 #### Main methods ####
 #################
@@ -100,7 +82,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
 
     def update_msgs_in_context_tree(self,msgs):
-        if msgs[0].msg_type == BNB_msg_type.token_from_father :
+        if msgs[0].msg_type == BNB_msg_type.token_from_father:
             self.update_msgs_in_context_tree_receive_token_from_father(msgs)
 
 
@@ -132,8 +114,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
 
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
-            self.compute_select_value_with_min_cost()
-            self.update_token()
+            min_cost = self.compute_select_value_with_min_cost()
+            self.update_token(min_cost)
 
             print("TODO- need to check that update token works, i think need to update UB")
 
@@ -174,6 +156,25 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     #################
     #### COMPUTE ####
     #################
+
+    def compute_select_value_for_variable(self):
+        self.domain_index = self.domain_index + 1
+        if debug_BNB:
+            print(self,  "domain index is ",self.domain_index)
+        while self.domain_index<len(self.domain):
+            self.variable = self.domain[self.domain_index]
+            if self.dfs_father is None:
+                return
+
+            else:
+                current_context = self.bnb_token.get_variable_dict(self.above_me)
+                local_cost = self.calc_local_price(current_context)
+                self.update_token(local_cost)
+                return True
+
+        else:
+            print(self.__str__(),"finished moving over all domain - TODO")
+            return False
 
     def compute_root_starts_the_algorithm(self):
         self.compute_select_value_for_variable()
@@ -239,7 +240,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             potential_cost = self.calc_potential_cost(potential_domain, current_context)
             potential_value_and_cost[potential_domain] = potential_cost
         self.variable = min(potential_value_and_cost, key=lambda k: potential_value_and_cost[k])
-
+        return potential_value_and_cost[self.variable]
     def update_token(self,local_cost):
 
         try:
