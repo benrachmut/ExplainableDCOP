@@ -218,5 +218,5 @@ def get_depth(node, dfs_nodes):
 
 debug_draw_graph = False
 debug_DFS_tree = True
-debug_DFS_draw_tree = True
+debug_DFS_draw_tree = False
 debug_BNB = True

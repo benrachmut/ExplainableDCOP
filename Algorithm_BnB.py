@@ -26,10 +26,11 @@ class ShouldPruneException(Exception):
         Exception.__init__(message)
 
 class BranchAndBoundToken:
-    def __init__(self,UB = math.inf,LB = 0, variables = {}):
+    def __init__(self,UB = math.inf,LB = 0, variables = {},heights = {}):
         self.UB= UB
         self.LB = LB
         self.variables = variables
+        self.heights = heights
         self.sender = None
 
 
@@ -44,6 +45,11 @@ class BranchAndBoundToken:
         if self.agent_include_in_variables(id_):
             raise ShouldPruneException("used it when agent is already in token")
         self.variables[id_] = {value:local_cost}
+        if  id_ not in self.heights.keys():
+            if len(self.heights)==0:
+                self.heights[id_] = 1
+            else:
+                self.heights[id_] = max(self.heights.values())+1
         self.update_cost()
 
     def update_cost(self):
@@ -63,7 +69,14 @@ class BranchAndBoundToken:
         return "UB:"+str(self.UB)+", LB:"+str(self.LB)+", context:"+str(self.variables)
 
     def __deepcopy__(self, memodict={}):
-        return BranchAndBoundToken(self.UB,self.LB,self.variables)
+        variables_to_send = {}
+        for k,v in self.variables.items():
+            variables_to_send[k] = v
+
+        heights_to_send = {}
+        for k, v in self.heights.items():
+            heights_to_send[k] = v
+        return BranchAndBoundToken(self.UB,self.LB,variables_to_send,heights_to_send)
 
 
 
@@ -90,7 +103,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if msg.msg_type == BNB_msg_type.token_from_father:
                 self.update_msgs_in_context_tree_receive_token_from_father(msgs)
             if msg.msg_type == BNB_msg_type.token_from_child:
-                self.tokens_from_children[msg.sender] = msg.information
+                self.tokens_from_children[msg.sender] = msg.information.__deepcopy__()
 
 
 
@@ -135,6 +148,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.compute_recive_all_tokens_from_children()
 
 
+
+
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
             min_cost = self.compute_select_value_with_min_cost()
             self.update_token(min_cost)
@@ -171,7 +186,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def update_msgs_in_context_tree_receive_token_from_father(self, msgs):
         if len(msgs) > 1:
             raise Exception("should receive a single msg")
-        self.bnb_token = msgs[0].information
+        self.bnb_token = msgs[0].information.__deepcopy__()
         #self.bnb_token_local =self.bnb_token.__deepcopy__()
 
 
@@ -274,9 +289,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if debug_BNB:
             print(self.__str__(), "sends messages to its children:",self.dfs_children)
 
-
-
-
     def sends_msgs_token_up_the_tree(self):
         msg = Msg(sender=self.id_,receiver=self.dfs_father,information=self.bnb_token,msg_type=BNB_msg_type.token_from_child)
         self.outbox.insert([msg])
@@ -295,6 +307,16 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if v is None:
                 return False
         return True
+
+    def compute_recive_all_tokens_from_children(self):
+        local_token = None
+        for child_token in self.tokens_from_children.values():
+            if local_token is None:
+                local_token = child_token
+            else:
+                local_token = local_token + child_token
+
+        print("stopped here - need to do + for token")
 
 
 

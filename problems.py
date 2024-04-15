@@ -228,6 +228,7 @@ class DCOP(ABC):
             for a in self.agents:
                 if root_agent.id_ ==a.id_:
                     root_agent.dfs_tree_token = []
+                    root_agent.dfs_height_dict = {}
                 else:
                     a.dfs_tree_token = None
 
