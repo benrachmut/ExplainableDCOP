@@ -9,13 +9,17 @@ from globals_ import *
 
 class BNB_msg_type(Enum):
     token_from_father = 1
+    token_from_child = 2
 
 
 class BNB_Status(Enum):
     hold_token_need_to_send_down = 1
-    wait_for_tokens_from_children = 2
+    finished_current_role_in_tree = 2
     receive_token_from_father_continue_to_send_down = 3
     receive_token_from_father_find_best_value = 4
+    wait_for_token_after_sending_to_children = 5
+    wait_for_all_tokens_from_children = 6
+    recive_all_tokens_from_children = 7
 
 class ShouldPruneException(Exception):
     def __init__(self, message=""):
@@ -63,13 +67,13 @@ class BranchAndBoundToken:
 
 
 
+
 class BranchAndBound(DFS,CompleteAlgorithm):
     def __init__(self, id_, D):
         DFS.__init__(self, id_, D)
         self.domain_index = -1
         self.bnb_token = None
         self.tokens_from_children = {}
-        self.reset_tokens_from_children()
 
 
 
@@ -82,25 +86,41 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
 
     def update_msgs_in_context_tree(self,msgs):
-        if msgs[0].msg_type == BNB_msg_type.token_from_father:
-            self.update_msgs_in_context_tree_receive_token_from_father(msgs)
+        for msg in msgs:
+            if msg.msg_type == BNB_msg_type.token_from_father:
+                self.update_msgs_in_context_tree_receive_token_from_father(msgs)
+            if msg.msg_type == BNB_msg_type.token_from_child:
+                self.tokens_from_children[msg.sender] = msg.information
+
 
 
 
 
     def change_status_after_update_msgs_in_context_tree(self, msgs):
-        if BNB_msg_type.token_from_father:
+
+        self.senity_check_1(msgs)
+
+        if msgs[0].msg_type == BNB_msg_type.token_from_father:
             if len(self.dfs_children)==0:
                 self.status = BNB_Status.receive_token_from_father_find_best_value
             else:
                 self.status = BNB_Status.receive_token_from_father_continue_to_send_down
+        if msgs[0].msg_type == BNB_msg_type.token_from_child:
+            if self.change_status_is_receive_token_back_from_all_children():
+                self.status = BNB_Status.recive_all_tokens_from_children
+            else:
+                self.status = BNB_Status.wait_for_all_tokens_from_children
+
+
 
         if debug_BNB:
             print(self.__str__(),"status is:", self.status)
 
     def is_compute_in_this_iteration_tree(self):
         if  self.status == BNB_Status.receive_token_from_father_find_best_value\
-                or self.status == BNB_Status.receive_token_from_father_continue_to_send_down:
+            or self.status == BNB_Status.receive_token_from_father_continue_to_send_down\
+            or BNB_Status.recive_all_tokens_from_children:
+
             return True
         else:
             return False
@@ -111,13 +131,14 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.receive_token_from_father_continue_to_send_down:
             if not self.compute_select_value_for_variable():
                 print("we went through all domain, need to send up")
+        if  self.status == BNB_Status.recive_all_tokens_from_children:
+            self.compute_recive_all_tokens_from_children()
 
 
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
             min_cost = self.compute_select_value_with_min_cost()
             self.update_token(min_cost)
 
-            print("TODO- need to check that update token works, i think need to update UB")
 
     def send_msgs_tree(self):
         if self.status == BNB_Status.hold_token_need_to_send_down or \
@@ -125,17 +146,19 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.sends_msgs_token_down_the_tree()
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
             self.sends_msgs_token_up_the_tree()
-            print("TODO FROM MSG DELIEVERY")
-
-
-
 
 
     def change_status_after_send_msgs_tree(self):
+        old_statues = self.status
         if self.status == BNB_Status.hold_token_need_to_send_down or \
                 self.status == BNB_Status.receive_token_from_father_continue_to_send_down:
-            self.status = BNB_Status.wait_for_tokens_from_children
+            self.status = BNB_Status.wait_for_token_after_sending_to_children
+
+        if self.status == BNB_Status.receive_token_from_father_find_best_value:
+           self.status = BNB_Status.finished_current_role_in_tree
         self.bnb_token = None
+        if debug_BNB:
+            print(self.__str__(), "when finish iteration status was:",old_statues,"and now status updated to", self.status)
 
     def should_record_this_iteration(self): pass
 
@@ -159,6 +182,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def compute_select_value_for_variable(self):
         self.domain_index = self.domain_index + 1
+        self.reset_tokens_from_children()
+
         if debug_BNB:
             print(self,  "domain index is ",self.domain_index)
         while self.domain_index<len(self.domain):
@@ -193,8 +218,47 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         for n_id in self.dfs_children:
             self.tokens_from_children[n_id] = None
 
+    def compute_select_value_with_min_cost(self):
+        current_context = self.bnb_token.get_variable_dict(self.above_me)
+        potential_value_and_cost = {}
+        for potential_domain in self.domain:
+            potential_cost = self.calc_potential_cost(potential_domain, current_context)
+            potential_value_and_cost[potential_domain] = potential_cost
+        self.variable = min(potential_value_and_cost, key=lambda k: potential_value_and_cost[k])
+        return potential_value_and_cost[self.variable]
 
+    def calc_local_price(self, current_context):
+        local_cost = 0
+        for n_id, current_value in current_context.items():
+            neighbor_obj = self.get_n_obj(n_id)
+            local_cost = local_cost + neighbor_obj.get_cost(self.id_, self.variable, n_id, current_value)
+        return local_cost
 
+    def get_n_obj(self, n_id):
+        for ans in self.neighbors_obj:
+            if ans.is_agent_in_obj(agent_id_input=n_id):
+                return ans
+
+        if ans is None:
+            raise Exception("n_id is not correct")
+
+    def calc_potential_cost(self, potential_domain, current_context):
+        local_cost = 0
+        for n_id, current_value in current_context.items():
+            neighbor_obj = self.get_n_obj(n_id)
+            local_cost = local_cost + neighbor_obj.get_cost(self.id_, potential_domain, n_id, current_value)
+        return local_cost
+
+    def update_token(self, local_cost):
+
+        try:
+            self.bnb_token.add_agent_to_token_variables(id_=self.id_, value=self.variable, local_cost=local_cost)
+            return True
+
+        except ShouldPruneException:
+            if debug_BNB:
+                print(self.__str__(), "pruned", self.domain_index)
+            self.domain_index = self.domain_index + 1
     #################
     #### send message ####
     #################
@@ -211,46 +275,26 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             print(self.__str__(), "sends messages to its children:",self.dfs_children)
 
 
-    def calc_local_price(self, current_context):
-        local_cost = 0
-        for n_id,current_value in current_context.items():
-            neighbor_obj = self.get_n_obj(n_id)
-            local_cost = local_cost + neighbor_obj.get_cost(self.id_, self.variable, n_id, current_value)
-        return local_cost
 
-    def get_n_obj(self, n_id):
-        for ans in self.neighbors_obj:
-            if ans.is_agent_in_obj(agent_id_input = n_id):
-                return ans
 
-        if ans is None:
-            raise Exception("n_id is not correct")
+    def sends_msgs_token_up_the_tree(self):
+        msg = Msg(sender=self.id_,receiver=self.dfs_father,information=self.bnb_token,msg_type=BNB_msg_type.token_from_child)
+        self.outbox.insert([msg])
 
-    def calc_potential_cost(self, potential_domain,current_context):
-        local_cost = 0
-        for n_id, current_value in current_context.items():
-            neighbor_obj = self.get_n_obj(n_id)
-            local_cost = local_cost + neighbor_obj.get_cost(self.id_, potential_domain, n_id, current_value)
-        return local_cost
+    def senity_check_1(self,msgs):
+        if len(msgs) > 1:
+            if msgs[0].msg_type != msgs[1].msg_type:
+                raise Exception("by logic it does not make any sense to receive two types of msgs at the same time")
 
-    def compute_select_value_with_min_cost(self):
-        current_context = self.bnb_token.get_variable_dict(self.above_me)
-        potential_value_and_cost = {}
-        for potential_domain in self.domain:
-            potential_cost = self.calc_potential_cost(potential_domain, current_context)
-            potential_value_and_cost[potential_domain] = potential_cost
-        self.variable = min(potential_value_and_cost, key=lambda k: potential_value_and_cost[k])
-        return potential_value_and_cost[self.variable]
-    def update_token(self,local_cost):
+    #################
+    #### change_status_after_update_msgs_in_context_tree ####
+    #################
 
-        try:
-            self.bnb_token.add_agent_to_token_variables(id_=self.id_, value=self.variable, local_cost=local_cost)
-            return True
-
-        except ShouldPruneException:
-            if debug_BNB:
-                print(self.__str__(), "pruned", self.domain_index)
-            self.domain_index = self.domain_index + 1
+    def change_status_is_receive_token_back_from_all_children(self):
+        for v in self.tokens_from_children.values():
+            if v is None:
+                return False
+        return True
 
 
 

@@ -252,3 +252,17 @@ class DCOP_RandomUniform(DCOP):
                 rnd_number = self.rnd_neighbors.random()
                 if rnd_number<sparse_p1:
                     self.neighbors.append(Neighbors(a1, a2, sparse_random_uniform_cost_function, self.dcop_id))
+
+
+class DCOP_GraphColoring(DCOP):
+    def __init__(self, id_,A,D,dcop_name):
+        DCOP.__init__(self,id_,A,D,dcop_name)
+
+    def create_neighbors(self):
+        for i in range(self.A):
+            a1 = self.agents[i]
+            for j in range(i+1,self.A):
+                a2 = self.agents[j]
+                rnd_number = self.rnd_neighbors.random()
+                if rnd_number<sparse_p1:
+                    self.neighbors.append(Neighbors(a1, a2, graph_coloring_cost_function, self.dcop_id))

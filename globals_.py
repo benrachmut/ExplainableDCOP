@@ -3,7 +3,7 @@ from random import Random
 import networkx as nx
 import matplotlib.pyplot as plt
 
-dcop_type = DcopType.sparse_random_uniform
+dcop_type = DcopType.graph_coloring
 algorithm = Algorithm.branch_and_bound
 
 is_complete = None
@@ -29,6 +29,8 @@ def sparse_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
         return rnd_cost.randint(sparse_min_cost, sparse_max_cost)
     else:
         return 0
+
+
 
 
 
@@ -68,7 +70,7 @@ def scale_free_network_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 # dcop_type = DcopType.graph_coloring
 #*******************************************#
 
-graph_coloring_p1 = 0.05
+graph_coloring_p1 = 0.5
 graph_coloring_constant_cost = 10
 
 def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
@@ -107,7 +109,7 @@ def given_dcop_create_input():
 
 
     if dcop_type == DcopType.graph_coloring:
-        A = 50
+        A = 10
         D = 3
         dcop_name = "Graph Coloring"
 
@@ -216,5 +218,5 @@ def get_depth(node, dfs_nodes):
 
 debug_draw_graph = False
 debug_DFS_tree = True
-debug_DFS_draw_tree = False
+debug_DFS_draw_tree = True
 debug_BNB = True
