@@ -19,19 +19,41 @@ class BNB_Status(Enum):
     receive_token_from_father_find_best_value = 4
     wait_for_token_after_sending_to_children = 5
     wait_for_all_tokens_from_children = 6
-    recive_all_tokens_from_children = 7
+    receive_all_tokens_from_children = 7
+    finished_going_over_domain = 8
 
 class ShouldPruneException(Exception):
     def __init__(self, message=""):
         Exception.__init__(message)
 
 class BranchAndBoundToken:
-    def __init__(self,UB = math.inf,LB = 0, variables = {},heights = {}):
-        self.UB= UB
+    def __init__(self, UB_global = math.inf, UB_local = math.inf, LB = 0, variables = {}, heights = {}):
+        self.UB_global= UB_global
+        self.UB_local = UB_local
         self.LB = LB
         self.variables = variables
         self.heights = heights
-        self.sender = None
+
+
+    def __add__(self, other):
+
+        new_variables = self.merge_variables(other)
+        new_heights = self.merge_heights(other)
+        if other.UB_global != self.UB_global:
+            raise Exception("should be equal")
+
+        ans = BranchAndBoundToken(UB_global= other.UB_global,variables=new_variables,heights=new_heights)
+        ans.update_cost()
+        ans.UB_local= ans.LB
+        return ans
+
+    def create_reseted_token(self,id_):
+        new_variables = self.reset_variables(id_)
+        ans = BranchAndBoundToken(UB_global = self.UB_global, UB_local = self.UB_local, LB = 0, variables = new_variables, heights = self.heights)
+        ans.update_cost()
+        return ans
+
+
 
 
     def agent_include_in_variables(self,id_):
@@ -43,8 +65,8 @@ class BranchAndBoundToken:
 
     def add_agent_to_token_variables(self,id_,value,local_cost):
         if self.agent_include_in_variables(id_):
-            raise ShouldPruneException("used it when agent is already in token")
-        self.variables[id_] = {value:local_cost}
+            raise Exception("used it when agent is already in token")
+        self.variables[id_] = (value,local_cost)
         if  id_ not in self.heights.keys():
             if len(self.heights)==0:
                 self.heights[id_] = 1
@@ -53,10 +75,16 @@ class BranchAndBoundToken:
         self.update_cost()
 
     def update_cost(self):
-        costs = [cost for id_, dict_ in self.variables.items() for value, cost in dict_.items()]
+        costs = []
+        for n_id, tuple_ in self.variables.items():
+            costs.append(tuple_[1])
+        #costs =  {key: sum(value) for key, value in self.variables.items()}.values()
+
         self.LB = sum(costs)
-        if self.LB>self.UB:
-            raise ShouldPruneException("LB>UB move to the next domain")
+        if self.LB>=self.UB_global:
+            raise ShouldPruneException("LB>UB_global move to the next domain LB=",str(self.LB),"UB_global=",str(self.UB_global))
+        if self.LB>=self.UB_local:
+            raise ShouldPruneException("LB>UB_local move to the next domain LB=",str(self.LB),"UB_global=",str(self.UB_local))
 
     def get_variable_dict(self,agent_list_id):
         ans = {}
@@ -66,7 +94,7 @@ class BranchAndBoundToken:
             #ans[n_id] = self.variables[n_id][0]
         return ans
     def __str__(self):
-        return "UB:"+str(self.UB)+", LB:"+str(self.LB)+", context:"+str(self.variables)
+        return "UB:" + str(self.UB_global) + ", LB:" + str(self.LB) + ", context:" + str(self.variables)
 
     def __deepcopy__(self, memodict={}):
         variables_to_send = {}
@@ -76,10 +104,59 @@ class BranchAndBoundToken:
         heights_to_send = {}
         for k, v in self.heights.items():
             heights_to_send[k] = v
-        return BranchAndBoundToken(self.UB,self.LB,variables_to_send,heights_to_send)
+        return BranchAndBoundToken(UB_global = self.UB_global,UB_local= self.UB_local,
+                                   LB = self.LB, variables = variables_to_send, heights = heights_to_send)
 
+    def merge_heights(self, other):
+        merged_dict = {}
+        # Merge keys from both dictionaries
+        all_keys = set(self.variables.keys()) | set(other.variables.keys())
 
+        for key in all_keys:
+            value_dict1 = self.heights.get(key)
+            value_dict2 = other.heights.get(key)
 
+            if value_dict1 is not None and value_dict2 is not None:
+                if value_dict1 != value_dict2:
+                    raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
+                else:
+                    merged_dict[key] = value_dict1
+            elif value_dict1 is not None:
+                merged_dict[key] = value_dict1
+            elif value_dict2 is not None:
+                merged_dict[key] = value_dict2
+
+        return merged_dict
+
+    def merge_variables(self, other):
+        merged_dict = {}
+        # Merge keys from both dictionaries
+        all_keys = set(self.variables.keys()) | set(other.variables.keys())
+
+        for key in all_keys:
+            value_dict1 = self.variables.get(key)
+            value_dict2 = other.variables.get(key)
+
+            if value_dict1 is not None and value_dict2 is not None:
+                if value_dict1 != value_dict2:
+                    raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
+                else:
+                    merged_dict[key] = value_dict1
+            elif value_dict1 is not None:
+                merged_dict[key] = value_dict1
+            elif value_dict2 is not None:
+                merged_dict[key] = value_dict2
+
+        return merged_dict
+
+    def reset_variables(self,id_):
+        ans = {}
+        height_of_id = self.heights[id_]
+        for n_id, dict_ in self.variables.items():
+            height_of_neighbor = self.heights[n_id]
+            if height_of_id > height_of_neighbor:
+                ans[n_id] = dict_
+        return ans
 
 class BranchAndBound(DFS,CompleteAlgorithm):
     def __init__(self, id_, D):
@@ -88,6 +165,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.bnb_token = None
         self.tokens_from_children = {}
 
+        self.local_token = None
 
 
 #################
@@ -120,11 +198,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 self.status = BNB_Status.receive_token_from_father_continue_to_send_down
         if msgs[0].msg_type == BNB_msg_type.token_from_child:
             if self.change_status_is_receive_token_back_from_all_children():
-                self.status = BNB_Status.recive_all_tokens_from_children
+                self.status = BNB_Status.receive_all_tokens_from_children
             else:
                 self.status = BNB_Status.wait_for_all_tokens_from_children
-
-
 
         if debug_BNB:
             print(self.__str__(),"status is:", self.status)
@@ -132,7 +208,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def is_compute_in_this_iteration_tree(self):
         if  self.status == BNB_Status.receive_token_from_father_find_best_value\
             or self.status == BNB_Status.receive_token_from_father_continue_to_send_down\
-            or BNB_Status.recive_all_tokens_from_children:
+            or BNB_Status.receive_all_tokens_from_children:
 
             return True
         else:
@@ -142,17 +218,17 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.root_of_tree_start_algorithm:
             self.compute_root_starts_the_algorithm()
         if self.status == BNB_Status.receive_token_from_father_continue_to_send_down:
-            if not self.compute_select_value_for_variable():
-                print("we went through all domain, need to send up")
-        if  self.status == BNB_Status.recive_all_tokens_from_children:
-            self.compute_recive_all_tokens_from_children()
-
-
-
-
+            self.compute_select_value_for_variable()
+        if self.status == BNB_Status.receive_all_tokens_from_children:
+            self.compute_receive_all_tokens_from_children()
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
             min_cost = self.compute_select_value_with_min_cost()
             self.update_token(min_cost)
+
+        if self.status == BNB_Status.finished_going_over_domain:
+            self.bnb_token = self.local_token.__deepcopy__()
+
+            print("TODO check that line above is true")
 
 
     def send_msgs_tree(self):
@@ -161,6 +237,14 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.sends_msgs_token_down_the_tree()
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
             self.sends_msgs_token_up_the_tree()
+
+        if self.status == BNB_Status.receive_all_tokens_from_children:
+            self.sends_msgs_token_down_the_tree()
+
+        if self.status == BNB_Status.finished_going_over_domain:
+            self.sends_msgs_token_up_the_tree()
+
+
 
 
     def change_status_after_send_msgs_tree(self):
@@ -171,7 +255,17 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
            self.status = BNB_Status.finished_current_role_in_tree
+
+        if self.status == BNB_Status.receive_all_tokens_from_children:
+            self.status = BNB_Status.wait_for_token_after_sending_to_children
+
+        if self.status == BNB_Status.finished_going_over_domain:
+            self.local_token = None
+            self.status = BNB_Status.finished_current_role_in_tree
+
+
         self.bnb_token = None
+
         if debug_BNB:
             print(self.__str__(), "when finish iteration status was:",old_statues,"and now status updated to", self.status)
 
@@ -205,7 +299,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.variable = self.domain[self.domain_index]
             if self.dfs_father is None:
                 return
-
             else:
                 current_context = self.bnb_token.get_variable_dict(self.above_me)
                 local_cost = self.calc_local_price(current_context)
@@ -214,7 +307,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
         else:
             print(self.__str__(),"finished moving over all domain - TODO")
-            return False
+            self.status = BNB_Status.finished_going_over_domain
+            self.domain_index = -1
 
     def compute_root_starts_the_algorithm(self):
         self.compute_select_value_for_variable()
@@ -290,7 +384,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             print(self.__str__(), "sends messages to its children:",self.dfs_children)
 
     def sends_msgs_token_up_the_tree(self):
-        msg = Msg(sender=self.id_,receiver=self.dfs_father,information=self.bnb_token,msg_type=BNB_msg_type.token_from_child)
+        msg = Msg(sender=self.id_,receiver=self.dfs_father,information=self.bnb_token.__deepcopy__(),msg_type=BNB_msg_type.token_from_child)
         self.outbox.insert([msg])
 
     def senity_check_1(self,msgs):
@@ -308,15 +402,30 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 return False
         return True
 
-    def compute_recive_all_tokens_from_children(self):
-        local_token = None
-        for child_token in self.tokens_from_children.values():
-            if local_token is None:
-                local_token = child_token
-            else:
-                local_token = local_token + child_token
+    def compute_receive_all_tokens_from_children(self):
+        self.update_local_token()
+        self.reset_tokens_from_children()
+        self.create_local_token_after_receive_from_children()
 
-        print("stopped here - need to do + for token")
+
+    def update_local_token(self):
+        local_token_temp = None
+        for child_token in self.tokens_from_children.values():
+            if local_token_temp is None:
+                local_token_temp = child_token
+            else:
+                local_token_temp = local_token_temp + child_token
+
+        if self.local_token is None:
+            self.local_token = local_token_temp
+        elif self.local_token.UB_local < local_token_temp.UB_local:
+            self.local_token = local_token_temp
+
+    def create_local_token_after_receive_from_children(self):
+        self.bnb_token = self.local_token.create_reseted_token(self.id_)
+        self.compute_select_value_for_variable()
+
+
 
 
 
