@@ -204,6 +204,9 @@ class DCOP(ABC):
             self.agents_perform_iteration()
             self.draw_global_things()
 
+    def __str__(self):
+        split_string = str(dcop_type).split('.')
+        return split_string[1]+",id_"+str(self.dcop_id)+",A_"+str(self.A)+",D_"+str(self.D)+","
 
 
 
@@ -238,7 +241,7 @@ class DCOP(ABC):
 
     def draw_global_things(self):
         if globals_.draw_dfs_tree_flag:
-            draw_dfs_tree(self.agents)
+            draw_dfs_tree(self.agents,self.dcop_id)
             globals_.draw_dfs_tree_flag = False
 
 class DCOP_RandomUniform(DCOP):

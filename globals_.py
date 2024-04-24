@@ -2,6 +2,10 @@ from enums import *
 from random import Random
 import networkx as nx
 import matplotlib.pyplot as plt
+import os
+os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz-10.0.1-win64/bin'
+
+import graphviz
 
 dcop_type = DcopType.graph_coloring
 algorithm = Algorithm.branch_and_bound
@@ -146,27 +150,20 @@ def get_neighbor_str_tuple(neighbors):
 
 
 def draw_dcop_graph(dcop):
-    plt.figure()  # Create a new figure
-    agents = [get_agent_id(item) for item in dcop.agents]
-    neighbors = {get_neighbor_str_tuple(item) for item in dcop.neighbors}
-    G = nx.Graph()
-    G.add_nodes_from(agents)
-    G.add_edges_from(neighbors)
-    nx.draw(G, with_labels=True, node_color='skyblue', node_size=700, edge_color='k', linewidths=1, font_size=15,
-            pos=nx.spring_layout(G))
-    plt.show()
+    #filename=dcop.__str__(),
+    g = graphviz.Graph("G", format = "pdf")
+    for n in dcop.neighbors:
+        g.edge(n.a1.__str__(), n.a2.__str__())
+    #g.render(view=False)
+    g.view()
 
-def draw_dcop_dense_agent(dcop):
-    plt.figure()  # Create a new figure
-    a_max = dcop.most_dense_agent()
-    agents = a_max.neighbors_agents_id
-    neighbors = a_max.get_neighbors_tuples()
-    G = nx.Graph()
-    G.add_nodes_from(agents)
-    G.add_edges_from(neighbors)
-    nx.draw(G, with_labels=True, node_color='skyblue', node_size=700, edge_color='k', linewidths=1, font_size=15,
-            pos=nx.spring_layout(G))
-    #plt.show()
+    # Generate the PDF directly (without creating a text file)
+    #pdf_bytes = g.pipe(format='pdf')
+
+    # Save the PDF bytes to a file
+    #with open('graph.pdf', 'wb') as pdf_file:
+    #    pdf_file.write(pdf_bytes)
+
 
 
 class Msg():
@@ -179,34 +176,68 @@ class Msg():
 
 
 
-def draw_dfs_tree(dfs_nodes):
+def draw_dfs_tree(dfs_nodes,dcop_id):
     # Create a directed graph
-    G = nx.DiGraph()
+    # filename=TODO
+
+    # Create a new graph
+    g = graphviz.Digraph('G',filename="DCOP_ID_"+dcop_id+", DFS_tree", format="pdf")
 
     # Add nodes to the graph
     for node in dfs_nodes:
-        G.add_node(node.id_)
+        g.node(str(node.id_))
 
-    # Add edges to the graph
+    # Add edges to the graph with solid line style
+    added_edges = set()  # To keep track of added edges
+
     for node in dfs_nodes:
         if node.dfs_father is not None:
-            G.add_edge(node.dfs_father, node.id_)
+            edge = (str(node.dfs_father), str(node.id_))
+            if edge not in added_edges:
+                g.edge(*edge)
+                added_edges.add(edge)
 
-    # Manually assign positions based on depth
-    positions = {}
-    for node in dfs_nodes:
-        depth = get_depth(node, dfs_nodes)
-        positions[node.id_] = (depth, -node.id_)  # Assign positions based on depth and node ID
+        for child_id in node.dfs_children:
+            edge = (str(node.id_), str(child_id))
+            if edge not in added_edges:
+                g.edge(*edge)
+                added_edges.add(edge)
 
-    # Draw the graph with full lines for edges in the tree
-    nx.draw(G, positions, with_labels=True, arrows=True, node_color='lightblue', node_size=1000, edge_color='black')
+    # View the graph (open it in the default viewer)
+    g.view()
+    ##########
+    #g = graphviz.Graph("G", format="pdf")
+    #for n in dcop.neighbors:
+    #    g.edge(n.a1.__str__(), n.a2.__str__())
+    ## g.render(view=False)
+    #g.view()
+    #########
+    #G = nx.DiGraph()
 
-    # Draw node labels
-    node_labels = {node.id_: node.id_ for node in dfs_nodes}  # Use the node ID as label
-    nx.draw_networkx_labels(G, positions, labels=node_labels)
+    ## Add nodes to the graph
+    #for node in dfs_nodes:
+    #    G.add_node(node.id_)
 
-    # Show the plot
-    plt.show()
+    ## Add edges to the graph
+    #for node in dfs_nodes:
+    #    if node.dfs_father is not None:
+    #        G.add_edge(node.dfs_father, node.id_)
+
+    ## Manually assign positions based on depth
+    #positions = {}
+    #for node in dfs_nodes:
+    #    depth = get_depth(node, dfs_nodes)
+    #    positions[node.id_] = (depth, -node.id_)  # Assign positions based on depth and node ID
+
+    ## Draw the graph with full lines for edges in the tree
+    #nx.draw(G, positions, with_labels=True, arrows=True, node_color='lightblue', node_size=1000, edge_color='black')
+
+    ## Draw node labels
+    #node_labels = {node.id_: node.id_ for node in dfs_nodes}  # Use the node ID as label
+    #nx.draw_networkx_labels(G, positions, labels=node_labels)
+
+    ## Show the plot
+    #plt.pause(0.01)
 
 def get_depth(node, dfs_nodes):
     depth = 0
@@ -216,7 +247,7 @@ def get_depth(node, dfs_nodes):
     return depth
 
 
-debug_draw_graph = False
+debug_draw_graph = True
 debug_DFS_tree = True
-debug_DFS_draw_tree = False
+debug_DFS_draw_tree = True
 debug_BNB = True
