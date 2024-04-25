@@ -24,7 +24,9 @@ class BNB_Status(Enum):
 
 class ShouldPruneException(Exception):
     def __init__(self, message=""):
-        Exception.__init__(message)
+        Exception.__init__(self)
+        print("\033[91m"+message+"\033[0m")
+
 
 class BranchAndBoundToken:
     def __init__(self, UB_global = math.inf, UB_local = math.inf, LB = 0, variables = {}, heights = {}):
@@ -82,9 +84,9 @@ class BranchAndBoundToken:
 
         self.LB = sum(costs)
         if self.LB>=self.UB_global:
-            raise ShouldPruneException("LB>UB_global move to the next domain LB=",str(self.LB),"UB_global=",str(self.UB_global))
+            raise ShouldPruneException("LB>UB_global move to the next domain LB="+str(self.LB)+" UB_global="+str(self.UB_local))
         if self.LB>=self.UB_local:
-            raise ShouldPruneException("LB>UB_local move to the next domain LB=",str(self.LB),"UB_global=",str(self.UB_local))
+            raise ShouldPruneException("LB>UB_local move to the next domain LB="+str(self.LB)+" UB_global="+str(self.UB_local))
 
     def get_variable_dict(self,agent_list_id):
         ans = {}
@@ -219,8 +221,11 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.compute_root_starts_the_algorithm()
         if self.status == BNB_Status.receive_token_from_father_continue_to_send_down:
             self.compute_select_value_for_variable()
-        if self.status == BNB_Status.receive_all_tokens_from_children:
-            self.compute_receive_all_tokens_from_children()
+        if self.status == BNB_Status.receive_all_tokens_from_children and not self.am_i_root():
+            self.compute_receive_all_tokens_from_children_not_root()
+        if self.status == BNB_Status.receive_all_tokens_from_children and self.am_i_root():
+            self.compute_receive_all_tokens_from_children_yes_root()
+
         if self.status == BNB_Status.receive_token_from_father_find_best_value:
             min_cost = self.compute_select_value_with_min_cost()
             self.update_token(min_cost)
@@ -228,7 +233,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.finished_going_over_domain:
             self.bnb_token = self.local_token.__deepcopy__()
 
-            print("TODO check that line above is true")
 
 
     def send_msgs_tree(self):
@@ -306,7 +310,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 return True
 
         else:
-            print(self.__str__(),"finished moving over all domain - TODO")
             self.status = BNB_Status.finished_going_over_domain
             self.domain_index = -1
 
@@ -366,7 +369,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
         except ShouldPruneException:
             if debug_BNB:
-                print(self.__str__(), "pruned", self.domain_index)
+                print(self.__str__(), "pruned", self.domain_index,"token:",self.bnb_token)
             self.domain_index = self.domain_index + 1
     #################
     #### send message ####
@@ -402,7 +405,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 return False
         return True
 
-    def compute_receive_all_tokens_from_children(self):
+    def compute_receive_all_tokens_from_children_not_root(self):
         self.update_local_token()
         self.reset_tokens_from_children()
         self.create_local_token_after_receive_from_children()
@@ -424,6 +427,13 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def create_local_token_after_receive_from_children(self):
         self.bnb_token = self.local_token.create_reseted_token(self.id_)
         self.compute_select_value_for_variable()
+
+    def am_i_root(self):
+        return self.dfs_father is None
+
+    def compute_receive_all_tokens_from_children_yes_root(self):
+        need  to  check to local token and reset and create  new bnb token and check for new global up
+
 
 
 

@@ -206,7 +206,7 @@ class DCOP(ABC):
 
     def __str__(self):
         split_string = str(dcop_type).split('.')
-        return split_string[1]+",id_"+str(self.dcop_id)+",A_"+str(self.A)+",D_"+str(self.D)+","
+        return split_string[1]+",id_"+str(self.dcop_id)+",A_"+str(self.A)+",D_"+str(self.D)
 
 
 
