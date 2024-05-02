@@ -20,6 +20,7 @@ class Agent(ABC):
         self.inbox = None
         self.outbox = None
         self.local_clock = 0
+        self.records = []
 
     def set_neighbors(self,neighbors):
         self.neighbors_obj = neighbors
@@ -33,6 +34,30 @@ class Agent(ABC):
             ans.append((self.id_,n_id))
         return ans
 
+
+    def calc_local_price(self, current_context):
+        local_cost = 0
+        for n_id, current_value in current_context.items():
+            neighbor_obj = self.get_n_obj(n_id)
+            local_cost = local_cost + neighbor_obj.get_cost(self.id_, self.variable, n_id, current_value)
+        return local_cost
+
+
+    def get_n_obj(self, n_id):
+        for ans in self.neighbors_obj:
+            if ans.is_agent_in_obj(agent_id_input=n_id):
+                return ans
+        if ans is None:
+            raise Exception("n_id is not correct")
+
+    def calc_potential_cost(self, potential_domain, current_context):
+        local_cost = 0
+        for n_id, current_value in current_context.items():
+            neighbor_obj = self.get_n_obj(n_id)
+            local_cost = local_cost + neighbor_obj.get_cost(self.id_, potential_domain, n_id, current_value)
+        return local_cost
+
+
     def execute_iteration(self):
         msgs = self.inbox.extract()
         if len(msgs)!=0:
@@ -41,8 +66,6 @@ class Agent(ABC):
             if self.is_compute_in_this_iteration():
                 self.local_clock = self.local_clock + 1
                 self.compute()
-                if self.should_record_this_iteration():
-                    self.record()
                 self.send_msgs()
                 self.change_status_after_send_msgs()
 
@@ -61,11 +84,8 @@ class Agent(ABC):
     @abstractmethod
     def compute(self): pass
 
-    @abstractmethod
-    def should_record_this_iteration(self): pass
 
-    @abstractmethod
-    def record(self): pass
+
 
     @abstractmethod
     def send_msgs(self): pass

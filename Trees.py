@@ -192,11 +192,6 @@ class DFS(Agent,ABC):
     @abstractmethod
     def send_msgs_tree(self):pass
 
-    @abstractmethod
-    def should_record_this_iteration(self): pass
-
-    @abstractmethod
-    def record(self): pass
 
     def create_below_me(self):
 
