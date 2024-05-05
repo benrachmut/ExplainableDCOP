@@ -85,8 +85,6 @@ class Agent(ABC):
     def compute(self): pass
 
 
-
-
     @abstractmethod
     def send_msgs(self): pass
 
