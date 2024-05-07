@@ -33,7 +33,7 @@ class BNB_Status(Enum):
     send_best_local_token_to_father = 12
 
     receive_all_tokens_from_children = 13
-
+    receive_all_tokens_from_children_root = 14
 
     ####
 
@@ -494,7 +494,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def update_msgs_in_context_tree(self, msgs):
         for msg in msgs:
             if msg.msg_type == BNB_msg_type.token_from_father:
-                self.recieve_token_from_father(msgs)
+                self.update_msgs_in_context_receive_token_from_father(msgs)
             if msg.msg_type == BNB_msg_type.token_from_child:
                 self.tokens_from_children[msg.sender] = msg.information.__deepcopy__()
             if msg.msg_type == BNB_msg_type.token_empty:
@@ -517,15 +517,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
         if msgs[0].msg_type == BNB_msg_type.token_from_child or msgs[0].msg_type == BNB_msg_type.token_empty:
             if self.is_receive_from_all_children():
-                if self.receive_empty_msg_flag:
-                    self.receive_empty_msg_flag = False
-                    self.status = BNB_Status.receive_all_tokens_from_children_with_empty
-                else:
-                    if self.dfs_father is not None:
-                        self.status = BNB_Status.receive_all_tokens_from_children
-                    else:
-                        raise Exception("TODO need for root to aggregate")
-
+                self.update_status_if_receive_from_all_children()
             else:
                 self.status = BNB_Status.wait_tokens_from_children
 
@@ -580,15 +572,34 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
         self.token = None
 
+    def update_status_if_receive_from_all_children(self):
+        if self.receive_empty_msg_flag:
+            self.receive_empty_msg_flag = False
+            if self.is_root():
+                raise Exception("did not create this status yet")
+                self.status = BNB_Status.receive_all_tokens_from_children_with_empty_root
+            else:
+                self.status = BNB_Status.receive_all_tokens_from_children_with_empty
+
+        else:
+            if self.is_root():
+                self.status = BNB_Status.receive_all_tokens_from_children_root
+                raise Exception ("STOP HERE")
+            else:
+                self.status = BNB_Status.receive_all_tokens_from_children
+
+
+
     # update msgs #################################################################################################
 
-    def recieve_token_from_father(self, msgs):
+    def update_msgs_in_context_receive_token_from_father(self, msgs):
         if len(msgs) > 1:
             raise Exception("should receive a single msg")
         self.token = msgs[0].information.__deepcopy__()
         if self.token.best_token is not None:
             self.best_global_token = self.token.best_token.__deepcopy__()
             self.variable_anytime = self.best_global_token.variables[self.id_][0]
+
 
     # compute #################################################################################################
 
@@ -616,9 +627,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                     return True
                 except ShouldPruneException:
                     self.add_to_records_from_current_token()
-
                     del self.token.variables[self.id_]
-                    self.token.LB = self.token.LB - local_cost
+                    #self.token.LB = self.token.LB - local_cost
                     self.domain_index = self.domain_index + 1
             else:
                 return
@@ -847,6 +857,11 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             variables.append(child_token.reset_variables(self.id_))
         all_equal = all(item == variables[0] for item in variables)
         if all_equal:
+            child_token.create_reseted_token(self.id_)
+            del child_token.variables[self.id_]
+            child_token.UB = None
+            child_token.update_cost()
+
             return child_token
         else:
             raise Exception("check is wrong")
@@ -875,20 +890,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def add_to_records_from_current_token(self):
         winner = BranchAndBoundToken(LB=self.token.UB[0], variables=self.token.UB[1], heights=None)
         self.records.append((self.token.__deepcopy__(), winner.__deepcopy__()))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
