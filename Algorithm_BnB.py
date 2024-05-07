@@ -30,7 +30,7 @@ class BNB_Status(Enum):
     send_token_to_children = 9
     send_empty_to_father = 10
     send_token_to_father = 11
-    #send_best_local_token_to_father = 12
+    send_best_local_token_to_father = 12
 
     receive_all_tokens_from_children = 13
 
@@ -80,18 +80,8 @@ class BranchAndBoundToken:
         ans.update_cost()
         return ans
 
-    def get_variables_copy(self):
-        ans = {}
-        for k,v in self.variables.items():
-            ans[k] = v
-        return ans
-    def get_UB_copy(self):
-        if self.UB is not None:
-            first = self.UB[0]
-            second = {}
-            for k,v in self.UB[1].items():
-                second[k]=v
-            return (first,second)
+
+
     def agent_include_in_variables(self,id_):
         if id_ in self.variables.keys():
             return True
@@ -483,8 +473,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def __init__(self, id_, D):
         DFS.__init__(self, id_, D)
         self.domain_index = -1
-        #self.best_global_token = None
-        #self.best_local_token = None
+        self.best_global_token = None
+        self.best_local_token = None
         self.token = None
         self.tokens_from_children = {}
         self.receive_empty_msg_flag = False
@@ -567,8 +557,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.send_token_to_father:
             self.sends_msgs_token_up_the_tree()
 
-        # self.status == BNB_Status.send_best_local_token_to_father:
-            #self.sends_msgs_best_token_up_the_tree()
+        if self.status == BNB_Status.send_best_local_token_to_father:
+            self.sends_msgs_best_token_up_the_tree()
 
         if self.status == BNB_Status.send_empty_to_father:
             self.send_msgs_empty_up_the_tree()
@@ -654,15 +644,20 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def compute_receive_token_from_father_leaf(self):
         potential_value_and_cost = self.get_potential_values_dict()
         min_cost = min(potential_value_and_cost.values())
-        self.variable = min(potential_value_and_cost, key=lambda k: potential_value_and_cost[k])
-        try:
-            self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable,local_cost=min_cost)
-            self.record_other_domains_of_leaf(potential_value_and_cost)
-            self.status = BNB_Status.send_token_to_father
-        except ShouldPruneException:
-            self.record_all_domains(potential_value_and_cost)
-            self.variable_anytime = self.token.variables[self.id_]
-            self.status = BNB_Status.send_empty_to_father
+        if self.best_global_token is not None:
+            if self.best_global_token.UB[0]<=min_cost:
+               raise Exception("TODO need to complete")
+        else:
+            self.variable = min(potential_value_and_cost, key=lambda k: potential_value_and_cost[k])
+            try:
+                self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable,local_cost=min_cost)
+                self.record_other_domains_of_leaf(potential_value_and_cost)
+                self.status = BNB_Status.send_token_to_father
+            except ShouldPruneException:
+                self.record_all_domains(potential_value_and_cost)
+                self.variable_anytime = self.token.variables[self.id_]
+                self.status = BNB_Status.send_empty_to_father
+                #raise Exception("TODO send_empty_to_father cause did not add self to token")
 
         return potential_value_and_cost[self.variable]
 
@@ -730,7 +725,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                   msg_type=BNB_msg_type.token_from_child)
         self.outbox.insert([msg])
         self.domain_index = -1
-
+        if len(self.dfs_children) != 0:
+            raise Exception("only leaf should be in this status")
 
     def is_receive_from_all_children(self):
         for info in self.tokens_from_children.values():
@@ -746,25 +742,15 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def compute_receive_all_tokens_from_children(self):
         self.aggregate_tokens()
-        old_UB = self.token.get_UB_copy()
-        if old_UB is None or self.token.LB < old_UB[0]:
-            self.token.UB = (self.token.LB, self.token.get_variables_copy())
-            new_UB = self.token.get_UB_copy()
-            if old_UB is not None:
-                self.records.append((old_UB,new_UB))
-                #raise Exception("want to check that above is working")
+        did_change_token,previous_local_token = self.check_to_change_best_local_token()
+        t = {}
+        for k,v in self.token.variables.items():
+            t[k] = v
+        self.token.UB = (self.best_local_token.LB,t)
+        self.record_best_token_if_needed(did_change_token, previous_local_token)
 
 
         self.check_if_continue_down_or_up()
-
-        #did_change_token,previous_local_token = self.check_to_change_best_local_token()
-        #t = {}
-        #for k,v in self.token.variables.items():
-        #    t[k] = v
-
-        #
-
-
 
 
     def aggregate_tokens(self):
@@ -779,32 +765,34 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                     raise Exception ("when adding tokens from children the best token found is better")
         self.token = local_token_temp
 
-    # def check_to_change_best_local_token(self):
-    #     cost_of_current_token = self.token.LB
-    #     if self.best_local_token is not None:
-    #         cost_of_current_best_local_token = self.best_local_token.LB
-    #         if cost_of_current_token < cost_of_current_best_local_token:
-    #             prev_token = self.best_local_token.__deepcopy__()
-    #             self.best_local_token = self.token.__deepcopy__()
-    #             var_to_send = {}
-    #             for k,v in self.token.variables.items():
-    #                 var_to_send[k]=v
-    #             self.best_local_token.UB = (self.token.LB, var_to_send)
-    #             return True,prev_token
-    #         else: return False, None
-    #
-    #     else:
-    #         self.best_local_token = self.token.__deepcopy__()
-    #         #self.best_local_token.UB = self.token.UB
-    #
-    #     return False, None
+    def check_to_change_best_local_token(self):
+        cost_of_current_token = self.token.LB
 
-    # def record_best_token_if_needed(self, did_change_token, previous_local_token):
-    #     if did_change_token:
-    #         winner_token = self.best_local_token.__deepcopy__()
-    #         loser_token = previous_local_token
-    #         self.records.append((loser_token, winner_token))
-    #         #raise Exception("need to see that this is working")
+
+        if self.best_local_token is not None:
+            cost_of_current_best_local_token = self.best_local_token.LB
+            if cost_of_current_token < cost_of_current_best_local_token:
+                prev_token = self.best_local_token.__deepcopy__()
+                self.best_local_token = self.token.__deepcopy__()
+                var_to_send = {}
+                for k,v in self.token.variables.items():
+                    var_to_send[k]=v
+                self.best_local_token.UB = (self.token.LB, var_to_send)
+                return True,prev_token
+            else: return False, None
+
+        else:
+            self.best_local_token = self.token.__deepcopy__()
+            #self.best_local_token.UB = self.token.UB
+
+        return False, None
+
+    def record_best_token_if_needed(self, did_change_token, previous_local_token):
+        if did_change_token:
+            winner_token = self.best_local_token.__deepcopy__()
+            loser_token = previous_local_token
+            self.records.append((loser_token, winner_token))
+            #raise Exception("need to see that this is working")
 
     def send_msgs_empty_up_the_tree(self):
         msg = Msg(sender=self.id_, receiver=self.dfs_father, information=self.token.__deepcopy__(),
@@ -849,7 +837,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             try:
                 self.token = self.token.create_reseted_token(self.id_)
             except ShouldPruneException:
-                self.status = BNB_Status.send_token_to_father
+                self.status = BNB_Status.send_best_local_token_to_father
                 self.add_to_records_from_current_token()
                 if debug_BNB:
                     print(self.__str__(),"currently found combination where all below are zero without selecting next value")
@@ -877,19 +865,16 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                     self.status = BNB_Status.send_empty_to_father
                     self.reset_tokens_from_children()
                 else:
-                    raise Exception("need to check")
-                    self.status = BNB_Status.send_token_to_father
+                    self.status = BNB_Status.send_best_local_token_to_father
                 return
             else:
-                raise Exception("need to check")
-                self.status = BNB_Status.send_token_to_father
+                self.status = BNB_Status.send_best_local_token_to_father
         else:
             self.status = BNB_Status.send_token_to_children
 
     def add_to_records_from_current_token(self):
         winner = BranchAndBoundToken(LB=self.token.UB[0], variables=self.token.UB[1], heights=None)
         self.records.append((self.token.__deepcopy__(), winner.__deepcopy__()))
-
 
 
 
