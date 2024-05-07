@@ -603,35 +603,28 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.domain_index = self.domain_index + 1
         self.reset_tokens_from_children()
         while self.domain_index < len(self.domain):
+
             self.variable = self.domain[self.domain_index]
             if debug_BNB:
                 print(self, "variable changed to", self.variable)
-            if self.dfs_father is None:
-                return
-            else:
+            if not self.is_root():
                 current_context = self.token.get_variable_dict(self.above_me)
                 local_cost = self.calc_local_price(current_context)
                 try:
-                    self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable,
-                                                            local_cost=local_cost)
-                    #self.check_to_change_best_local_token()
+                    self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable,local_cost=local_cost)
                     return True
                 except ShouldPruneException:
-                    winner = BranchAndBoundToken(  LB = self.token.UB[0], variables=self.token.UB[1], heights=None)
-                    self.records.append((self.token.__deepcopy__(), winner.__deepcopy__()))
+                    self.add_to_records_from_current_token()
+
                     del self.token.variables[self.id_]
                     self.token.LB = self.token.LB - local_cost
-
                     self.domain_index = self.domain_index + 1
-
-                    #raise Exception("TODO need to record it")
-
-
-        else:
-            self.status = BNB_Status.finished_going_over_domain
-            self.domain_index = -1
-            if debug_BNB:
-                print(self, "finished going over domain", self.variable)
+            else:
+                return
+        self.status = BNB_Status.finished_going_over_domain
+        self.domain_index = -1
+        if debug_BNB:
+            print(self, "finished going over domain", self.variable)
 
     def reset_tokens_from_children(self):
         self.tokens_from_children = {}
@@ -671,26 +664,13 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def compute_receive_all_tokens_from_children_with_empty(self):
         current_token = self.sanity_check_all_tokens_identical_from_my_height()
         self.token = BranchAndBoundToken(variables=current_token.variables,heights=current_token.heights)
-
-        raise Exception("a10 recieved empty and finished going over the domain, how it reached here and finished domain...????")
         self.token.update_cost()
         if self.best_local_token is not None:
             self.token.UB = (self.best_local_token.LB,self.best_local_token.variables)
         if self.dfs_father is None:
             raise Exception("TODO need to update best token as root")
         self.select_next_value()
-        if self.status == BNB_Status.finished_going_over_domain:
-            if self.id_ not in self.token.variables.keys():
-                if self.best_local_token is None:
-                    self.status = BNB_Status.send_empty_to_father
-                    self.reset_tokens_from_children()
-                else:
-                    self.status = BNB_Status.send_best_local_token_to_father
-                return
-            else:
-                self.status = BNB_Status.send_best_local_token_to_father
-        else:
-            self.status = BNB_Status.send_token_to_children
+        self.change_statues_after_value_change()
 
 
 
@@ -763,12 +743,12 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def compute_receive_all_tokens_from_children(self):
         self.aggregate_tokens()
         did_change_token,previous_local_token = self.check_to_change_best_local_token()
-
         t = {}
         for k,v in self.token.variables.items():
             t[k] = v
         self.token.UB = (self.best_local_token.LB,t)
         self.record_best_token_if_needed(did_change_token, previous_local_token)
+
 
         self.check_if_continue_down_or_up()
 
@@ -851,32 +831,20 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.records.append((token_other, token_winner))
 
     def check_if_continue_down_or_up(self):
-        if self.dfs_father is None:
+        if self.is_root():
             raise Exception("TODO need to update best token as root")
         else:
             try:
                 self.token = self.token.create_reseted_token(self.id_)
-                self.select_next_value()
-                if self.status == BNB_Status.finished_going_over_domain:
-                    if self.id_ not in self.token.variables.keys():
-                        if self.best_local_token is None:
-                            # self.status = BNB_Status.send_empty_to_father
-                            raise Exception("TODO send_empty_to_father cause did not add self to token")
-
-                            self.reset_tokens_from_children()
-                        else:
-                            self.status = BNB_Status.send_best_local_token_to_father
-                        return
-                    else:
-                        self.status = BNB_Status.send_best_local_token_to_father
-                else:
-                    self.status = BNB_Status.send_token_to_children
             except ShouldPruneException:
                 self.status = BNB_Status.send_best_local_token_to_father
+                self.add_to_records_from_current_token()
                 if debug_BNB:
-                    print(self.__str__(),
-                          "currently found combination where all below are zero without selecting next value")
+                    print(self.__str__(),"currently found combination where all below are zero without selecting next value")
+                return
 
+            self.select_next_value()
+            self.change_statues_after_value_change()
     def sanity_check_all_tokens_identical_from_my_height(self):
         variables = []
         for child_token in self.tokens_from_children.values():
@@ -886,6 +854,27 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             return child_token
         else:
             raise Exception("check is wrong")
+
+    def is_root(self):
+        return self.dfs_father is None
+
+    def change_statues_after_value_change(self):
+        if self.status == BNB_Status.finished_going_over_domain:
+            if self.id_ not in self.token.variables.keys():
+                if self.best_local_token is None:
+                    self.status = BNB_Status.send_empty_to_father
+                    self.reset_tokens_from_children()
+                else:
+                    self.status = BNB_Status.send_best_local_token_to_father
+                return
+            else:
+                self.status = BNB_Status.send_best_local_token_to_father
+        else:
+            self.status = BNB_Status.send_token_to_children
+
+    def add_to_records_from_current_token(self):
+        winner = BranchAndBoundToken(LB=self.token.UB[0], variables=self.token.UB[1], heights=None)
+        self.records.append((self.token.__deepcopy__(), winner.__deepcopy__()))
 
 
 
