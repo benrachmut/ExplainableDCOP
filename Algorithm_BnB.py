@@ -228,7 +228,7 @@ class BranchAndBound_Try(DFS,CompleteAlgorithm):
         return False
 
 
-    def update_msgs_in_context_tree(self,msgs):
+    def update_msgs_in_context_after_tree(self, msgs):
         for msg in msgs:
             if msg.msg_type == BNB_msg_type.token_from_father:
                 self.update_msgs_in_context_tree_receive_token_from_father(msgs)
@@ -239,7 +239,7 @@ class BranchAndBound_Try(DFS,CompleteAlgorithm):
 
 
 
-    def change_status_after_update_msgs_in_context_tree(self, msgs):
+    def change_status_after_update_msgs_in_context_after_tree(self, msgs):
 
         self.senity_check_1(msgs)
 
@@ -257,7 +257,7 @@ class BranchAndBound_Try(DFS,CompleteAlgorithm):
         if debug_BNB:
             print(self.__str__(),"status is:", self.status)
 
-    def is_compute_in_this_iteration_tree(self):
+    def is_compute_in_this_iteration_after_tree(self):
         if  self.status == BNB_Status.receive_token_from_father_leaf\
             or self.status == BNB_Status.receive_token_from_father_mid\
             or BNB_Status.receive_all_tokens_from_children:
@@ -266,7 +266,7 @@ class BranchAndBound_Try(DFS,CompleteAlgorithm):
         else:
             return False
 
-    def compute_tree(self):
+    def compute_after_tree(self):
         if self.root_of_tree_start_algorithm:
             self.compute_root_starts_the_algorithm()
         if self.status == BNB_Status.receive_token_from_father_mid:
@@ -283,7 +283,7 @@ class BranchAndBound_Try(DFS,CompleteAlgorithm):
 
 
 
-    def send_msgs_tree(self):
+    def send_msgs_after_tree(self):
         if self.status == BNB_Status.hold_token_send_down or \
                 self.status == BNB_Status.receive_token_from_father_mid:
             self.sends_msgs_token_down_the_tree()
@@ -491,7 +491,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def is_algorithm_complete(self):
         return False
 
-    def update_msgs_in_context_tree(self, msgs):
+    def update_msgs_in_context_after_tree(self, msgs):
         for msg in msgs:
             if msg.msg_type == BNB_msg_type.token_from_father:
                 self.update_msgs_in_context_receive_token_from_father(msgs)
@@ -504,7 +504,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if debug_BNB:
                 print(self.__str__(), "receive", msg.msg_type,"from A_",msg.sender,"info:", msg.information)
 
-    def change_status_after_update_msgs_in_context_tree(self, msgs):
+    def change_status_after_update_msgs_in_context_after_tree(self, msgs):
         if debug_BNB:
             print(self.__str__(), "status WAS:", self.status)
 
@@ -514,26 +514,24 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             else:
                 self.status = BNB_Status.receive_token_from_father_mid
 
-
         if msgs[0].msg_type == BNB_msg_type.token_from_child or msgs[0].msg_type == BNB_msg_type.token_empty:
             if self.is_receive_from_all_children():
                 self.update_status_if_receive_from_all_children()
             else:
                 self.status = BNB_Status.wait_tokens_from_children
 
-
-
         if debug_BNB:
             print(self.__str__(), "status IS:", self.status)
 
-    def is_compute_in_this_iteration_tree(self):
+    def is_compute_in_this_iteration_after_tree(self):
         return self.root_of_tree_start_algorithm or \
                self.status == BNB_Status.receive_token_from_father_mid or\
                self.status == BNB_Status.receive_token_from_father_leaf or \
                self.status == BNB_Status.receive_all_tokens_from_children or \
-               self.status == BNB_Status.receive_all_tokens_from_children_with_empty
+               self.status == BNB_Status.receive_all_tokens_from_children_with_empty or \
+               self.status == BNB_Status.receive_all_tokens_from_children_root
 
-    def compute_tree(self):
+    def compute_after_tree(self):
         if self.root_of_tree_start_algorithm:
             self.compute_start_algorithm()
         if self.status == BNB_Status.receive_token_from_father_mid:
@@ -547,7 +545,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if debug_BNB:
             print(self.__str__(), "status IS:", self.status)
 
-    def send_msgs_tree(self):
+    def send_msgs_after_tree(self):
         if self.status == BNB_Status.hold_token_send_down or self.status == BNB_Status.send_token_to_children:
             self.sends_msgs_token_down_the_tree()
 
@@ -584,7 +582,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         else:
             if self.is_root():
                 self.status = BNB_Status.receive_all_tokens_from_children_root
-                raise Exception ("STOP HERE")
             else:
                 self.status = BNB_Status.receive_all_tokens_from_children
 

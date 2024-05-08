@@ -60,36 +60,27 @@ class DFS(Agent,ABC):
                 flag = True
 
         if not flag:
-            self.update_msgs_in_context_tree(msgs)
+            self.update_msgs_in_context_after_tree(msgs)
 
     def change_status_after_update_msgs_in_context(self,msgs):
         if self.status == DFS_Status.wait_for_amount_of_neighbors or not self.all_neighbors_are_in_tree():
             self.status = DFS_Status.create_dfs
 
         else:
-            self.change_status_after_update_msgs_in_context_tree(msgs)
+            self.change_status_after_update_msgs_in_context_after_tree(msgs)
 
     def is_compute_in_this_iteration(self):
         if self.status == DFS_Status.create_dfs:
-            if  self.is_holding_tree_token():
-                return True
-            else:
-                return False
-        else:
             return self.is_compute_in_this_iteration_tree()
+
+        else:
+            return self.is_compute_in_this_iteration_after_tree()
 
     def compute(self):
         if self.status == DFS_Status.create_dfs:
-            self.remove_all_agents_in_token()
-            if len(self.context_amount_of_neighbors) != 0:
-                self.token_goes_down()
-            elif (self.dfs_father is not None):
-                self.token_goes_up()
-            else:
-                self.root_of_tree_start_algorithm = True
-                self.below_me = self.neighbors_agents_id
-                self.compute_tree()
-        else: self.compute_tree()
+            self.compute_tree_creation()
+
+        else: self.compute_after_tree()
 
 
 
@@ -102,7 +93,7 @@ class DFS(Agent,ABC):
                 self.outbox.insert(msgs)
                 self.dfs_tree_token = None
         else:
-            self.send_msgs_tree()
+            self.send_msgs_after_tree()
 
     def change_status_after_send_msgs(self):
         self.change_status_after_send_msgs_tree()
@@ -178,19 +169,19 @@ class DFS(Agent,ABC):
 
 
     @abstractmethod
-    def update_msgs_in_context_tree(self,msgs):pass
+    def update_msgs_in_context_after_tree(self, msgs):pass
 
     @abstractmethod
-    def change_status_after_update_msgs_in_context_tree(self, msgs): pass
+    def change_status_after_update_msgs_in_context_after_tree(self, msgs): pass
 
     @abstractmethod
-    def is_compute_in_this_iteration_tree(self):pass
+    def is_compute_in_this_iteration_after_tree(self):pass
 
     @abstractmethod
-    def compute_tree(self):pass
+    def compute_after_tree(self):pass
 
     @abstractmethod
-    def send_msgs_tree(self):pass
+    def send_msgs_after_tree(self):pass
 
 
     def create_below_me(self):
@@ -210,6 +201,23 @@ class DFS(Agent,ABC):
             if n_id not in agents_in_tree:
                 return False
         return True
+
+    def compute_tree_creation(self):
+        self.remove_all_agents_in_token()
+        if len(self.context_amount_of_neighbors) != 0:
+            self.token_goes_down()
+        elif (self.dfs_father is not None):
+            self.token_goes_up()
+        else:
+            self.root_of_tree_start_algorithm = True
+            self.below_me = self.neighbors_agents_id
+            self.compute_after_tree()
+
+    def is_compute_in_this_iteration_tree(self):
+        if self.is_holding_tree_token():
+            return True
+        else:
+            return False
 
 
 
