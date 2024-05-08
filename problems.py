@@ -90,8 +90,6 @@ class Neighbors():
         else:
             return self.a1.id_
 
-
-
 class UnboundedBuffer():
 
     def __init__(self):
@@ -120,7 +118,6 @@ class UnboundedBuffer():
     def is_buffer_empty(self):
 
         return len(self.buffer) == 0
-
 
 class Mailer():
     def __init__(self,agents):
@@ -201,7 +198,7 @@ class DCOP(ABC):
             if is_empty:
                 print("DCOP:",str(self.dcop_id),"global clock:",str(self.global_clock), "is over because there are no messages in system ")
                 break
-            self.agents_perform_iteration()
+            self.agents_perform_iteration(self.global_clock)
             self.draw_global_things()
 
     def __str__(self):
@@ -235,9 +232,9 @@ class DCOP(ABC):
                 else:
                     a.dfs_tree_token = None
 
-    def agents_perform_iteration(self):
+    def agents_perform_iteration(self,global_clock):
         for a in self.agents:
-            a.execute_iteration()
+            a.execute_iteration(global_clock)
 
     def draw_global_things(self):
         if globals_.draw_dfs_tree_flag:
@@ -256,7 +253,6 @@ class DCOP_RandomUniform(DCOP):
                 rnd_number = self.rnd_neighbors.random()
                 if rnd_number<sparse_p1:
                     self.neighbors.append(Neighbors(a1, a2, sparse_random_uniform_cost_function, self.dcop_id))
-
 
 class DCOP_GraphColoring(DCOP):
     def __init__(self, id_,A,D,dcop_name):

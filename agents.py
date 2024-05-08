@@ -10,6 +10,7 @@ from globals_ import *
 class Agent(ABC):
 
     def __init__(self,id_,D):
+        self.global_clock = 0
         self.variable = None
         self.variable_anytime = None
         self.id_ = id_
@@ -20,7 +21,7 @@ class Agent(ABC):
         self.inbox = None
         self.outbox = None
         self.local_clock = 0
-        self.records = []
+        self.records = {}
 
     def set_neighbors(self,neighbors):
         self.neighbors_obj = neighbors
@@ -58,7 +59,8 @@ class Agent(ABC):
         return local_cost
 
 
-    def execute_iteration(self):
+    def execute_iteration(self,global_clock):
+        self.global_clock = global_clock
         msgs = self.inbox.extract()
         if len(msgs)!=0:
             self.update_msgs_in_context(msgs)
@@ -88,7 +90,8 @@ class Agent(ABC):
     @abstractmethod
     def send_msgs(self): pass
 
-
+    @abstractmethod
+    def add_to_records(self): pass
 
     @abstractmethod
     def change_status_after_update_msgs_in_context(self, msgs): pass
