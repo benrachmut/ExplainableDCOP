@@ -57,6 +57,8 @@ class GlobalUBPruneException(Exception):
         Exception.__init__(self)
         print("\033[91m" + message + "\033[0m")
 
+class BranchAndBoundInformation:
+    def __init__(self,):
 
 class BranchAndBoundToken:
     def __init__(self, best_UB = None, UB = None, LB = 0, variables=None, heights=None):
@@ -127,13 +129,13 @@ class BranchAndBoundToken:
 
         best_UB = self.best_UB
         if best_UB is not None and self.LB>=best_UB[0]:
-            if flag:
+            if flag and debug_BNB:
                 raise GlobalUBPruneException("LB>UB_global move to the next domain LB=" + str(self.LB) + " UB_global=" + str(best_UB[0]))
             else:
                 raise GlobalUBPruneException()
 
         if self.UB is not None and self.LB>=self.UB[0]:
-            if flag:
+            if flag and debug_BNB:
                 raise LocalUBPruneException("LB>UB_local move to the next domain LB=" + str(self.LB) + " UB_local=" + str(self.UB))
             else:
                 raise LocalUBPruneException()
@@ -340,34 +342,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.finished_algorithm:
             self.send_msgs_finished_algorithm()
 
-    def add_to_records(self, other_variables,other_LB, winner_variables, winner_LB):
-        if "Agent_id" not in self.records:
-            self.records["Agent_id"] = []
-        self.records["Agent_id"] = self.id_
 
-        if "local_clock" not in self.records:
-            self.records["local_clock"] = []
-        self.records["local_clock"].append(self.local_clock)
-
-        if "global_clock" not in self.records:
-            self.records["global_clock"] = []
-        self.records["global_clock"].append(self.global_clock)
-
-        if "context_loser" not in self.records:
-            self.records["context_loser"] = []
-        self.records["context_loser"].append(other_variables)
-
-        if "LB_loser" not in self.records:
-            self.records["LB_loser"] = []
-        self.records["LB_loser"].append(other_LB)
-
-        if "context_winner" not in self.records:
-            self.records["context_winner"] = []
-        self.records["context_winner"].append(winner_variables)
-
-        if "LB_winner" not in self.records:
-            self.records["LB_winner"] = []
-        self.records["LB_winner"].append(winner_LB)
 
 
 
@@ -517,22 +492,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             ans[potential_domain] = potential_cost
         return ans
 
-    def record_other_domains_of_leaf(self,potential_value_and_cost):
-        for domain, cost in potential_value_and_cost.items():
-            if domain!= self.variable:
-                token_winner = self.token.__deepcopy__()
-                token_other = self.token.__deepcopy__()
-                token_other.variables[self.id_] = (domain, cost)
-                try:
-                    token_other.update_cost()
-                except LocalUBPruneException:
-                    pass
-                except GlobalUBPruneException:
-                    pass
-                self.add_to_records(other_variables=token_other.variables,other_LB=token_other.LB,
-                                    winner_variables=token_winner.variables,winner_LB=token_winner.LB)
-
-                #self.records.append((token_other, token_winner))
 
     # send msgs #################################################################################################
 
@@ -605,7 +564,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
         self.check_if_continue_down_or_up()
 
-
     def aggregate_tokens(self):
         local_token_temp = None
         for child_token in self.tokens_from_children.values():
@@ -634,40 +592,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.local_UB = (self.token.LB, self.token.copy_variables())
             #self.best_local_token.UB = self.token.UB
             return True, None
-
-
-    def record_best_token_if_needed(self, did_change_token, previous_local_token):
-        if did_change_token:
-            winner_token = (self.local_UB[0],self.local_UB[1])
-            loser_token = previous_local_token
-
-            self.add_to_records(other_variables=copy_dict(loser_token[1]),other_LB=loser_token[0],winner_variables= copy_dict(winner_token[1]),winner_LB=winner_token[0])
-            #self.records.append((loser_token, winner_token))
-
-
-
-    def get_best_token_from_records(self):
-        second_elements = []
-        for t in self.records:
-            second_elements.append(t[1])
-        min_object = min(second_elements, key=lambda x: x.UB)
-        return min_object
-
-    def record_all_domains(self,potential_value_and_cost, winner_vars,winner_LB_input):
-        for domain, cost in potential_value_and_cost.items():
-            token_other = self.token.__deepcopy__()
-            token_other.variables[self.id_] = (domain, cost)
-            try:
-                token_other.update_cost(False)
-            except LocalUBPruneException:
-                pass
-            except GlobalUBPruneException:
-                pass
-            other_variables = token_other.variables
-            other_LB = token_other.LB
-            self.add_to_records(other_variables=other_variables, other_LB=other_LB, winner_variables=winner_vars,
-                                winner_LB=winner_LB_input)
-
 
     def check_if_continue_down_or_up(self):
         if self.is_root():
@@ -730,11 +654,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         else:
             self.status = BNB_Status.send_token_to_children
 
-    def add_to_records_from_current_token(self,winner_variables, winner_LB):
-        other_variables = copy_dict(self.token.__deepcopy__().variables)
-        other_LB = self.token.__deepcopy__().LB
-        self.add_to_records(other_variables = other_variables , other_LB = other_LB,winner_variables = winner_variables,winner_LB = winner_LB)
-
     def create_token_from_children(self):
         self.aggregate_tokens()
         did_change_token, previous_local_token = self.check_to_change_best_local_token()
@@ -749,7 +668,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.token.best_UB[1][self.id_][0]
             raise Exception("stopped here")
 
-
     def create_local_token_root(self):
         if self.status != BNB_Status.finished_going_over_domain:
             self.token = BranchAndBoundToken()
@@ -757,6 +675,86 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.reset_tokens_from_children()
 
 
+
+# RECORDS #################---------------------------------
+
+
+    def record_other_domains_of_leaf(self,potential_value_and_cost):
+        for domain, cost in potential_value_and_cost.items():
+            if domain!= self.variable:
+                token_winner = self.token.__deepcopy__()
+                token_other = self.token.__deepcopy__()
+                token_other.variables[self.id_] = (domain, cost)
+                try:
+                    token_other.update_cost()
+                except LocalUBPruneException:
+                    pass
+                except GlobalUBPruneException:
+                    pass
+
+
+                self.add_to_records(other_variables=token_other.variables,other_LB=token_other.LB,
+                                    winner_variables=token_winner.variables,winner_LB=token_winner.LB)
+
+
+
+    def record_best_token_if_needed(self, did_change_token, previous_local_token):
+        if did_change_token:
+            winner_token = (self.local_UB[0],self.local_UB[1])
+            loser_token = previous_local_token
+
+            self.add_to_records(other_variables=copy_dict(loser_token[1]),other_LB=loser_token[0],winner_variables= copy_dict(winner_token[1]),winner_LB=winner_token[0])
+
+    def record_all_domains(self,potential_value_and_cost, winner_vars,winner_LB_input):
+        for domain, cost in potential_value_and_cost.items():
+            token_other = self.token.__deepcopy__()
+            token_other.variables[self.id_] = (domain, cost)
+            try:
+                token_other.update_cost(False)
+            except LocalUBPruneException:
+                pass
+            except GlobalUBPruneException:
+                pass
+            other_variables = token_other.variables
+            other_LB = token_other.LB
+            self.add_to_records(other_variables=other_variables, other_LB=other_LB, winner_variables=winner_vars,
+                                winner_LB=winner_LB_input)
+
+
+    def add_to_records_from_current_token(self, winner_variables, winner_LB):
+        other_variables = copy_dict(self.token.__deepcopy__().variables)
+        other_LB = self.token.__deepcopy__().LB
+        self.add_to_records(other_variables=other_variables, other_LB=other_LB, winner_variables=winner_variables,
+                            winner_LB=winner_LB)
+
+    def add_to_records(self, other_variables,other_LB, winner_variables, winner_LB):
+        if "Agent_id" not in self.records:
+            self.records["Agent_id"] = []
+        self.records["Agent_id"].append(self.id_)
+
+        if "local_clock" not in self.records:
+            self.records["local_clock"] = []
+        self.records["local_clock"].append(self.local_clock)
+
+        if "global_clock" not in self.records:
+            self.records["global_clock"] = []
+        self.records["global_clock"].append(self.global_clock)
+
+        if "context_loser" not in self.records:
+            self.records["context_loser"] = []
+        self.records["context_loser"].append(other_variables)
+
+        if "LB_loser" not in self.records:
+            self.records["LB_loser"] = []
+        self.records["LB_loser"].append(other_LB)
+
+        if "context_winner" not in self.records:
+            self.records["context_winner"] = []
+        self.records["context_winner"].append(winner_variables)
+
+        if "LB_winner" not in self.records:
+            self.records["LB_winner"] = []
+        self.records["LB_winner"].append(winner_LB)
 
 
 

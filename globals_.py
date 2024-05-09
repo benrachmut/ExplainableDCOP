@@ -1,9 +1,14 @@
+import random
+
 from enums import *
 from random import Random
+import pandas as pd
+
 import networkx as nx
 import matplotlib.pyplot as plt
 import os
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz-10.0.1-win64/bin'
+from itertools import chain
 
 import graphviz
 
@@ -152,10 +157,11 @@ def get_neighbor_str_tuple(neighbors):
 def draw_dcop_graph(dcop):
     filename=dcop.__str__()
     g = graphviz.Graph("G",filename=filename, format = "pdf")
+
+
     for n in dcop.neighbors:
         g.edge(n.a1.__str__(), n.a2.__str__())
     g.render(view=False)
-
 
 
 
@@ -203,9 +209,89 @@ def draw_dfs_tree(dfs_nodes,dcop_id):
     ##########
 
 
+def get_all_personal_data_dict(dcops):
+    ans = {}
+    for dcop in dcops:
+        records = dcop.records_dcop
+        for k in records.keys():
+            if k not in ans.keys():
+                ans[k] = []
+            ans[k] = ans[k] + records[k]
+    return ans
 
 
-debug_draw_graph = True
-debug_DFS_tree = True
+def create_personal_data(dcops):
+    all_data_dict = get_all_personal_data_dict(dcops)
+    lengths = [len(v) for v in all_data_dict.values()]
+    if len(set(lengths)) == 1:
+        df = pd.DataFrame(all_data_dict)
+    else:
+        print("Error: Lists have different lengths.")
+    df.to_csv(dcops[0].__str__()+".csv",index=False)
+
+
+def create_data(dcops):
+    create_personal_data(dcops)
+
+
+def draw_dcop(dcop):
+    if debug_draw_graph:
+        draw_dcop_graph(dcop)
+        # draw_dcop_dense_agent(dcop)
+
+
+color_list_hex = [
+    "#FF0000", "#0000FF", "#008000", "#FFFF00", "#FFA500",
+    "#800080", "#FFC0CB", "#A52A2A", "#00FFFF", "#FF00FF",
+    "#F5F5DC", "#000000", "#FFFFFF", "#808080", "#C0C0C0",
+    "#FFD700", "#E6E6FA", "#00FF00", "#800000", "#000080",
+    "#808000", "#008080", "#40E0D0", "#EE82EE", "#BC8F8F",
+    "#C71585", "#FFA07A", "#B0C4DE", "#778899", "#FFB6C1",
+    "#90EE90", "#FAFAD2", "#E0FFFF", "#FFFACD", "#F0E68C",
+    "#FFFFF0", "#CD5C5C", "#F0FFF0", "#DAA520", "#B22222",
+    "#556B2F", "#DC143C", "#D2691E", "#5F9EA0", "#DEB887",
+    "#00FFFF", "#FAEBD7", "#F0F8FF", "#7FFFD4", "#F0FFFF",
+    "#FFEBCD", "#7FFF00", "#FF7F50", "#6495ED", "#E9967A",
+    "#FF1493", "#00BFFF", "#1E90FF", "#FF00FF", "#DCDCDC",
+    "#F8F8FF", "#FF69B4", "#4B0082", "#FFF0F5", "#ADD8E6",
+    "#F08080", "#D3D3D3", "#87CEFA", "#0000CD", "#BA55D3",
+    "#9370DB", "#3CB371", "#7B68EE", "#48D1CC", "#C71585",
+    "#F5FFFA", "#FFE4E1", "#FFDEAD", "#FDF5E6", "#EEE8AA",
+    "#98FB98", "#AFEEEE", "#FFEFD5", "#FFDAB9", "#CD853F",
+    "#B0E0E6", "#8B4513", "#2E8B57", "#A0522D", "#87CEEB",
+    "#00FF7F", "#4682B4", "#D2B48C", "#D8BFD8", "#FF6347",
+    "#F5DEB3", "#9ACD32", "#00FA9A", "#66CDAA", "#7B68EE"
+]
+
+
+def get_distinct_values_colors(dcop):
+    distinct_values = {agent.variable_anytime for agent in dcop.agents}
+    random.seed(((dcop.dcop_id + 1) * 17) + (dcop.A + 1) * 170 + (dcop.D + 2) * 1700)
+    random.shuffle(color_list_hex)
+
+    # Create a dictionary pairing each value from distinct_values with a unique color
+    distinct_values_colors = {}
+    for value in distinct_values:
+        # Pop a color from the shuffled color_list_hex to ensure uniqueness
+        color = color_list_hex.pop()
+        distinct_values_colors[value] = color
+    return  distinct_values_colors
+
+def draw_dcop_result(dcop):
+    distinct_values_colors = get_distinct_values_colors(dcop)
+
+    print()
+    for a in dcop.agents:
+       pass
+
+
+def draw_result(dcop):
+    if debug_draw_result:
+        draw_dcop_result(dcop)
+
+
+debug_draw_graph = False
+debug_draw_result = True
+debug_DFS_tree = False
 debug_DFS_draw_tree = True
-debug_BNB = True
+debug_BNB = False

@@ -161,6 +161,7 @@ class DCOP(ABC):
         self.mailer = Mailer(self.agents)
         self.global_clock = 0
         self.inform_root()
+        self.records_dcop = {}
 
 
     def create_agents(self):
@@ -193,13 +194,13 @@ class DCOP(ABC):
         self.agents_init()
         while not self.all_agents_complete():
             self.global_clock = self.global_clock + 1
-
-            is_empty = self.mailer.place_messages_in_agents_inbox() #TODO
+            is_empty = self.mailer.place_messages_in_agents_inbox()
             if is_empty:
                 print("DCOP:",str(self.dcop_id),"global clock:",str(self.global_clock), "is over because there are no messages in system ")
                 break
             self.agents_perform_iteration(self.global_clock)
             self.draw_global_things()
+        self.collect_records()
 
     def __str__(self):
         split_string = str(dcop_type).split('.')
@@ -240,6 +241,23 @@ class DCOP(ABC):
         if globals_.draw_dfs_tree_flag:
             draw_dfs_tree(self.agents,self.dcop_id)
             globals_.draw_dfs_tree_flag = False
+
+    def collect_records(self):
+        for a in self.agents:
+            records_dict = a.records
+            for k,v in records_dict.items():
+                if k not in self.records_dcop:
+                    self.records_dcop[k] = []
+                self.records_dcop[k]  = self.records_dcop[k] + records_dict[k]
+        self.add_more_records(k)
+
+
+    def add_more_records(self, k):
+        amount_reps = len(self.records_dcop[k])
+        dcop_ids = [self.dcop_id] * amount_reps
+        problems = [self.__str__()] *amount_reps
+        self.records_dcop["dcop_id"] = dcop_ids
+        self.records_dcop["problem"] = problems
 
 class DCOP_RandomUniform(DCOP):
     def __init__(self, id_,A,D,dcop_name):
