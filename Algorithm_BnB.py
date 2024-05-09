@@ -57,11 +57,24 @@ class GlobalUBPruneException(Exception):
         Exception.__init__(self)
         print("\033[91m" + message + "\033[0m")
 
+
+
+
 class BranchAndBoundInformation:
-    def __init__(self,):
+    def __init__(self,context,constraints):
+        self.context = context
+        self.constraints = constraints
+        self.total_cost = self.calculate_total_cost()
+
+
+class BranchAndBoundPrune:
+    def __init__(self,winner,loser):
+        self.winner = winner
+        self.loser = loser
+        self.disjoint = self.get_disjoint_constraints()
 
 class BranchAndBoundToken:
-    def __init__(self, best_UB = None, UB = None, LB = 0, variables=None, heights=None):
+    def __init__(self, best_UB:BranchAndBoundInformation = None, UB:BranchAndBoundInformation = None, LB = 0, variables=None, heights=None):
         if heights is None:
             heights = {}
         if variables is None:
@@ -71,6 +84,7 @@ class BranchAndBoundToken:
         self.LB = LB
         self.variables = variables
         self.heights = heights
+        self.constraints  = {}
 
     def __add__(self, other):
 
@@ -98,19 +112,19 @@ class BranchAndBoundToken:
         ans.update_cost()
         return ans
 
-
-
     def agent_include_in_variables(self,id_):
         if id_ in self.variables.keys():
             return True
         else:
             return False
 
-
-    def add_agent_to_token_variables(self,id_,value,local_cost):
+    def add_agent_to_token_variables(self,id_,value,local_cost,constraint_list):
         if self.agent_include_in_variables(id_):
             raise Exception("used it when agent is already in token")
-        self.variables[id_] = (value,local_cost)
+
+        stopped here
+        self.variables[id_] = BranchAndBoundInformation()(value,local_cost)
+
         if  id_ not in self.heights.keys():
             if len(self.heights)==0:
                 self.heights[id_] = 1
@@ -153,6 +167,7 @@ class BranchAndBoundToken:
 
             #ans[n_id] = self.variables[n_id][0]
         return ans
+
     def __str__(self):
         return "UB:" + str(self.UB) + ", LB:" + str(self.LB) + ", context:" + str(self.variables)
 
@@ -311,17 +326,17 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def compute_after_tree(self):
         if self.root_of_tree_start_algorithm:
-            self.compute_start_algorithm()
+            self.compute_start_algorithm() # done
         if self.status == BNB_Status.receive_token_from_father_mid:
-            self.compute_receive_token_from_father_mid()
+            self.compute_receive_token_from_father_mid() # TODO
         if self.status == BNB_Status.receive_token_from_father_leaf:
-            self.compute_receive_token_from_father_leaf()
+            self.compute_receive_token_from_father_leaf() # TODO
         if self.status == BNB_Status.receive_all_tokens_from_children:
-            self.compute_receive_all_tokens_from_children()
+            self.compute_receive_all_tokens_from_children() #TODO
         if self.status == BNB_Status.receive_all_tokens_from_children_with_empty:
-            self.compute_receive_all_tokens_from_children_with_empty()
+            self.compute_receive_all_tokens_from_children_with_empty() #TODO
         if self.status == BNB_Status.receive_all_tokens_from_children_root:
-            self.compute_receive_all_tokens_from_children_root()
+            self.compute_receive_all_tokens_from_children_root() #TODO
 
         if debug_BNB:
             print(self.__str__(), "status IS:", self.status)
@@ -403,6 +418,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.variable = self.domain[self.domain_index]
             if debug_BNB:
                 print(self, "variable changed to", self.variable)
+
+
+
             current_context = self.token.get_variable_dict(self.above_me)
             local_cost = self.calc_local_price(current_context)
             try:
@@ -428,13 +446,18 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def compute_receive_token_from_father_mid(self):
         self.select_next_value()
-        if self.token.agent_include_in_variables(self.id_):
+        is_managed_to_select_value =self.token.agent_include_in_variables(self.id_)
+        if is_managed_to_select_value:
             self.status = BNB_Status.send_token_to_children
-        else:
+        elif self.status == BNB_Status.finished_going_over_domain:
             self.status = BNB_Status.send_empty_to_father
-            #raise Exception("TODO send_empty_to_father cause did not add self to token")
+        raise Exception("logic mistake")
 
     def compute_receive_token_from_father_leaf(self):
+        current_UB = self.token.UB
+        current_UB_cost =  current_UB.total_cost
+
+
         potential_value_and_cost = self.get_potential_values_dict()
         min_cost = min(potential_value_and_cost.values())
         if self.best_global_token is not None:
@@ -485,6 +508,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             raise Exception("did not complete this")
 
     def get_potential_values_dict(self):
+
+
         ans = {}
         current_context = self.token.get_variable_dict(self.above_me)
         for potential_domain in self.domain:
