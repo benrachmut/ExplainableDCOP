@@ -60,21 +60,21 @@ class GlobalUBPruneException(Exception):
 
 
 
-class BranchAndBoundInformation:
+class SingleInformation:
     def __init__(self,context,constraints):
         self.context = context
         self.constraints = constraints
         self.total_cost = self.calculate_total_cost()
 
 
-class BranchAndBoundPrune:
+class PruneExplanation:
     def __init__(self,winner,loser):
         self.winner = winner
         self.loser = loser
         self.disjoint = self.get_disjoint_constraints()
 
 class BranchAndBoundToken:
-    def __init__(self, best_UB:BranchAndBoundInformation = None, UB:BranchAndBoundInformation = None, LB = 0, variables=None, heights=None):
+    def __init__(self, best_UB:SingleInformation = None, UB:SingleInformation = None, LB = 0, variables=None, heights=None):
         if heights is None:
             heights = {}
         if variables is None:
@@ -121,8 +121,7 @@ class BranchAndBoundToken:
     def add_agent_to_token_variables(self,id_,value,local_cost,constraint_list):
         if self.agent_include_in_variables(id_):
             raise Exception("used it when agent is already in token")
-
-        stopped here
+        #stopped here
         self.variables[id_] = BranchAndBoundInformation()(value,local_cost)
 
         if  id_ not in self.heights.keys():
@@ -418,9 +417,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.variable = self.domain[self.domain_index]
             if debug_BNB:
                 print(self, "variable changed to", self.variable)
-
-
-
             current_context = self.token.get_variable_dict(self.above_me)
             local_cost = self.calc_local_price(current_context)
             try:
