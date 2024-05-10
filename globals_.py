@@ -290,8 +290,46 @@ def draw_result(dcop):
         draw_dcop_result(dcop)
 
 
+
+class SingleInformation:
+    def __init__(self,context,constraints):
+        self.context = context
+        self.constraints = constraints
+        self.total_cost = self.calculate_total_cost()
+
+    def calculate_total_cost(self):
+        return 0
+
+    def __deepcopy__(self, memodict={}):
+        context_input = {}
+        for k,v in self.context.items():
+            context_input[k] = v
+
+        constraints_input = {}
+        for k,v in self.constraints.items():
+            t_list = []
+            for constraint in v:
+                t_list.append(constraint.__deepcopy__())
+            constraints_input[k] = t_list
+
+
+        return SingleInformation(context_input,constraints_input)
+
+
+
+
+class PruneExplanation:
+    def __init__(self,winner,loser,text):
+        self.winner = winner
+        self.loser = loser
+        self.text =
+        self.disjoint = self.get_disjoint_constraints()
+
+
+
 debug_draw_graph = False
 debug_draw_result = True
-debug_DFS_tree = False
+debug_DFS_tree = True
+
 debug_DFS_draw_tree = True
-debug_BNB = False
+debug_BNB = True

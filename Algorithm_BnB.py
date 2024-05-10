@@ -60,203 +60,204 @@ class GlobalUBPruneException(Exception):
 
 
 
-class SingleInformation:
-    def __init__(self,context,constraints):
-        self.context = context
-        self.constraints = constraints
-        self.total_cost = self.calculate_total_cost()
 
-
-class PruneExplanation:
-    def __init__(self,winner,loser):
-        self.winner = winner
-        self.loser = loser
-        self.disjoint = self.get_disjoint_constraints()
 
 class BranchAndBoundToken:
-    def __init__(self, best_UB:SingleInformation = None, UB:SingleInformation = None, LB = 0, variables=None, heights=None):
-        if heights is None:
-            heights = {}
-        if variables is None:
-            variables = {}
+    def __init__(self,heights = None, best_UB:SingleInformation = None, UB:SingleInformation = None, LB:SingleInformation = None,):
         self.best_UB= best_UB
         self.UB = UB
         self.LB = LB
-        self.variables = variables
         self.heights = heights
-        self.constraints  = {}
 
-    def __add__(self, other):
+    def __deepcopy__(self, memodict={}):
+        best_UB_input = None
+        UB_input = None
+        LB_input = None
 
-        best_UB = self.check_for_best_UB(other)
+        if self.best_UB is not None:
+            best_UB_input = self.best_UB.__deepcopy__()
+        if self.UB is not None:
+            UB_input = self.UB.__deepcopy__()
+        if self.LB is not None:
+            LB_input = self.LB.__deepcopy__()
 
-
-        new_variables = self.merge_variables(other)
-        new_heights = self.merge_heights(other)
-
-        ans = BranchAndBoundToken(best_UB= best_UB, variables=new_variables, heights=new_heights)
-        ans.update_cost()
-
-        variables_to_send = {}
-        for k, v in self.variables.items():
-            variables_to_send[k] = v
-
-        #ans.UB= (ans.LB,variables_to_send)
-
-        # todo check if best variables is the same if not there is a bug raise exp
-        return ans
-
-    def create_reseted_token(self,id_):
-        new_variables = self.reset_variables(id_)
-        ans = BranchAndBoundToken(best_UB= self.best_UB, UB= self.UB, LB = 0, variables = new_variables, heights = self.heights)
-        ans.update_cost()
-        return ans
-
-    def agent_include_in_variables(self,id_):
-        if id_ in self.variables.keys():
-            return True
-        else:
-            return False
-
-    def add_agent_to_token_variables(self,id_,value,local_cost,constraint_list):
-        if self.agent_include_in_variables(id_):
-            raise Exception("used it when agent is already in token")
-        #stopped here
-        self.variables[id_] = BranchAndBoundInformation()(value,local_cost)
-
-        if  id_ not in self.heights.keys():
-            if len(self.heights)==0:
-                self.heights[id_] = 1
-            else:
-                self.heights[id_] = max(self.heights.values())+1
-
-        self.update_cost()
-
-    def update_cost(self,flag = True):
-        costs = []
-        for n_id, tuple_ in self.variables.items():
-            costs.append(tuple_[1])
-        #costs =  {key: sum(value) for key, value in self.variables.items()}.values()
-
-        self.LB = sum(costs)
-
-        best_UB = self.best_UB
-        if best_UB is not None and self.LB>=best_UB[0]:
-            if flag and debug_BNB:
-                raise GlobalUBPruneException("LB>UB_global move to the next domain LB=" + str(self.LB) + " UB_global=" + str(best_UB[0]))
-            else:
-                raise GlobalUBPruneException()
-
-        if self.UB is not None and self.LB>=self.UB[0]:
-            if flag and debug_BNB:
-                raise LocalUBPruneException("LB>UB_local move to the next domain LB=" + str(self.LB) + " UB_local=" + str(self.UB))
-            else:
-                raise LocalUBPruneException()
-
-    def copy_variables(self):
-        ans = {}
-        for k,v in self.variables.items():
-            ans[k] = v
-        return ans
-
-    def get_variable_dict(self,agent_list_id):
-        ans = {}
-        for n_id in agent_list_id:
-            ans[n_id] = next(iter(self.variables[n_id]))
-
-            #ans[n_id] = self.variables[n_id][0]
-        return ans
-
-    def __str__(self):
-        return "UB:" + str(self.UB) + ", LB:" + str(self.LB) + ", context:" + str(self.variables)
-
-    def __deepcopy__(self, memodict={},flag = False):
-        variables_to_send = {}
-        for k,v in self.variables.items():
-            variables_to_send[k] = v
-
-        heights_to_send = {}
-        for k, v in self.heights.items():
-            heights_to_send[k] = v
-
-        best_token = None
-        if self.best_UB is not None and not flag:
-            dict_dup = copy_dict(self.best_UB[1])
-            best_token = (self.best_UB[0],dict_dup)
-
-        return BranchAndBoundToken(best_UB= best_token, UB= self.UB, LB = self.LB, variables = variables_to_send, heights = heights_to_send)
-
-    def merge_heights(self, other):
-        merged_dict = {}
-        # Merge keys from both dictionaries
-        all_keys = set(self.variables.keys()) | set(other.variables.keys())
-
-        for key in all_keys:
+        heights_input = None
+        if self.heights is not None:
+            heights_input = copy_dict(self.heights)
+        return BranchAndBoundToken(best_UB= best_UB_input,UB = UB_input,LB = LB_input, heights = heights_input)
 
 
-
-            value_dict1 = self.heights.get(key)
-            value_dict2 = other.heights.get(key)
-
-            if value_dict1 is not None and value_dict2 is not None:
-                if value_dict1 != value_dict2:
-                    raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
-                else:
-                    merged_dict[key] = value_dict1
-            elif value_dict1 is not None:
-                merged_dict[key] = value_dict1
-            elif value_dict2 is not None:
-                merged_dict[key] = value_dict2
-
-        return merged_dict
-
-    def merge_variables(self, other):
-        merged_dict = {}
-        # Merge keys from both dictionaries
-        all_keys = set(self.variables.keys()) | set(other.variables.keys())
-
-        for key in all_keys:
-            value_dict1 = self.variables.get(key)
-            value_dict2 = other.variables.get(key)
-
-            if value_dict1 is not None and value_dict2 is not None:
-                if value_dict1 != value_dict2:
-                    raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
-                else:
-                    merged_dict[key] = value_dict1
-            elif value_dict1 is not None:
-                merged_dict[key] = value_dict1
-            elif value_dict2 is not None:
-                merged_dict[key] = value_dict2
-
-        return merged_dict
-
-    def reset_variables(self,id_):
-        ans = {}
-
-        height_of_id = self.heights[id_]
-
-        for n_id, dict_ in self.variables.items():
-            height_of_neighbor = self.heights[n_id]
-            if height_of_id > height_of_neighbor:
-                ans[n_id] = dict_
-        return ans
-
-    def check_for_best_UB(self,other):
-        if other.best_UB is not None and self.best_UB is not None and other.best_UB[0] != self.best_UB[0]:
-            raise Exception("not logical")
-
-        if other.best_UB is None and self.best_UB is not None:
-            raise Exception("not logical")
-
-        if other.best_UB is not None and self.best_UB is None:
-            raise Exception("not logical")
-        best_UB = None
-
-        if other.best_UB is not None and self.best_UB is not None:
-            dict_dup = copy_dict(self.best_UB[1])
-            best_UB = (self.best_UB[0],dict_dup)
-        return  best_UB
+    # def __add__(self, other):
+    #
+    #     best_UB = self.check_for_best_UB(other)
+    #
+    #
+    #     new_variables = self.merge_variables(other)
+    #     new_heights = self.merge_heights(other)
+    #
+    #     ans = BranchAndBoundToken(best_UB= best_UB, variables=new_variables, heights=new_heights)
+    #     ans.update_cost()
+    #
+    #     variables_to_send = {}
+    #     for k, v in self.variables.items():
+    #         variables_to_send[k] = v
+    #
+    #     #ans.UB= (ans.LB,variables_to_send)
+    #
+    #     # todo check if best variables is the same if not there is a bug raise exp
+    #     return ans
+    #
+    # def create_reseted_token(self,id_):
+    #     new_variables = self.reset_variables(id_)
+    #     ans = BranchAndBoundToken(best_UB= self.best_UB, UB= self.UB, LB = 0, variables = new_variables, heights = self.heights)
+    #     ans.update_cost()
+    #     return ans
+    #
+    # def agent_include_in_variables(self,id_):
+    #     if id_ in self.variables.keys():
+    #         return True
+    #     else:
+    #         return False
+    #
+    # def add_agent_to_token_variables(self,id_,value,local_cost,constraint_list):
+    #     if self.agent_include_in_variables(id_):
+    #         raise Exception("used it when agent is already in token")
+    #     #stopped here
+    #     self.variables[id_] = BranchAndBoundInformation()(value,local_cost)
+    #
+    #     if  id_ not in self.heights.keys():
+    #         if len(self.heights)==0:
+    #             self.heights[id_] = 1
+    #         else:
+    #             self.heights[id_] = max(self.heights.values())+1
+    #
+    #     self.update_cost()
+    #
+    # def update_cost(self,flag = True):
+    #     costs = []
+    #     for n_id, tuple_ in self.variables.items():
+    #         costs.append(tuple_[1])
+    #     #costs =  {key: sum(value) for key, value in self.variables.items()}.values()
+    #
+    #     self.LB = sum(costs)
+    #
+    #     best_UB = self.best_UB
+    #     if best_UB is not None and self.LB>=best_UB[0]:
+    #         if flag and debug_BNB:
+    #             raise GlobalUBPruneException("LB>UB_global move to the next domain LB=" + str(self.LB) + " UB_global=" + str(best_UB[0]))
+    #         else:
+    #             raise GlobalUBPruneException()
+    #
+    #     if self.UB is not None and self.LB>=self.UB[0]:
+    #         if flag and debug_BNB:
+    #             raise LocalUBPruneException("LB>UB_local move to the next domain LB=" + str(self.LB) + " UB_local=" + str(self.UB))
+    #         else:
+    #             raise LocalUBPruneException()
+    #
+    # def copy_variables(self):
+    #     ans = {}
+    #     for k,v in self.variables.items():
+    #         ans[k] = v
+    #     return ans
+    #
+    # def get_variable_dict(self,agent_list_id):
+    #     ans = {}
+    #     for n_id in agent_list_id:
+    #         ans[n_id] = next(iter(self.variables[n_id]))
+    #
+    #         #ans[n_id] = self.variables[n_id][0]
+    #     return ans
+    #
+    # def __str__(self):
+    #     return "UB:" + str(self.UB) + ", LB:" + str(self.LB) + ", context:" + str(self.variables)
+    #
+    # def __deepcopy__(self, memodict={},flag = False):
+    #     variables_to_send = {}
+    #     for k,v in self.variables.items():
+    #         variables_to_send[k] = v
+    #
+    #     heights_to_send = {}
+    #     for k, v in self.heights.items():
+    #         heights_to_send[k] = v
+    #
+    #     best_token = None
+    #     if self.best_UB is not None and not flag:
+    #         dict_dup = copy_dict(self.best_UB[1])
+    #         best_token = (self.best_UB[0],dict_dup)
+    #
+    #     return BranchAndBoundToken(best_UB= best_token, UB= self.UB, LB = self.LB, variables = variables_to_send, heights = heights_to_send)
+    #
+    # def merge_heights(self, other):
+    #     merged_dict = {}
+    #     # Merge keys from both dictionaries
+    #     all_keys = set(self.variables.keys()) | set(other.variables.keys())
+    #
+    #     for key in all_keys:
+    #
+    #
+    #
+    #         value_dict1 = self.heights.get(key)
+    #         value_dict2 = other.heights.get(key)
+    #
+    #         if value_dict1 is not None and value_dict2 is not None:
+    #             if value_dict1 != value_dict2:
+    #                 raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
+    #             else:
+    #                 merged_dict[key] = value_dict1
+    #         elif value_dict1 is not None:
+    #             merged_dict[key] = value_dict1
+    #         elif value_dict2 is not None:
+    #             merged_dict[key] = value_dict2
+    #
+    #     return merged_dict
+    #
+    # def merge_variables(self, other):
+    #     merged_dict = {}
+    #     # Merge keys from both dictionaries
+    #     all_keys = set(self.variables.keys()) | set(other.variables.keys())
+    #
+    #     for key in all_keys:
+    #         value_dict1 = self.variables.get(key)
+    #         value_dict2 = other.variables.get(key)
+    #
+    #         if value_dict1 is not None and value_dict2 is not None:
+    #             if value_dict1 != value_dict2:
+    #                 raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
+    #             else:
+    #                 merged_dict[key] = value_dict1
+    #         elif value_dict1 is not None:
+    #             merged_dict[key] = value_dict1
+    #         elif value_dict2 is not None:
+    #             merged_dict[key] = value_dict2
+    #
+    #     return merged_dict
+    #
+    # def reset_variables(self,id_):
+    #     ans = {}
+    #
+    #     height_of_id = self.heights[id_]
+    #
+    #     for n_id, dict_ in self.variables.items():
+    #         height_of_neighbor = self.heights[n_id]
+    #         if height_of_id > height_of_neighbor:
+    #             ans[n_id] = dict_
+    #     return ans
+    #
+    # def check_for_best_UB(self,other):
+    #     if other.best_UB is not None and self.best_UB is not None and other.best_UB[0] != self.best_UB[0]:
+    #         raise Exception("not logical")
+    #
+    #     if other.best_UB is None and self.best_UB is not None:
+    #         raise Exception("not logical")
+    #
+    #     if other.best_UB is not None and self.best_UB is None:
+    #         raise Exception("not logical")
+    #     best_UB = None
+    #
+    #     if other.best_UB is not None and self.best_UB is not None:
+    #         dict_dup = copy_dict(self.best_UB[1])
+    #         best_UB = (self.best_UB[0],dict_dup)
+    #     return  best_UB
 
 class BranchAndBound(DFS,CompleteAlgorithm):
     def __init__(self, id_, D):
@@ -267,6 +268,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.token = None
         self.tokens_from_children = {}
         self.receive_empty_msg_flag = False
+        self.my_height = None
+        self.above_me = []
 
     def is_algorithm_complete(self):
         return self.status == BNB_Status.finished_algorithm
@@ -357,9 +360,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.send_msgs_finished_algorithm()
 
 
-
-
-
     def change_status_after_send_msgs_tree(self):
         if self.status == BNB_Status.hold_token_send_down or self.status == BNB_Status.send_token_to_children:
             self.status = BNB_Status.wait_tokens_from_children
@@ -400,8 +400,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     # compute #################################################################################################
 
     def compute_start_algorithm(self):
+        self.my_height = 1
         self.select_next_value()
-        self.create_local_token_root()
+        si = SingleInformation(context={self.id_:self.variable},constraints={self.id_:[]})
+        self.create_local_token_root(si)
         self.root_of_tree_start_algorithm = False
         self.status = BNB_Status.hold_token_send_down
         if debug_DFS_draw_tree:
@@ -414,16 +416,21 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.variable = self.domain[self.domain_index]
             return
         while self.domain_index < len(self.domain):
+
             self.variable = self.domain[self.domain_index]
             if debug_BNB:
                 print(self, "variable changed to", self.variable)
-            current_context = self.token.get_variable_dict(self.above_me)
-            local_cost = self.calc_local_price(current_context)
+            raise Exception ("all below is not completed")
+            constraints = self.get_constraints() # TODO
+
+            self.token.add_info_to_LB(self.id_,constraints,self.variable)
             try:
-                self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable,local_cost=local_cost)
-                return True
+                self.token_check_current_LB()
             except LocalUBPruneException:
-                self.add_to_records_from_current_token(self.token.UB[1],self.token.UB[0])
+                text = ""
+                pe = PruneExplanation (winner=self.token.UB__deepcopy__(),loser=self.token.LB__deepcopy__(),text= text)
+                self.add_prune_explanation(pe)
+                self.token.remove_from_lb(self.)
                 del self.token.variables[self.id_]
                 self.domain_index = self.domain_index + 1
             except GlobalUBPruneException:
@@ -441,6 +448,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.tokens_from_children[n_id] = None
 
     def compute_receive_token_from_father_mid(self):
+        self.update_height_and_above_me()
         self.select_next_value()
         is_managed_to_select_value =self.token.agent_include_in_variables(self.id_)
         if is_managed_to_select_value:
@@ -450,6 +458,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         raise Exception("logic mistake")
 
     def compute_receive_token_from_father_leaf(self):
+        self.update_height_and_above_me()
+
+
         current_UB = self.token.UB
         current_UB_cost =  current_UB.total_cost
 
@@ -689,10 +700,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.token.best_UB[1][self.id_][0]
             raise Exception("stopped here")
 
-    def create_local_token_root(self):
+    def create_local_token_root(self, si:SingleInformation):
         if self.status != BNB_Status.finished_going_over_domain:
-            self.token = BranchAndBoundToken()
-            self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable, local_cost=0)
+            self.token = BranchAndBoundToken(LB=si,heights={self.id_:self.my_height})
             self.reset_tokens_from_children()
 
 
@@ -741,12 +751,12 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.add_to_records(other_variables=other_variables, other_LB=other_LB, winner_variables=winner_vars,
                                 winner_LB=winner_LB_input)
 
-
-    def add_to_records_from_current_token(self, winner_variables, winner_LB):
-        other_variables = copy_dict(self.token.__deepcopy__().variables)
-        other_LB = self.token.__deepcopy__().LB
-        self.add_to_records(other_variables=other_variables, other_LB=other_LB, winner_variables=winner_variables,
-                            winner_LB=winner_LB)
+    #
+    # def add_to_records_from_current_token(self, winner_variables, winner_LB):
+    #     other_variables = copy_dict(self.token.__deepcopy__().variables)
+    #     other_LB = self.token.__deepcopy__().LB
+    #     self.add_to_records(other_variables=other_variables, other_LB=other_LB, winner_variables=winner_variables,
+    #                         winner_LB=winner_LB)
 
     def add_to_records(self, other_variables,other_LB, winner_variables, winner_LB):
         if "Agent_id" not in self.records:
@@ -776,6 +786,15 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if "LB_winner" not in self.records:
             self.records["LB_winner"] = []
         self.records["LB_winner"].append(winner_LB)
+
+    def update_height_and_above_me(self):
+        if len(self.above_me) == 0 and not self.is_root():
+            father_height = self.token.heights[self.dfs_father]
+            self.my_height = father_height+1
+            for k in self.token.heights.keys():
+                self.above_me.append(k)
+            self.token.heights[self.id_] = self.my_height
+
 
 
 

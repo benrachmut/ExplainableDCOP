@@ -31,8 +31,8 @@ class DFS(Agent,ABC):
         self.dfs_father = None
         self.root_of_tree_start_algorithm = False
 
-        self.above_me = []
-        self.below_me = []
+        #self.above_me = []
+        #self.below_me = []
 
     def initialize(self):
         msgs = []
@@ -63,9 +63,8 @@ class DFS(Agent,ABC):
             self.update_msgs_in_context_after_tree(msgs)
 
     def change_status_after_update_msgs_in_context(self,msgs):
-        if self.status == DFS_Status.wait_for_amount_of_neighbors or not self.all_neighbors_are_in_tree():
+        if self.status == DFS_Status.wait_for_amount_of_neighbors:# or not self.all_neighbors_are_in_tree():
             self.status = DFS_Status.create_dfs
-
         else:
             self.change_status_after_update_msgs_in_context_after_tree(msgs)
 
@@ -140,10 +139,10 @@ class DFS(Agent,ABC):
         if debug_DFS_tree:
             index_to_print = len(self.dfs_children)-1
             print("A_", str(self.id_), "sends token down to", "A_" + str(self.dfs_children[index_to_print]))
-        if len(self.above_me) == 0:
-            self.create_above_me()
-        else:
-            self.below_me.append(max_id)
+        #if len(self.above_me) == 0:
+         #   self.create_above_me()
+        #else:
+        #    self.below_me.append(max_id)
 
 
         self.dfs_tree_token.append(self.id_)
@@ -153,10 +152,10 @@ class DFS(Agent,ABC):
         if self.id_ not in self.dfs_tree_token:
             self.dfs_tree_token.append(self.id_)
 
-        if len(self.dfs_children) == 0:
-            self.create_above_me()
-        else:
-            self.create_below_me()
+        # if len(self.dfs_children) == 0:
+        #     self.create_above_me()
+        # else:
+        #     self.create_below_me()
 
 
         self.dfs_tree_token = (self.dfs_tree_token, self.dfs_father)
@@ -164,8 +163,8 @@ class DFS(Agent,ABC):
 
         if debug_DFS_tree:
             print("A_", str(self.id_), "sends token up to", "A_" + str(self.dfs_father))
-            print("A_", str(self.id_), "above", self.above_me)
-            print("A_", str(self.id_), "below", self.below_me)
+            #print("A_", str(self.id_), "above", self.above_me)
+            #print("A_", str(self.id_), "below", self.below_me)
 
 
     @abstractmethod
@@ -184,23 +183,23 @@ class DFS(Agent,ABC):
     def send_msgs_after_tree(self):pass
 
 
-    def create_below_me(self):
+    # def create_below_me(self):
+    #
+    #     for n_id in self.dfs_tree_token:
+    #         if n_id not in self.above_me and n_id in self.neighbors_agents_id and n_id not in self.below_me:
+    #             self.below_me.append(n_id)
 
-        for n_id in self.dfs_tree_token:
-            if n_id not in self.above_me and n_id in self.neighbors_agents_id and n_id not in self.below_me:
-                self.below_me.append(n_id)
+    # def create_above_me(self):
+    #     for n_id in self.dfs_tree_token:
+    #         if n_id in self.neighbors_agents_id and n_id not in self.above_me:
+    #             self.above_me.append(n_id)
 
-    def create_above_me(self):
-        for n_id in self.dfs_tree_token:
-            if n_id in self.neighbors_agents_id and n_id not in self.above_me:
-                self.above_me.append(n_id)
-
-    def all_neighbors_are_in_tree(self):
-        agents_in_tree = self.above_me + self.below_me
-        for n_id in self.neighbors_agents_id:
-            if n_id not in agents_in_tree:
-                return False
-        return True
+    # def all_neighbors_are_in_tree(self):
+    #     agents_in_tree = self.above_me + self.below_me
+    #     for n_id in self.neighbors_agents_id:
+    #         if n_id not in agents_in_tree:
+    #             return False
+    #     return True
 
     def compute_tree_creation(self):
         self.remove_all_agents_in_token()
@@ -210,7 +209,7 @@ class DFS(Agent,ABC):
             self.token_goes_up()
         else:
             self.root_of_tree_start_algorithm = True
-            self.below_me = self.neighbors_agents_id
+            #self.below_me = self.neighbors_agents_id
             self.compute_after_tree()
 
     def is_compute_in_this_iteration_tree(self):
