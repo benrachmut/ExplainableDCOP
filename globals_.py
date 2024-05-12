@@ -322,7 +322,7 @@ class PruneExplanation:
     def __init__(self,winner,loser,text):
         self.winner = winner
         self.loser = loser
-        self.text =
+        self.text = text
         self.disjoint = self.get_disjoint_constraints()
 
 
