@@ -4,7 +4,6 @@ from enum import Enum
 from Scripts._testmultiphase import Example
 
 import Globals_
-import problems
 from Trees import *
 from Agents import *
 from Globals_ import *
@@ -51,7 +50,6 @@ class LocalUBPruneException(Exception):
     def __init__(self, message=""):
         Exception.__init__(self)
         print("\033[91m"+message+"\033[0m")
-
 
 class GlobalUBPruneException(Exception):
     def __init__(self, message=""):
@@ -430,11 +428,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             return
         while self.domain_index < len(self.domain):
             self.variable = self.domain[self.domain_index]
-            lb_to_update = self.get_lb_to_update()
+            lb_to_update = self.get_lb_to_update(self.variable)
             did_update = self.try_to_update_lb(lb_to_update)
             if did_update:
                 return True
-
             self.domain_index = -1
             if debug_BNB:
                 print(self, "finished going over domain", self.variable)
@@ -474,7 +471,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         else:
             self.status = BNB_Status.send_empty_to_father
             raise Exception("need to check this")
-
 
     def compute_receive_token_from_father_leaf(self):
         self.update_height_and_above_me()
@@ -528,9 +524,12 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             raise Exception("did not complete this")
 
     def get_potential_values_dict(self):
-
-
         ans = {}
+        for potential_domain in self.domain:
+            lb_to_update = self.get_lb_to_update(potential_domain)
+            ans[potential_domain] = lb_to_update
+        raise Exception("stopped here did not change what is below")
+
         current_context = self.token.get_variable_dict(self.above_me)
         for potential_domain in self.domain:
             potential_cost = self.calc_potential_cost(potential_domain, current_context)
@@ -541,13 +540,13 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     # select_next_value #################################################################################################
 
-    def get_lb_to_update(self):
+    def get_lb_to_update(self,variable_input):
 
 
         constraints = self.get_constraints(current_context = self.token.get_lb_copy().context)
         token_lb = self.token.get_lb_copy()
         token_lb.update_constraints(self.id_, constraints)
-        token_lb.update_context(self.id_, self.variable)  # TODO
+        token_lb.update_context(self.id_, variable_input)  # TODO
         return token_lb
 
     def check_specific_ub(self, lb_to_update: SingleInformation, ub: SingleInformation):
