@@ -59,6 +59,12 @@ class Neighbors():
 
 
 
+    def is_ids_this_object(self,id_1,id_2):
+        if (self.a1.id_==id_1 and self.a2.id_ == id_2) or (self.a1.id_==id_2 and self.a2.id_ == id_1):
+            return True
+        else:
+            return False
+
     def get_cost(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
 
         if first_agent_id_input<second_agent_id_input:
@@ -72,9 +78,20 @@ class Neighbors():
     def create_dictionary_of_costs(self,cost_generator):
         for d_a1 in self.a1.domain:
             for d_a2 in self.a2.domain:
-                ap = (self.a1.id_,d_a1,self.a2.id_,d_a2)#AgentPair(self.a1.id_, d_a1, self.a2.id_, d_a2)
+                first_tuple = ("A_"+str(self.a1.id_),d_a1)
+                second_tuple = ("A_"+str(self.a2.id_),d_a2)
+                ap = (first_tuple,second_tuple)
+                #ap = (self.a1.id_,d_a1,self.a2.id_,d_a2)#AgentPair(self.a1.id_, d_a1, self.a2.id_, d_a2)
                 cost = cost_generator(self.rnd_cost,self.a1,self.a2,d_a1,d_a2)
                 self.cost_table[ap] = cost
+
+
+    def get_constraint(self,first_tuple,second_tuple):
+        if first_tuple[0]<second_tuple[0]:
+            k = (("A_"+str(first_tuple[0]),first_tuple[1]),("A_"+str(second_tuple[0]),second_tuple[1]))
+        else:
+            k = (("A_"+str(second_tuple[0]),second_tuple[1]),("A_"+str(first_tuple[0]),first_tuple[1]))
+        return k,self.cost_table[k]
 
 
     def is_agent_in_obj(self,agent_id_input):

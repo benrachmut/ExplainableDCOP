@@ -101,6 +101,18 @@ class Agent(ABC):
     def change_status_after_send_msgs(self):pass
 
 
+    def get_constraints(self,current_context):
+        ans = {}
+        for n_id,n_value in current_context.items():
+            neighbor = self.get_n_obj(n_id)
+            if neighbor is not None:
+                first_tuple = (self.id_,self.variable)
+                second_tuple = (n_id,n_value)
+                k, v = neighbor.get_constraint(first_tuple,second_tuple)
+                ans[k] =v
+        return ans
+
+
 class Completeness(ABC):
 
     @abstractmethod

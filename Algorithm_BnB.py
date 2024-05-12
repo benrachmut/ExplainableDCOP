@@ -25,7 +25,7 @@ class BNB_msg_type(Enum):
 
 class BNB_Status(Enum):
     hold_token_send_down = 1
-    finished_going_over_domain = 2
+    #finished_going_over_domain = 2
     finished_temp_role_in_tree = 3
 
     wait_tokens_from_children = 4
@@ -277,7 +277,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         DFS.__init__(self, id_, D)
         self.domain_index = -1
         self.best_global_token = None
-        self.local_UB = None
         self.token = None
         self.tokens_from_children = {}
         self.receive_empty_msg_flag = False
@@ -342,15 +341,15 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def compute_after_tree(self):
         if self.root_of_tree_start_algorithm:
             self.compute_start_algorithm() # done
-        if self.status == BNB_Status.receive_token_from_father_mid:
-            self.compute_receive_token_from_father_mid() # TODO
-        if self.status == BNB_Status.receive_token_from_father_leaf:
+        elif self.status == BNB_Status.receive_token_from_father_mid:
+            self.compute_receive_token_from_father_mid()
+        elif self.status == BNB_Status.receive_token_from_father_leaf:
             self.compute_receive_token_from_father_leaf() # TODO
-        if self.status == BNB_Status.receive_all_tokens_from_children:
+        elif self.status == BNB_Status.receive_all_tokens_from_children:
             self.compute_receive_all_tokens_from_children() #TODO
-        if self.status == BNB_Status.receive_all_tokens_from_children_with_empty:
+        elif self.status == BNB_Status.receive_all_tokens_from_children_with_empty:
             self.compute_receive_all_tokens_from_children_with_empty() #TODO
-        if self.status == BNB_Status.receive_all_tokens_from_children_root:
+        elif self.status == BNB_Status.receive_all_tokens_from_children_root:
             self.compute_receive_all_tokens_from_children_root() #TODO
 
         if debug_BNB:
@@ -415,7 +414,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     def compute_start_algorithm(self):
         self.my_height = 1
         self.select_next_value()
-        si = SingleInformation(context={self.id_:self.variable},constraints={self.id_:[]})
+        si = SingleInformation(context={self.id_:self.variable},constraints={self.id_:{}})
         self.create_local_token_root(si)
         self.root_of_tree_start_algorithm = False
         self.status = BNB_Status.hold_token_send_down
@@ -429,49 +428,33 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.variable = self.domain[self.domain_index]
             return
         while self.domain_index < len(self.domain):
-
             self.variable = self.domain[self.domain_index]
-            if debug_BNB:
-                print(self, "variable changed to", self.variable)
-
             lb_to_update = self.get_lb_to_update()
-            if self.is_need_to_update_lb(lb_to_update):
-                self.token.lb = lb_to_update
-                self.toke.update_cost
-            else:
-                is_better_then_UB,is_better_then_best_UB = self.get_the_reason_for_failure()
-                text = "Adding value " + str(self.variable) + " by A_"+self.id_+" with cost "+self.lb_to_update+", is larger than "
+            did_update = self.try_to_update_lb(lb_to_update)
+            if did_update:
+                return True
 
-                flag = False
-                pe = None
-                if not is_better_then_UB:
-                    text = text+" UB with cost "+self.token.UB.total_cost
-                    pe = PruneExplanation (winner=self.token.UB__deepcopy__(),loser=self.token.LB__deepcopy__(),text= text)
-
-
-                if not is_better_then_best_UB:
-                    text = text + " global UB with cost " + self.token.best_UB.total_cost
-                    pe = PruneExplanation(winner=self.token.best_UB__deepcopy__(), loser=self.token.LB__deepcopy__(),
-                                          text=text)
-
-                if pe is None:
-                    raise Exception("must have a reason")
-                self.add_prune_explanation(pe)
-            # except LocalUBPruneException:
-            #     text = ""
-            #     pe = PruneExplanation (winner=self.token.UB__deepcopy__(),loser=self.token.LB__deepcopy__(),text= text)
-            #     self.add_prune_explanation(pe)
-            #     self.token.remove_from_lb(self.)
-            #     del self.token.variables[self.id_]
-            #     self.domain_index = self.domain_index + 1
-            # except GlobalUBPruneException:
-            #     self.add_to_records_from_current_token(self.token.best_UB[1], self.token.best_UB[0])
-            #     del self.token.variables[self.id_]
-            #     self.domain_index = self.domain_index + 1
-            self.status = BNB_Status.finished_going_over_domain
             self.domain_index = -1
             if debug_BNB:
                 print(self, "finished going over domain", self.variable)
+            return False
+
+    def try_to_update_lb(self,lb_to_update):
+        if self.is_need_to_update_lb(lb_to_update):
+            self.token.lb = lb_to_update
+            if debug_BNB:
+                print(self, "variable changed to", self.variable)
+            return True
+        else:
+            raise Exception("need to check this")
+            is_better_then_UB, is_better_then_best_UB = self.get_the_reason_for_failure()
+            text = "Adding value " + str(
+                self.variable) + " by A_" + self.id_ + " with cost " + self.lb_to_update + ", is larger than "
+            pe = self.get_explanation(is_better_then_UB, is_better_then_best_UB, text)  # TODO
+            self.add_prune_explanation(pe)  # TODO
+            if debug_BNB:
+                print(self, "variable did not change to", self.variable, text)
+            return False
 
     def get_the_reason_for_failure(self,lb_to_update):
         return self.check_specific_ub(lb_to_update, self.token.UB),\
@@ -484,22 +467,18 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def compute_receive_token_from_father_mid(self):
         self.update_height_and_above_me()
-        self.select_next_value()
-        is_managed_to_select_value =self.token.agent_include_in_variables(self.id_)
+        is_managed_to_select_value = self.select_next_value()
         if is_managed_to_select_value:
             self.status = BNB_Status.send_token_to_children
-        elif self.status == BNB_Status.finished_going_over_domain:
+        else:
             self.status = BNB_Status.send_empty_to_father
-        raise Exception("logic mistake")
+            raise Exception("need to check this")
+
 
     def compute_receive_token_from_father_leaf(self):
+
         self.update_height_and_above_me()
-
-
         current_UB = self.token.UB
-        current_UB_cost =  current_UB.total_cost
-
-
         potential_value_and_cost = self.get_potential_values_dict()
         min_cost = min(potential_value_and_cost.values())
         if self.best_global_token is not None:
@@ -560,6 +539,51 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         return ans
 
 
+
+    # select_next_value #################################################################################################
+
+    def get_lb_to_update(self):
+
+
+        constraints = self.get_constraints(current_context = self.token.get_lb_copy().context)
+        token_lb = self.token.get_lb_copy()
+        token_lb.update_constraints(self.id_, constraints)
+        token_lb.update_context(self.id_, self.variable)  # TODO
+        return token_lb
+
+    def check_specific_ub(self, lb_to_update: SingleInformation, ub: SingleInformation):
+        if ub is None:
+            return True
+        elif lb_to_update < ub:
+            return True
+        return False
+
+    def is_need_to_update_lb(self, lb_to_update):
+        is_better_then_UB = self.check_specific_ub(lb_to_update, self.token.UB)
+        is_better_then_best_UB = self.check_specific_ub(lb_to_update, self.token.best_UB)
+        return is_better_then_UB or is_better_then_best_UB
+
+    def get_explanation(self, is_better_then_UB, is_better_then_best_UB, text):
+        pe = None
+        if not is_better_then_UB:
+            text = text + " UB with cost " + self.token.UB.total_cost
+            pe = PruneExplanation(winner=self.token.UB__deepcopy__(), loser=self.token.LB__deepcopy__(), text=text)
+
+        if not is_better_then_best_UB:
+            text = text + " global UB with cost " + self.token.best_UB.total_cost
+            pe = PruneExplanation(winner=self.token.best_UB__deepcopy__(), loser=self.token.LB__deepcopy__(),
+                                  text=text)
+        if pe is None:
+            raise Exception("must have a reason")
+
+        return pe
+
+
+
+    def get_n_obj(self,n_id):
+        for n in self.neighbors_obj:
+            if n.is_ids_this_object(self.id_,n_id):
+                return n
     # send msgs #################################################################################################
 
     def send_msgs_finished_algorithm(self):
@@ -736,9 +760,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             raise Exception("stopped here")
 
     def create_local_token_root(self, si:SingleInformation):
-        if self.status != BNB_Status.finished_going_over_domain:
-            self.token = BranchAndBoundToken(LB=si,heights={self.id_:self.my_height})
-            self.reset_tokens_from_children()
+        self.token = BranchAndBoundToken(LB=si,heights={self.id_:self.my_height})
+        self.reset_tokens_from_children()
 
 
 
@@ -830,24 +853,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 self.above_me.append(k)
             self.token.heights[self.id_] = self.my_height
 
-    def get_lb_to_update(self):
-        constraints = self.get_constraints()  # TODO
-        token_lb = self.token.get_lb_copy()
-        token_lb.update_constraints(self.id_, constraints)  # TODO
-        token_lb.update_context(self.id_, self.variable)  # TODO
-        return token_lb
 
-    def check_specific_ub(self,lb_to_update:SingleInformation,ub:SingleInformation):
-        if ub is None:
-            return True
-        elif lb_to_update < ub:
-            return True
-        return False
 
-    def is_need_to_update_lb(self,lb_to_update ):
-        is_better_then_UB = self.check_specific_ub(lb_to_update, self.token.UB)
-        is_better_then_best_UB = self.check_specific_ub(lb_to_update, self.token.best_UB)
-        return is_better_then_UB or is_better_then_best_UB
+
+
 
 
 
