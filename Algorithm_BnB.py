@@ -3,11 +3,12 @@ from enum import Enum
 
 from Scripts._testmultiphase import Example
 
-import globals_
+import Globals_
 import problems
 from Trees import *
-from agents import *
-from globals_ import *
+from Agents import *
+from Globals_ import *
+from General_Entities import *
 
 
 def copy_dict(dict):
@@ -419,7 +420,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.root_of_tree_start_algorithm = False
         self.status = BNB_Status.hold_token_send_down
         if debug_DFS_draw_tree:
-            globals_.draw_dfs_tree_flag = True
+            Globals_.draw_dfs_tree_flag = True
 
     def select_next_value(self):
         self.domain_index = self.domain_index + 1
@@ -476,10 +477,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
 
     def compute_receive_token_from_father_leaf(self):
-
         self.update_height_and_above_me()
-        current_UB = self.token.UB
-        potential_value_and_cost = self.get_potential_values_dict()
+        potential_value_and_information = self.get_potential_values_dict()
         min_cost = min(potential_value_and_cost.values())
         if self.best_global_token is not None:
             if self.best_global_token.UB[0]<=min_cost:

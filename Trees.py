@@ -1,8 +1,8 @@
 import math
 from abc import ABC, abstractmethod
 from enum import Enum
-from globals_ import *
-from agents import  Agent
+from Globals_ import *
+from Agents import  Agent
 import main
 
 

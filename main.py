@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from globals_ import *
+from Globals_ import *
 from problems import *
 
 

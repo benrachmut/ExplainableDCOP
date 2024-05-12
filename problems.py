@@ -1,10 +1,10 @@
 import random
 import threading
 
-import globals_
+import Globals_
 from Algorithm_BnB import BranchAndBound
-from agents import *
-from globals_ import *
+from Agents import *
+from Globals_ import *
 
 from enums import *
 from abc import ABC, abstractmethod
@@ -255,9 +255,9 @@ class DCOP(ABC):
             a.execute_iteration(global_clock)
 
     def draw_global_things(self):
-        if globals_.draw_dfs_tree_flag:
+        if Globals_.draw_dfs_tree_flag:
             draw_dfs_tree(self.agents,self.dcop_id)
-            globals_.draw_dfs_tree_flag = False
+            Globals_.draw_dfs_tree_flag = False
 
     def collect_records(self):
         for a in self.agents:
