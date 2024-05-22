@@ -45,12 +45,22 @@ class SingleInformation:
 
         return SingleInformation(context_input,constraints_input)
 
+    def __hash__(self):
+        context_items = frozenset(self.context.items())
+        constraints_items = frozenset((k, frozenset(v.items())) for k, v in self.constraints.items())
+        return hash((context_items, constraints_items))
 
 
 
 class PruneExplanation:
-    def __init__(self,winner,loser,text):
+    def __init__(self,winner,losers,text):
         self.winner = winner
-        self.loser = loser
+        self.loser = losers
         self.text = text
+        self.losers_joint = self.get_losers_joint()
+
         self.disjoint = self.get_disjoint_constraints()
+        self.joint = self.get_joint_constraints()
+
+    def get_losers_joint(self):
+

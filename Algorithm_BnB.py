@@ -281,6 +281,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.receive_empty_msg_flag = False
         self.my_height = None
         self.above_me = []
+        self.records_dict = {}
 
     def is_algorithm_complete(self):
         return self.status == BNB_Status.finished_algorithm
@@ -370,7 +371,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.finished_algorithm:
             self.send_msgs_finished_algorithm()
 
-
     def change_status_after_send_msgs_tree(self):
         if self.status == BNB_Status.hold_token_send_down or self.status == BNB_Status.send_token_to_children:
             self.status = BNB_Status.wait_tokens_from_children
@@ -397,8 +397,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 self.status = BNB_Status.receive_all_tokens_from_children_root
             else:
                 self.status = BNB_Status.receive_all_tokens_from_children
-
-
 
     # update msgs #################################################################################################
 
@@ -439,12 +437,12 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def try_to_update_lb(self,lb_to_update):
         if self.is_need_to_update_lb(lb_to_update):
-            self.token.lb = lb_to_update
+            self.token.LB = lb_to_update
             if debug_BNB:
                 print(self, "variable changed to", self.variable)
             return True
         else:
-            raise Exception("need to check this")
+            raise Exception("need to check this, save all with identical above me")
             is_better_then_UB, is_better_then_best_UB = self.get_the_reason_for_failure()
             text = "Adding value " + str(
                 self.variable) + " by A_" + self.id_ + " with cost " + self.lb_to_update + ", is larger than "
@@ -472,30 +470,87 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.status = BNB_Status.send_empty_to_father
             raise Exception("need to check this")
 
+
+
+
+
+
     def compute_receive_token_from_father_leaf(self):
         self.update_height_and_above_me()
         potential_value_and_information = self.get_potential_values_dict()
-        min_cost = min(potential_value_and_cost.values())
-        if self.best_global_token is not None:
-            if self.best_global_token.UB[0]<=min_cost:
-               raise Exception("TODO need to complete")
+        min_variable, min_lb = self.find_min_lb(potential_value_and_information)
+        self.leaf_add_to_record(potential_value_and_information, min_lb)
+
+
+    def find_min_lb(self, info_dict):
+
+        min_key = None
+        min_value = None
+        min_cost = float('inf')
+
+        for key, value in info_dict.items():
+            if value.cost < min_cost:
+                min_cost = value.cost
+                min_key = key
+                min_value = value
+
+        return min_key, min_value
+
+    def add_to_records(self, winner, losers,text):
+
+        text = "lb found is larger then global UB"
+        winner = winner.__deepcopy__()
+        if winner not in self.records_dict.keys():
+            self.records_dict[winner] = []
+
+        for lb in losers:
+            pe = PruneExplanation(winner=self.token.best_UB, losers=lb, text=text)
+            self.records.append(pe)
+            self.records_dict[winner].append(pe)
+        raise Exception("need to check that it works")
+        return
+
+    def leaf_add_to_record(self, potential_value_and_information, min_lb):
+        if self.token.best_UB is not None and self.token.best_UB.cost <= min_lb.cost:
+            text = "lb found is larger then global UB"
+            self.add_to_records(winner= self.token.best_UB,losers = potential_value_and_information.values(), text=text)
+            stop here!!!!!!!!!!!!!!
+
+        elif self.token.UB is not None and self.token.UB.cost <= min_lb.cost:
+            text = "All values in domain do not beat the local ub found"
+            pe = PruneExplanation(winner=self.token.UB, losers=potential_value_and_information.values(), text=text)
+            self.records.append(pe)
+            raise Exception("need to check that it works")
+            return
         else:
-            self.variable = min(potential_value_and_cost, key=lambda k: potential_value_and_cost[k])
-            try:
-                self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable,local_cost=min_cost)
-                self.record_other_domains_of_leaf(potential_value_and_cost)
-                self.status = BNB_Status.send_token_to_father
-            except LocalUBPruneException:
-                self.record_all_domains(potential_value_and_cost,winner_vars=copy_dict(self.token.UB[1]),winner_LB_input=self.token.UB[0])
-                self.status = BNB_Status.send_empty_to_father
-            except GlobalUBPruneException:
-                self.record_all_domains(potential_value_and_cost, winner_vars=copy_dict(self.token.best_UB[1]),
-                                        winner_LB_input=self.token.best_UB[0])
-                self.status = BNB_Status.send_empty_to_father
+            text = "found a value in domain which is better then the rest of the values in domain and better then ub"
+            del potential_value_and_information[min_variable]
+            pe = PruneExplanation(winner=min_lb, losers=potential_value_and_information.values(), text=text)
+            self.records.append(pe)
+            raise Exception("need to check that it works")
+            return
+
+        #min_cost = min(potential_value_and_cost.values())
+        #if self.best_global_token is not None:
+        #    if self.best_global_token.UB[0]<=min_cost:
+        #       raise Exception("TODO need to complete")
+        #else:
+        #    self.variable = min(potential_value_and_cost, key=lambda k: potential_value_and_cost[k])
+        #    try:
+        #        self.token.add_agent_to_token_variables(id_=self.id_, value=self.variable,local_cost=min_cost)
+        #        self.record_other_domains_of_leaf(potential_value_and_cost)
+        #        self.status = BNB_Status.send_token_to_father
+        #    except LocalUBPruneException:
+        #        self.record_all_domains(potential_value_and_cost,winner_vars=copy_dict(self.token.UB[1]),winner_LB_input=self.token.UB[0])
+        #        self.status = BNB_Status.send_empty_to_father
+        #    except GlobalUBPruneException:
+        #        self.record_all_domains(potential_value_and_cost, winner_vars=copy_dict(self.token.best_UB[1]),
+        #                                winner_LB_input=self.token.best_UB[0])
+        #        self.status = BNB_Status.send_empty_to_father
 
 
 
-        return potential_value_and_cost[self.variable]
+        #return potential_value_and_cost[self.variable]
 
     def compute_receive_all_tokens_from_children_with_empty(self):
         current_token = self.sanity_check_all_tokens_identical_from_my_height()
@@ -528,12 +583,12 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         for potential_domain in self.domain:
             lb_to_update = self.get_lb_to_update(potential_domain)
             ans[potential_domain] = lb_to_update
-        raise Exception("stopped here did not change what is below")
+        return ans
 
-        current_context = self.token.get_variable_dict(self.above_me)
-        for potential_domain in self.domain:
-            potential_cost = self.calc_potential_cost(potential_domain, current_context)
-            ans[potential_domain] = potential_cost
+        #current_context = self.token.get_variable_dict(self.above_me)
+        #for potential_domain in self.domain:
+        #    potential_cost = self.calc_potential_cost(potential_domain, current_context)
+        #    ans[potential_domain] = potential_cost
         return ans
 
 
@@ -541,12 +596,11 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     # select_next_value #################################################################################################
 
     def get_lb_to_update(self,variable_input):
-
-
-        constraints = self.get_constraints(current_context = self.token.get_lb_copy().context)
+        current_context = self.token.get_lb_copy().context
+        constraints = self.get_constraints(current_context = current_context,my_current_value=variable_input)
         token_lb = self.token.get_lb_copy()
         token_lb.update_constraints(self.id_, constraints)
-        token_lb.update_context(self.id_, variable_input)  # TODO
+        token_lb.update_context(self.id_, variable_input)
         return token_lb
 
     def check_specific_ub(self, lb_to_update: SingleInformation, ub: SingleInformation):
@@ -814,34 +868,34 @@ class BranchAndBound(DFS,CompleteAlgorithm):
     #     self.add_to_records(other_variables=other_variables, other_LB=other_LB, winner_variables=winner_variables,
     #                         winner_LB=winner_LB)
 
-    def add_to_records(self, other_variables,other_LB, winner_variables, winner_LB):
-        if "Agent_id" not in self.records:
-            self.records["Agent_id"] = []
-        self.records["Agent_id"].append(self.id_)
-
-        if "local_clock" not in self.records:
-            self.records["local_clock"] = []
-        self.records["local_clock"].append(self.local_clock)
-
-        if "global_clock" not in self.records:
-            self.records["global_clock"] = []
-        self.records["global_clock"].append(self.global_clock)
-
-        if "context_loser" not in self.records:
-            self.records["context_loser"] = []
-        self.records["context_loser"].append(other_variables)
-
-        if "LB_loser" not in self.records:
-            self.records["LB_loser"] = []
-        self.records["LB_loser"].append(other_LB)
-
-        if "context_winner" not in self.records:
-            self.records["context_winner"] = []
-        self.records["context_winner"].append(winner_variables)
-
-        if "LB_winner" not in self.records:
-            self.records["LB_winner"] = []
-        self.records["LB_winner"].append(winner_LB)
+    # def add_to_records(self, other_variables,other_LB, winner_variables, winner_LB):
+    #     if "Agent_id" not in self.records:
+    #         self.records["Agent_id"] = []
+    #     self.records["Agent_id"].append(self.id_)
+    #
+    #     if "local_clock" not in self.records:
+    #         self.records["local_clock"] = []
+    #     self.records["local_clock"].append(self.local_clock)
+    #
+    #     if "global_clock" not in self.records:
+    #         self.records["global_clock"] = []
+    #     self.records["global_clock"].append(self.global_clock)
+    #
+    #     if "context_loser" not in self.records:
+    #         self.records["context_loser"] = []
+    #     self.records["context_loser"].append(other_variables)
+    #
+    #     if "LB_loser" not in self.records:
+    #         self.records["LB_loser"] = []
+    #     self.records["LB_loser"].append(other_LB)
+    #
+    #     if "context_winner" not in self.records:
+    #         self.records["context_winner"] = []
+    #     self.records["context_winner"].append(winner_variables)
+    #
+    #     if "LB_winner" not in self.records:
+    #         self.records["LB_winner"] = []
+    #     self.records["LB_winner"].append(winner_LB)
 
     def update_height_and_above_me(self):
         if len(self.above_me) == 0 and not self.is_root():
@@ -850,6 +904,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             for k in self.token.heights.keys():
                 self.above_me.append(k)
             self.token.heights[self.id_] = self.my_height
+
+
+
+
 
 
 
