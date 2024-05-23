@@ -217,7 +217,7 @@ class DCOP(ABC):
                 break
             self.agents_perform_iteration(self.global_clock)
             self.draw_global_things()
-        self.collect_records()
+        #self.collect_records()
 
     def __str__(self):
         split_string = str(dcop_type).split('.')

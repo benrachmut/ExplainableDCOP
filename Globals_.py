@@ -279,8 +279,6 @@ def get_distinct_values_colors(dcop):
 
 def draw_dcop_result(dcop):
     distinct_values_colors = get_distinct_values_colors(dcop)
-
-    print()
     for a in dcop.agents:
        pass
 
