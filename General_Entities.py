@@ -11,6 +11,32 @@ class SingleInformation:
         else:
             return False
 
+
+    def __add__(self, other):
+        context = {}
+        for id_,value in other.context.items(): context[id_]=value
+        for id_,value in self.context.items(): context[id_]=value
+
+        constraints = {}
+        for id_,value in other.constraints.items(): constraints[id_] = value
+        for id_,value in self.constraints.items(): constraints[id_] = value
+        return SingleInformation(context=context, constraints=constraints)
+
+    def reset_given_id(self, heights_to_include):
+        context = {}
+        for id_, val in self.context.items():
+            if id_ in heights_to_include:
+                context[id_] = val
+
+        constraints = {}
+        for id_, val in self.constraints.items():
+            if id_ in heights_to_include:
+                constraints[id_] = val
+
+        return SingleInformation(context = context, constraints = constraints)
+
+
+
     def update_total_cost(self):
         ans = 0
         for dict_ in self.constraints.values():
@@ -46,6 +72,7 @@ class SingleInformation:
         context_items = frozenset(self.context.items())
         constraints_items = frozenset((k, frozenset(v.items())) for k, v in self.constraints.items())
         return hash((context_items, constraints_items))
+
 
 
 class PruneExplanation:
