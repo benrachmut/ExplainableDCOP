@@ -35,6 +35,21 @@ class SingleInformation:
 
         return SingleInformation(context = context, constraints = constraints)
 
+    def __eq__(self, other):
+        dict1 = self.context
+        dict2 = other.context
+        if not set(dict1.keys()) == set(dict2.keys()):
+            return False
+        try:
+            for k,v in self.context.items():
+                if v != other.context[k]:
+                    return False
+            return True
+        except:
+            return False
+
+
+
 
 
     def update_total_cost(self):
@@ -52,7 +67,7 @@ class SingleInformation:
         self.context[id_] = variable
 
     def __str__(self):
-        return str(self.constraints)
+        return str(self.context)
 
     def __deepcopy__(self, memodict={}):
         context_input = {}
