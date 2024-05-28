@@ -183,3 +183,27 @@ class PruneExplanation:
                 if first_agent in ids_with_different_values or second_agent in ids_with_different_values:
                     ans[tuples_] = cost
         return ans
+
+    def get_explanation_as_dict(self):
+        ans = {}
+        ans["text"] = self.text
+        ans["winner_constraints"] = str(self.winner.constraints)
+        ans["winner_context"] = str(self.winner.context)
+        ans["loser_constraints"] = str(self.loser.constraints)
+        ans["loser_context"] = str(self.loser.context)
+        ans["joint_constraints"] = str(self.joint_constraints)
+        ans["joint_cost"] = str(self.joint_cost)
+        ans["disjoint_loser_constraints"] = str(self.disjoint_loser_constraints)
+        ans["disjoint_loser_cost"] = str(self.disjoint_loser_cost)
+        ans["disjoint_winner_constraints"] = str(self.disjoint_winner_constraints)
+        ans["disjoint_winner_cost"] = str(self.disjoint_winner_cost)
+
+
+        return ans
+
+
+
+    @staticmethod
+    def get_explanation_headers_as_list(self):
+        return ["text", "winner_constraints", "winner_context", "loser_constraints", "loser_context", "joint_constraints", "joint_cost"
+            , "disjoint_loser_constraints", "disjoint_loser_cost", "disjoint_winner_constraints", "disjoint_winner_cost"]

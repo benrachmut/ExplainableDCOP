@@ -212,6 +212,8 @@ def draw_dfs_tree(dfs_nodes,dcop_id):
 def get_all_personal_data_dict(dcops):
     ans = {}
     for dcop in dcops:
+        records = dcop.collect_records()
+    for dcop in dcops:
         records = dcop.records_dcop
         for k in records.keys():
             if k not in ans.keys():

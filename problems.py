@@ -261,7 +261,17 @@ class DCOP(ABC):
 
     def collect_records(self):
         for a in self.agents:
+            records_list = a.records
+            dict_1 = {"dcop_id":self.dcop_id,"problem":self.__str__()} #self.add_more_records()
+            dict_2 = a.get_general_info_for_records()
+            dict_2.update(dict_1)
+            for record in records_list:
+                dict_3 = record.get_explanation_as_dict()
+                dict_3.update(dict_2)
+                print()
+
             records_dict = a.records
+
             for k,v in records_dict.items():
                 if k not in self.records_dcop:
                     self.records_dcop[k] = []
@@ -269,12 +279,9 @@ class DCOP(ABC):
         self.add_more_records(k)
 
 
-    def add_more_records(self, k):
-        amount_reps = len(self.records_dcop[k])
-        dcop_ids = [self.dcop_id] * amount_reps
-        problems = [self.__str__()] *amount_reps
-        self.records_dcop["dcop_id"] = dcop_ids
-        self.records_dcop["problem"] = problems
+
+
+
 
 class DCOP_RandomUniform(DCOP):
     def __init__(self, id_,A,D,dcop_name):

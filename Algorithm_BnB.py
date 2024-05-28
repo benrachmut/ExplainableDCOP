@@ -37,7 +37,7 @@ class BNB_Status(Enum):
 
     send_token_to_children = 9
     send_empty_to_father = 10
-    send_token_to_father = 11
+    send_token_to_leaf_to_father = 11
     send_best_local_token_to_father = 12
 
     receive_all_tokens_from_children = 13
@@ -128,167 +128,8 @@ class BranchAndBoundToken:
         self.LB = self.LB.reset_given_id(heights_to_include)
         return self.LB.__deepcopy__()
 
-
-
-
-    # def __add__(self, other):
-    #
-    #     best_UB = self.check_for_best_UB(other)
-    #
-    #
-    #     new_variables = self.merge_variables(other)
-    #     new_heights = self.merge_heights(other)
-    #
-    #     ans = BranchAndBoundToken(best_UB= best_UB, variables=new_variables, heights=new_heights)
-    #     ans.update_cost()
-    #
-    #     variables_to_send = {}
-    #     for k, v in self.variables.items():
-    #         variables_to_send[k] = v
-    #
-    #     #ans.UB= (ans.LB,variables_to_send)
-    #
-    #     # todo check if best variables is the same if not there is a bug raise exp
-    #     return ans
-    #
-
-    #
-    # def agent_include_in_variables(self,id_):
-    #     if id_ in self.variables.keys():
-    #         return True
-    #     else:
-    #         return False
-    #
-    # def add_agent_to_token_variables(self,id_,value,local_cost,constraint_list):
-    #     if self.agent_include_in_variables(id_):
-    #         raise Exception("used it when agent is already in token")
-    #     #stopped here
-    #     self.variables[id_] = BranchAndBoundInformation()(value,local_cost)
-    #
-    #     if  id_ not in self.heights.keys():
-    #         if len(self.heights)==0:
-    #             self.heights[id_] = 1
-    #         else:
-    #             self.heights[id_] = max(self.heights.values())+1
-    #
-    #     self.update_cost()
-    #
-    # def update_cost(self,flag = True):
-    #     costs = []
-    #     for n_id, tuple_ in self.variables.items():
-    #         costs.append(tuple_[1])
-    #     #costs =  {key: sum(value) for key, value in self.variables.items()}.values()
-    #
-    #     self.LB = sum(costs)
-    #
-    #     best_UB = self.best_UB
-    #     if best_UB is not None and self.LB>=best_UB[0]:
-    #         if flag and debug_BNB:
-    #             raise GlobalUBPruneException("LB>UB_global move to the next domain LB=" + str(self.LB) + " UB_global=" + str(best_UB[0]))
-    #         else:
-    #             raise GlobalUBPruneException()
-    #
-    #     if self.UB is not None and self.LB>=self.UB[0]:
-    #         if flag and debug_BNB:
-    #             raise LocalUBPruneException("LB>UB_local move to the next domain LB=" + str(self.LB) + " UB_local=" + str(self.UB))
-    #         else:
-    #             raise LocalUBPruneException()
-    #
-    # def copy_variables(self):
-    #     ans = {}
-    #     for k,v in self.variables.items():
-    #         ans[k] = v
-    #     return ans
-    #
-    # def get_variable_dict(self,agent_list_id):
-    #     ans = {}
-    #     for n_id in agent_list_id:
-    #         ans[n_id] = next(iter(self.variables[n_id]))
-    #
-    #         #ans[n_id] = self.variables[n_id][0]
-    #     return ans
-    #
-    # def __str__(self):
-    #     return "UB:" + str(self.UB) + ", LB:" + str(self.LB) + ", context:" + str(self.variables)
-    #
-    # def __deepcopy__(self, memodict={},flag = False):
-    #     variables_to_send = {}
-    #     for k,v in self.variables.items():
-    #         variables_to_send[k] = v
-    #
-    #     heights_to_send = {}
-    #     for k, v in self.heights.items():
-    #         heights_to_send[k] = v
-    #
-    #     best_token = None
-    #     if self.best_UB is not None and not flag:
-    #         dict_dup = copy_dict(self.best_UB[1])
-    #         best_token = (self.best_UB[0],dict_dup)
-    #
-    #     return BranchAndBoundToken(best_UB= best_token, UB= self.UB, LB = self.LB, variables = variables_to_send, heights = heights_to_send)
-    #
-    # def merge_heights(self, other):
-    #     merged_dict = {}
-    #     # Merge keys from both dictionaries
-    #     all_keys = set(self.variables.keys()) | set(other.variables.keys())
-    #
-    #     for key in all_keys:
-    #
-    #
-    #
-    #         value_dict1 = self.heights.get(key)
-    #         value_dict2 = other.heights.get(key)
-    #
-    #         if value_dict1 is not None and value_dict2 is not None:
-    #             if value_dict1 != value_dict2:
-    #                 raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
-    #             else:
-    #                 merged_dict[key] = value_dict1
-    #         elif value_dict1 is not None:
-    #             merged_dict[key] = value_dict1
-    #         elif value_dict2 is not None:
-    #             merged_dict[key] = value_dict2
-    #
-    #     return merged_dict
-    #
-    # def merge_variables(self, other):
-    #     merged_dict = {}
-    #     # Merge keys from both dictionaries
-    #     all_keys = set(self.variables.keys()) | set(other.variables.keys())
-    #
-    #     for key in all_keys:
-    #         value_dict1 = self.variables.get(key)
-    #         value_dict2 = other.variables.get(key)
-    #
-    #         if value_dict1 is not None and value_dict2 is not None:
-    #             if value_dict1 != value_dict2:
-    #                 raise ValueError(f"Conflict for key {key}: {value_dict1} != {value_dict2}")
-    #             else:
-    #                 merged_dict[key] = value_dict1
-    #         elif value_dict1 is not None:
-    #             merged_dict[key] = value_dict1
-    #         elif value_dict2 is not None:
-    #             merged_dict[key] = value_dict2
-    #
-    #     return merged_dict
-    #
-
-    #
-    # def check_for_best_UB(self,other):
-    #     if other.best_UB is not None and self.best_UB is not None and other.best_UB[0] != self.best_UB[0]:
-    #         raise Exception("not logical")
-    #
-    #     if other.best_UB is None and self.best_UB is not None:
-    #         raise Exception("not logical")
-    #
-    #     if other.best_UB is not None and self.best_UB is None:
-    #         raise Exception("not logical")
-    #     best_UB = None
-    #
-    #     if other.best_UB is not None and self.best_UB is not None:
-    #         dict_dup = copy_dict(self.best_UB[1])
-    #         best_UB = (self.best_UB[0],dict_dup)
-    #     return  best_UB
+    def __str__(self):
+        return str(self.LB.context)
 
 
 
@@ -301,6 +142,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.tokens_from_children = {}
         self.receive_empty_msg_flag = False
         self.my_height = None
+        self.heights = {}
         self.above_me = []
         self.records_dict = {}
         self.local_UB = None
@@ -317,12 +159,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if msg.msg_type == BNB_msg_type.token_empty:
                 self.tokens_from_children[msg.sender] = msg.information.__deepcopy__()
                 self.receive_empty_msg_flag = True
-                #raise Exception ("need to move to next in domain, because children could not find anything good with current domain")
-
             if msg.msg_type == BNB_msg_type.finish_algorithm:
-
                 self.token = msg.information.__deepcopy__()
-                self.variable_anytime = self.token.best_UB[1][self.id_][0]
+                self.variable_anytime = self.token.best_UB.context[self.id_]
 
             if debug_BNB:
                 print(self.__str__(), "receive", msg.msg_type,"from A_",msg.sender,"info:", msg.information)
@@ -372,7 +211,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         elif self.status == BNB_Status.receive_all_tokens_from_children_with_empty:
             self.compute_receive_all_tokens_from_children_with_empty()
         elif self.status == BNB_Status.receive_all_tokens_from_children_root:
-            self.compute_receive_all_tokens_from_children_root() #TODO
+            self.compute_receive_all_tokens_from_children_root()
 
         if debug_BNB:
             print(self.__str__(), "status IS:", self.status)
@@ -381,8 +220,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.hold_token_send_down or self.status == BNB_Status.send_token_to_children:
             self.sends_msgs_token_down_the_tree()
 
-        if self.status == BNB_Status.send_token_to_father:
-            self.sends_msgs_token_up_the_tree()
+        if self.status == BNB_Status.send_token_to_leaf_to_father:
+            self.sends_msgs_token_up_the_tree_leaf_to_father()
 
         if self.status == BNB_Status.send_best_local_token_to_father:
             self.sends_msgs_UB_up_the_tree()
@@ -397,7 +236,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.hold_token_send_down or self.status == BNB_Status.send_token_to_children:
             self.status = BNB_Status.wait_tokens_from_children
 
-        if self.status == BNB_Status.send_token_to_father or self.status == BNB_Status.send_empty_to_father or self.status == BNB_Status.send_best_local_token_to_father:
+        if self.status == BNB_Status.send_token_to_leaf_to_father or self.status == BNB_Status.send_empty_to_father or self.status == BNB_Status.send_best_local_token_to_father:
             self.status = BNB_Status.finished_temp_role_in_tree
 
         if debug_BNB:
@@ -428,6 +267,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.token = msgs[0].information.__deepcopy__()
 
 
+
     # compute #################################################################################################
 
     def compute_start_algorithm(self):
@@ -452,6 +292,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             did_update = self.try_to_update_lb(lb_to_update)
             if did_update:
                 return True
+            else:
+                self.domain_index = self.domain_index + 1
         self.actions_for_finished_going_over_domain()
         return False
 
@@ -468,16 +310,15 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 print(self, "variable changed to", self.variable)
             return True
         else:
-            raise Exception("need to check this, save all with identical above me")
-            is_better_then_UB, is_better_then_best_UB = self.get_the_reason_for_failure()
-            text = "Adding value " + str(
-                self.variable) + " by A_" + self.id_ + " with cost " + self.lb_to_update + ", is larger than "
-            pe = self.get_explanation(is_better_then_UB, is_better_then_best_UB, text)  # TODO
+            #raise Exception("need to check this, save all with identical above me")
+            is_better_then_UB, is_better_then_best_UB = self.get_the_reason_for_failure(lb_to_update)
+
+            pe = self.get_explanation(is_better_then_UB, is_better_then_best_UB)
             self.records_dict[pe.winner] = pe
             self.records.append(pe)
 
             if debug_BNB:
-                print(self, "variable did not change to", self.variable, text)
+                print(self, "variable did not change to", self.variable)
             return False
 
     def get_the_reason_for_failure(self,lb_to_update):
@@ -505,7 +346,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         should_update_token = self.leaf_add_to_record(potential_value_and_information, min_lb,min_variable)
         if should_update_token:
             self.token.LB = min_lb
-            self.status = BNB_Status.send_token_to_father
+            self.status = BNB_Status.send_token_to_leaf_to_father
         else:
             self.status = BNB_Status.send_empty_to_father
 
@@ -568,19 +409,30 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.change_statues_after_value_change()
 
     def compute_receive_all_tokens_from_children_root(self):
-        raise Exception("create_token_from_children now returns true or false if it mananged to aggregate or not")
         self.create_token_from_children()
-        dict_dup = copy_dict(self.local_UB[1])
-        self.token.best_UB = (self.local_UB[0], dict_dup)
-        self.variable_anytime = self.token.variables[self.id_][0]
-        self.token.variables = {}
-        self.token.LB = 0
+        self.reset_token_after_add_from_all_children()
+        self.token.best_UB = self.local_UB.__deepcopy__()
+        self.best_global_UB = self.local_UB.__deepcopy__()
+        self.variable_anytime = self.best_global_UB.context[self.id_]
         self.select_next_value()
         if self.status == BNB_Status.finished_going_over_domain:
             self.status = BNB_Status.finished_algorithm
         else:
             self.status = BNB_Status.send_token_to_children
-            raise Exception("did not complete this")
+
+        #self.change_statues_after_value_change()
+        # self.create_token_from_children()
+        # dict_dup = copy_dict(self.local_UB[1])
+        # self.token.best_UB = (self.local_UB[0], dict_dup)
+        # self.variable_anytime = self.token.variables[self.id_][0]
+        # self.token.variables = {}
+        # self.token.LB = 0
+        # self.select_next_value()
+        # if self.status == BNB_Status.finished_going_over_domain:
+        #     self.status = BNB_Status.finished_algorithm
+        # else:
+        #     self.status = BNB_Status.send_token_to_children
+        #     raise Exception("did not complete this")
 
     def get_potential_values_dict(self):
         ans = {}
@@ -610,19 +462,20 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         return False
 
     def is_need_to_update_lb(self, lb_to_update):
-        is_better_then_UB = self.check_specific_ub(lb_to_update, self.token.UB)
+        is_better_then_UB = self.check_specific_ub(lb_to_update, self.local_UB)
         is_better_then_best_UB = self.check_specific_ub(lb_to_update, self.token.best_UB)
-        return is_better_then_UB or is_better_then_best_UB
+        return is_better_then_UB and is_better_then_best_UB
 
-    def get_explanation(self, is_better_then_UB, is_better_then_best_UB, text):
+    def get_explanation(self, is_better_then_UB, is_better_then_best_UB):
         pe = None
+        text = "try to reset token but LB is larger then"
         if not is_better_then_UB:
-            text = text + " UB with cost " + self.token.UB.total_cost
-            pe = PruneExplanation(winner=self.token.UB.__deepcopy__(), loser=self.token.LB__deepcopy__(), text=text)
+            text = text + " local UB"
+            pe = PruneExplanation(winner=self.local_UB.__deepcopy__(), loser=self.token.LB.__deepcopy__(), text=text)
 
         if not is_better_then_best_UB:
-            text = text + " global UB with cost " + self.token.best_UB.total_cost
-            pe = PruneExplanation(winner=self.token.best_UB.__deepcopy__(), loser=self.token.LB__deepcopy__(),
+            text = text + " global UB"
+            pe = PruneExplanation(winner=self.token.best_UB.__deepcopy__(), loser=self.token.LB.__deepcopy__(),
                                   text=text)
         if pe is None:
             raise Exception("must have a reason")
@@ -662,11 +515,13 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if debug_BNB:
             print(self.__str__(), "sends messages to its children:",self.dfs_children)
 
-    def sends_msgs_token_up_the_tree(self):
+    def sends_msgs_token_up_the_tree_leaf_to_father(self):
+        self.token.UB = None
         msg = Msg(sender=self.id_, receiver=self.dfs_father, information=self.token.__deepcopy__(),
                   msg_type=BNB_msg_type.token_from_child)
         self.outbox.insert([msg])
         self.domain_index = -1
+
         if len(self.dfs_children) != 0:
             raise Exception("only leaf should be in this status")
 
@@ -702,7 +557,30 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def compute_receive_all_tokens_from_children(self):
         self.create_token_from_children()
-        self.check_if_continue_down_or_up()
+        self.reset_token_after_add_from_all_children()
+        self.select_next_value()
+        self.change_statues_after_value_change()
+
+
+
+
+
+
+    def get_reseted_LB(self,first_value):
+
+        heights_to_include = []
+        for id_of_height, height in first_value.heights.items():
+            if height <= first_value.heights[self.id_] and self.id_ != id_of_height:
+                heights_to_include.append(id_of_height)
+        LB = first_value.LB.reset_given_id(heights_to_include)
+        return LB.__deepcopy__()
+
+    def reset_token_after_add_from_all_children(self):
+        first_value = next(iter(self.tokens_from_children.values()), None)
+        LB = self.get_reseted_LB(first_value)
+        UB = self.local_UB.__deepcopy__()
+        heights = first_value.heights
+        self.token = BranchAndBoundToken(LB=LB, UB=UB, heights=heights)
 
 
     def check_if_cumulative_token_survived(self,local_token_temp):
@@ -718,15 +596,15 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             return False
         return True
 
-    def update_local_UB(self):
+    def update_local_UB(self, aggregated_token):
         if self.local_UB is not None:
             prev_local_UB = self.local_UB.__deepcopy__()
-            self.local_UB = self.token.LB.__deepcopy__()
+            self.local_UB = aggregated_token.LB.__deepcopy__()
             text = "local UB is not valid any more, children found a lower UB"
             self.add_to_records(winner=self.local_UB.__deepcopy__(), losers=[prev_local_UB.__deepcopy__()], text=text)
         else:
             if self.best_global_UB is None or (self.best_global_UB is not None and self.local_UB<self.best_global_UB):
-                self.local_UB = self.token.LB.__deepcopy__()
+                self.local_UB = aggregated_token.LB.__deepcopy__()
 
 
     def check_to_change_best_local_UB(self):
@@ -739,14 +617,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         else:
             self.local_UB = self.token.LB.__deepcopy__()
 
-    def check_if_continue_down_or_up(self):
-        if self.is_root():
-            self.best_global_UB = self.local_UB.__deepcopy__()
-            raise Exception("need to check this ")
-        else:
-            self.token.reset_LB_given_id(self.id_)
-            self.select_next_value()
-            self.change_statues_after_value_change()
+
+
 
     def sanity_check_all_tokens_identical_from_my_height(self):
         variables = []
@@ -795,9 +667,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             else:
                 local_token_temp = local_token_temp + child_token
                 did_survive = self.check_if_cumulative_token_survived(local_token_temp)
-                if not did_survive: return
-        self.token = local_token_temp
-        self.update_local_UB()
+                if not did_survive:
+                    return False
+        self.update_local_UB(local_token_temp)
+        return True
 
 
 
@@ -896,7 +769,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 self.above_me.append(k)
             self.token.heights[self.id_] = self.my_height
 
+        for k,v in self.token.heights.items():
+            self.heights[k] = v
 
+        self.token.heights = copy_dict(self.heights)
 
 
 

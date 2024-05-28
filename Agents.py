@@ -43,6 +43,9 @@ class Agent(ABC):
             local_cost = local_cost + neighbor_obj.get_cost(self.id_, self.variable, n_id, current_value)
         return local_cost
 
+    def get_general_info_for_records(self):
+        return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
+
 
     def get_n_obj(self, n_id):
         for ans in self.neighbors_obj:
