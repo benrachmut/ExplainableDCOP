@@ -12,6 +12,25 @@ class SingleInformation:
         else:
             return False
 
+    def get_explanation_as_dict(self):
+        raise Exception("bellow is copied so it wont work")
+        ans = {}
+        ans["text"] = self.text
+        ans["winner_constraints"] = str(self.winner.constraints)
+        ans["winner_context"] = str(self.winner.context)
+        ans["loser_constraints"] = str(self.loser.constraints)
+        ans["loser_context"] = str(self.loser.context)
+        ans["joint_constraints"] = str(self.joint_constraints)
+        ans["joint_cost"] = str(self.joint_cost)
+        ans["disjoint_loser_constraints"] = str(self.disjoint_loser_constraints)
+        ans["disjoint_loser_cost"] = str(self.disjoint_loser_cost)
+        ans["disjoint_winner_constraints"] = str(self.disjoint_winner_constraints)
+        ans["disjoint_winner_cost"] = str(self.disjoint_winner_cost)
+        ans["local_clock"] = str(self.local_clock)
+        ans["global_clock"] = str(self.global_clock)
+        ans["agent_id"] = str(self.agent_id)
+        return ans
+
     @staticmethod
     def convert_str_A_number(input_str):
         _, number_str = input_str.split('_')
@@ -217,11 +236,6 @@ class PruneExplanation:
         ans["local_clock"] = str(self.local_clock)
         ans["global_clock"] = str(self.global_clock)
         ans["agent_id"] = str(self.agent_id)
-
-
-
-
-
         return ans
 
 
