@@ -161,7 +161,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 self.receive_empty_msg_flag = True
             if msg.msg_type == BNB_msg_type.finish_algorithm:
                 self.token = msg.information.__deepcopy__()
-                self.variable_anytime = self.token.best_UB.context[self.id_]
+                self.variable_anytime, self.context_anytime, self.constraints_anytime = self.best_global_UB.get_anytime_info(
+                    self.id_, self.neighbors_agents_id)
+
+                #self.variable_anytime = self.token.best_UB.context[self.id_]
 
             if debug_BNB:
                 print(self.__str__(), "receive", msg.msg_type,"from A_",msg.sender,"info:", msg.information)
@@ -388,7 +391,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.reset_token_after_add_from_all_children()
         self.token.best_UB = self.local_UB.__deepcopy__()
         self.best_global_UB = self.local_UB.__deepcopy__()
-        self.variable_anytime = self.best_global_UB.context[self.id_]
+        self.variable_anytime, self.context_anytime, self.constraints_anytime = self.best_global_UB.get_anytime_info(self.id_, self.neighbors_agents_id)
+
+
         self.select_next_value()
         if self.status == BNB_Status.finished_going_over_domain:
             self.status = BNB_Status.finished_algorithm

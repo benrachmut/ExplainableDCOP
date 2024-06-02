@@ -31,5 +31,5 @@ if __name__ == '__main__':
     for i in range(repetitions):
         dcops.append(create_selected_dcop(i,A,D,dcop_name))
     solve_dcops(dcops)
-    create_data(dcops)
+    #create_data(dcops)
 

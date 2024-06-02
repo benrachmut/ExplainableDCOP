@@ -13,6 +13,8 @@ class Agent(ABC):
         self.global_clock = 0
         self.variable = None
         self.variable_anytime = None
+        self.context_anytime = None
+        self.constraints_anytime = None
         self.id_ = id_
         self.domain = []
         for i in range(D): self.domain.append(i)

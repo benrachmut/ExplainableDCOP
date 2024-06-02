@@ -12,24 +12,31 @@ class SingleInformation:
         else:
             return False
 
-    def get_explanation_as_dict(self):
-        raise Exception("bellow is copied so it wont work")
+    def get_context_anytime(self,neighbors):
         ans = {}
-        ans["text"] = self.text
-        ans["winner_constraints"] = str(self.winner.constraints)
-        ans["winner_context"] = str(self.winner.context)
-        ans["loser_constraints"] = str(self.loser.constraints)
-        ans["loser_context"] = str(self.loser.context)
-        ans["joint_constraints"] = str(self.joint_constraints)
-        ans["joint_cost"] = str(self.joint_cost)
-        ans["disjoint_loser_constraints"] = str(self.disjoint_loser_constraints)
-        ans["disjoint_loser_cost"] = str(self.disjoint_loser_cost)
-        ans["disjoint_winner_constraints"] = str(self.disjoint_winner_constraints)
-        ans["disjoint_winner_cost"] = str(self.disjoint_winner_cost)
-        ans["local_clock"] = str(self.local_clock)
-        ans["global_clock"] = str(self.global_clock)
-        ans["agent_id"] = str(self.agent_id)
+        for id_, value in self.context:
+            if id_ in neighbors:
+                ans[id_] = value
         return ans
+
+    def get_constraints_anytime(self,id_):
+        ans = {}
+        for constraint_tuple in self.constraints_readable:
+            first_agent = constraint_tuple[0]
+            second_agent = constraint_tuple[1]
+            cost = constraint_tuple[2]
+            if first_agent == id_:
+               ans[second_agent] = cost
+            if second_agent == id_:
+               ans[first_agent] = cost
+        return ans
+
+    def get_anytime_info (self,id_, neighbors):
+        variable_anytime = self.context[id_]
+        context_anytime = self.get_context_anytime(neighbors)
+        constraints_anytime = self.get_contstaints_anytime(id_)
+        return variable_anytime,context_anytime,constraints_anytime
+
 
     @staticmethod
     def convert_str_A_number(input_str):
