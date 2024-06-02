@@ -213,13 +213,12 @@ def get_all_personal_data_dict(dcops):
     ans = {}
     for dcop in dcops:
         records = dcop.collect_records()
-    for dcop in dcops:
-        records = dcop.records_dcop
-        for k in records.keys():
-            if k not in ans.keys():
+        for k,v in records.items():
+            if k not in ans:
                 ans[k] = []
-            ans[k] = ans[k] + records[k]
+            ans[k] =ans[k]+v
     return ans
+
 
 
 def create_personal_data(dcops):

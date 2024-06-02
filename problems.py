@@ -260,23 +260,18 @@ class DCOP(ABC):
             Globals_.draw_dfs_tree_flag = False
 
     def collect_records(self):
+        ans = {}
         for a in self.agents:
             records_list = a.records
             dict_1 = {"dcop_id":self.dcop_id,"problem":self.__str__()} #self.add_more_records()
-            dict_2 = a.get_general_info_for_records()
-            dict_2.update(dict_1)
             for record in records_list:
-                dict_3 = record.get_explanation_as_dict()
-                dict_3.update(dict_2)
-                print()
-
-            records_dict = a.records
-
-            for k,v in records_dict.items():
-                if k not in self.records_dcop:
-                    self.records_dcop[k] = []
-                self.records_dcop[k]  = self.records_dcop[k] + records_dict[k]
-        self.add_more_records(k)
+                dict_2 = record.get_explanation_as_dict()
+                dict_2.update(dict_1)
+                for k,v in dict_2.items():
+                    if k not in ans:
+                        ans[k]=[]
+                    ans[k].append(v)
+        return ans
 
 
 

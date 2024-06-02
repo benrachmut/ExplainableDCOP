@@ -2,6 +2,7 @@ class SingleInformation:
     def __init__(self, context: {}, constraints: {}):
         self.context = context
         self.constraints = constraints
+        self.constraints_readable = self.get_constraints_readable()
         self.cost = 0
         self.update_total_cost()
 
@@ -11,6 +12,19 @@ class SingleInformation:
         else:
             return False
 
+    @staticmethod
+    def convert_str_A_number(input_str):
+        _, number_str = input_str.split('_')
+        # Convert the part after the underscore to an integer
+        return int(number_str)
+
+    def get_constraints_readable(self):
+        ans = []
+        for list_of_constraints in self.constraints.values():
+            for context,cost in list_of_constraints.items():
+                first_agent_num = self.convert_str_A_number(context[0][0])
+                second_agent_num = self.convert_str_A_number(context[1][0])
+                ans.append((first_agent_num,second_agent_num,cost))
 
     def __add__(self, other):
         context = {}
@@ -91,10 +105,13 @@ class SingleInformation:
 
 
 class PruneExplanation:
-    def __init__(self, winner: SingleInformation, loser: SingleInformation, text):
+    def __init__(self, winner: SingleInformation, loser: SingleInformation, text, agent_id,local_clock,global_clock):
         self.winner = winner
         self.loser = loser
         self.text = text
+        self.agent_id = agent_id
+        self.local_clock =local_clock
+        self.global_clock = global_clock
 
         ########### constraints ###########
         self.joint_constraints = {}
@@ -197,6 +214,12 @@ class PruneExplanation:
         ans["disjoint_loser_cost"] = str(self.disjoint_loser_cost)
         ans["disjoint_winner_constraints"] = str(self.disjoint_winner_constraints)
         ans["disjoint_winner_cost"] = str(self.disjoint_winner_cost)
+        ans["local_clock"] = str(self.local_clock)
+        ans["global_clock"] = str(self.global_clock)
+        ans["agent_id"] = str(self.agent_id)
+
+
+
 
 
         return ans
