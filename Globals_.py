@@ -7,13 +7,13 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 import os
+
+
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz-10.0.1-win64/bin'
 from itertools import chain
 
 import graphviz
 
-dcop_type = DcopType.graph_coloring
-algorithm = Algorithm.branch_and_bound
 
 is_complete = None
 repetitions = 1
@@ -26,6 +26,9 @@ draw_dfs_tree_flag = False
 #*******************************************#
 # dcop_type = DcopType.sparse_random_uniform
 #*******************************************#
+
+
+
 sparse_p1 = 0.5
 sparse_p2 = 1
 sparse_min_cost = 1
@@ -38,10 +41,6 @@ def sparse_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
         return rnd_cost.randint(sparse_min_cost, sparse_max_cost)
     else:
         return 0
-
-
-
-
 
 
 # *******************************************#
@@ -103,43 +102,6 @@ meeting_schedule_meet_amount = 20
 
 ######## dcop input ########
 
-def given_dcop_create_input():
-
-    if dcop_type == DcopType.sparse_random_uniform:
-        A = 10
-        D = 10
-        dcop_name = "Sparse Uniform"
-
-
-    if dcop_type == DcopType.dense_random_uniform:
-        A = 50
-        D = 10
-        dcop_name = "Dense Uniform"
-
-
-    if dcop_type == DcopType.graph_coloring:
-        A = 10
-        D = 3
-        dcop_name = "Graph Coloring"
-
-
-    if dcop_type == DcopType.scale_free_network:
-        A = 50
-        D = 10
-        dcop_name = "Scale Free"
-
-
-    if dcop_type == DcopType.meeting_scheduling:
-        A = 90
-        D = 2
-        dcop_name = "Meeting Scheduling"
-
-    return A,D,dcop_name
-    #    is_neighbor_function = TODO
-    #    cost_generator_function = TODO
-    #    cost_matrix_function = TODO
-
-    #    raise Exception("I did not meeting scheduling yet")
 
 def get_agent_id(a):
     return a.id_
@@ -266,7 +228,7 @@ color_list_hex = [
 
 
 def get_distinct_values_colors(dcop):
-    distinct_values = {agent.variable_anytime for agent in dcop.agents}
+    distinct_values = {agent.anytime_variable for agent in dcop.agents}
     random.seed(((dcop.dcop_id + 1) * 17) + (dcop.A + 1) * 170 + (dcop.D + 2) * 1700)
     random.shuffle(color_list_hex)
 
@@ -294,8 +256,7 @@ def draw_result(dcop):
 
 
 debug_draw_graph = False
-debug_draw_result = True
-debug_DFS_tree = True
-
-debug_DFS_draw_tree = True
+debug_draw_result = False
+debug_DFS_tree = False
+debug_DFS_draw_tree = False
 debug_BNB = True

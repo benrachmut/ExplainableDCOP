@@ -163,10 +163,12 @@ class Mailer():
         return msgs_by_receiver_dict
 
 class DCOP(ABC):
-    def __init__(self,id_,A,D,dcop_name):
+    def __init__(self,id_,A,D,dcop_name,algorithm):
         self.dcop_id = id_
         self.A = A
         self.D = D
+        self.algorithm = algorithm
+
         self.dcop_name = dcop_name
         self.agents = []
         self.create_agents()
@@ -183,7 +185,7 @@ class DCOP(ABC):
 
     def create_agents(self):
         for i in range(self.A):
-            if algorithm == Algorithm.branch_and_bound:
+            if self.algorithm == Algorithm.branch_and_bound:
                 self.agents.append(BranchAndBound(i + 1, self.D))
 
 
@@ -220,8 +222,7 @@ class DCOP(ABC):
         #self.collect_records()
 
     def __str__(self):
-        split_string = str(dcop_type).split('.')
-        return split_string[1]+",id_"+str(self.dcop_id)+",A_"+str(self.A)+",D_"+str(self.D)
+        return self.dcop_name+",id_"+str(self.dcop_id)+",A_"+str(self.A)+",D_"+str(self.D)
 
 
 
@@ -241,7 +242,7 @@ class DCOP(ABC):
         return True
 
     def inform_root(self):
-        if algorithm == Algorithm.branch_and_bound:
+        if self.algorithm == Algorithm.branch_and_bound:
             root_agent = self.most_dense_agent()
             for a in self.agents:
                 if root_agent.id_ ==a.id_:
@@ -279,8 +280,8 @@ class DCOP(ABC):
 
 
 class DCOP_RandomUniform(DCOP):
-    def __init__(self, id_,A,D,dcop_name):
-        DCOP.__init__(self,id_,A,D,dcop_name)
+    def __init__(self, id_,A,D,dcop_name,algorithm):
+        DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 
     def create_neighbors(self):
         for i in range(self.A):
@@ -292,8 +293,9 @@ class DCOP_RandomUniform(DCOP):
                     self.neighbors.append(Neighbors(a1, a2, sparse_random_uniform_cost_function, self.dcop_id))
 
 class DCOP_GraphColoring(DCOP):
-    def __init__(self, id_,A,D,dcop_name):
-        DCOP.__init__(self,id_,A,D,dcop_name)
+
+    def __init__(self, id_,A,D,dcop_name,algorithm):
+        DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 
     def create_neighbors(self):
         for i in range(self.A):

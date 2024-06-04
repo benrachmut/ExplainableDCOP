@@ -146,6 +146,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.above_me = []
         #self.records_dict = {}
         self.local_UB = None
+        self.anytime_variable=None
+        self.anytime_context=None
+        self.anytime_constraints=None
 
     def is_algorithm_complete(self):
         return self.status == BNB_Status.finished_algorithm
@@ -161,10 +164,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 self.receive_empty_msg_flag = True
             if msg.msg_type == BNB_msg_type.finish_algorithm:
                 self.token = msg.information.__deepcopy__()
-                self.variable_anytime, self.context_anytime, self.constraints_anytime = self.best_global_UB.get_anytime_info(
+                self.anytime_variable, self.anytime_context, self.anytime_constraints = self.token.best_UB.get_anytime_info(
                     self.id_, self.neighbors_agents_id)
 
-                #self.variable_anytime = self.token.best_UB.context[self.id_]
 
             if debug_BNB:
                 print(self.__str__(), "receive", msg.msg_type,"from A_",msg.sender,"info:", msg.information)
@@ -391,7 +393,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.reset_token_after_add_from_all_children()
         self.token.best_UB = self.local_UB.__deepcopy__()
         self.best_global_UB = self.local_UB.__deepcopy__()
-        self.variable_anytime, self.context_anytime, self.constraints_anytime = self.best_global_UB.get_anytime_info(self.id_, self.neighbors_agents_id)
+        self.anytime_variable, self.anytime_context, self.anytime_constraints = self.best_global_UB.get_anytime_info(self.id_, self.neighbors_agents_id)
 
 
         self.select_next_value()

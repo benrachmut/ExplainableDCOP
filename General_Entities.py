@@ -14,7 +14,7 @@ class SingleInformation:
 
     def get_context_anytime(self,neighbors):
         ans = {}
-        for id_, value in self.context:
+        for id_, value in self.context.items():
             if id_ in neighbors:
                 ans[id_] = value
         return ans
@@ -34,7 +34,7 @@ class SingleInformation:
     def get_anytime_info (self,id_, neighbors):
         variable_anytime = self.context[id_]
         context_anytime = self.get_context_anytime(neighbors)
-        constraints_anytime = self.get_contstaints_anytime(id_)
+        constraints_anytime = self.get_constraints_anytime(id_)
         return variable_anytime,context_anytime,constraints_anytime
 
 
@@ -51,6 +51,7 @@ class SingleInformation:
                 first_agent_num = self.convert_str_A_number(context[0][0])
                 second_agent_num = self.convert_str_A_number(context[1][0])
                 ans.append((first_agent_num,second_agent_num,cost))
+        return ans
 
     def __add__(self, other):
         context = {}
