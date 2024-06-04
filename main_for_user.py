@@ -167,7 +167,6 @@ def create_dcop():
         dcop_name = "Graph Coloring"
         return DCOP_GraphColoring(seed, A, D, dcop_name, algorithm)
 
-
 def open_agent_input_window():
     agent_window = tk.Tk()
     agent_window.title("Agent Input")
@@ -176,18 +175,16 @@ def open_agent_input_window():
     agent_number = tk.Scale(agent_window, from_=0, to=user_amount_agents-1, orient=tk.HORIZONTAL)
     agent_number.grid(row=0, column=1, padx=10, pady=5)
 
-    tk.Button(agent_window, text="See Results", command=lambda: show_agent_results(agent_window, agent_number.get())).grid(row=1, columnspan=2, pady=20)
+    result_label = tk.Label(agent_window, text="")
+    result_label.grid(row=2, columnspan=2, pady=20)
+
+    tk.Button(agent_window, text="See Results", command=lambda: show_agent_results(agent_number.get(), result_label)).grid(row=1, columnspan=2, pady=20)
 
     agent_window.mainloop()
-
-def show_agent_results(agent_window, agent_number):
+def show_agent_results(agent_number, result_label):
     result = f"Results for Agent {agent_number}"
     # Here you can add the logic to calculate and display the results based on the agent number
-    messagebox.showinfo("Agent Results", result)
-
-    # Display results on the same page
-    tk.Label(agent_window, text=result).grid(row=2, columnspan=2, pady=20)
-
+    result_label.config(text=result)
 
 if __name__ == '__main__':
 
@@ -197,6 +194,7 @@ if __name__ == '__main__':
     dcop = create_dcop()
     dcop.execute()
     open_agent_input_window()
+    show_agent_results()
     print()
 
 
