@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 
 # Example choices for DCOP type and Algorithm
 from enums import DcopType, Algorithm
-from problems import DCOP_RandomUniform, DCOP_GraphColoring
+from problems import DCOP_RandomUniform, DCOP_GraphColoring, DCOP
 
 dcop_types = ["Graph Coloring", "Type2", "Type3"]
 algorithms = ["Branch and Bound", "Algorithm2", "Algorithm3"]
@@ -167,24 +167,63 @@ def create_dcop():
         dcop_name = "Graph Coloring"
         return DCOP_GraphColoring(seed, A, D, dcop_name, algorithm)
 
-def open_agent_input_window():
+def open_agent_input_window(dcop):
     agent_window = tk.Tk()
     agent_window.title("Agent Input")
 
     tk.Label(agent_window, text="Which Agent are you?").grid(row=0, column=0, padx=10, pady=5, sticky='e')
-    agent_number = tk.Scale(agent_window, from_=0, to=user_amount_agents-1, orient=tk.HORIZONTAL)
+    agent_number = tk.Scale(agent_window, from_=1, to=user_amount_agents, orient=tk.HORIZONTAL)
     agent_number.grid(row=0, column=1, padx=10, pady=5)
 
     result_label = tk.Label(agent_window, text="")
     result_label.grid(row=2, columnspan=2, pady=20)
 
-    tk.Button(agent_window, text="See Results", command=lambda: show_agent_results(agent_number.get(), result_label)).grid(row=1, columnspan=2, pady=20)
+    tk.Button(agent_window, text="See Results", command=lambda: show_agent_results(agent_number.get(), result_label,dcop)).grid(row=1, columnspan=2, pady=20)
 
     agent_window.mainloop()
-def show_agent_results(agent_number, result_label):
-    result = f"Results for Agent {agent_number}"
-    # Here you can add the logic to calculate and display the results based on the agent number
+
+
+def get_selected_agent_obj(agent_number, dcop:DCOP):
+    for a in dcop.agents:
+        if a.id_ == agent_number:
+            return a
+
+
+def show_agent_results(agent_number, result_label,dcop:DCOP):
+    agent = get_selected_agent_obj(agent_number, dcop)
+    result = "Results for A_"+str(agent_number)+"="+str(agent.anytime_variable)
     result_label.config(text=result)
+
+    # Example dictionary for demonstration purposes
+    result_dict = {1: 10, 2: 20, 3: 30}
+
+    # Create checkboxes for the result dictionary
+    checkboxes = create_checkboxes(result_label.master, result_dict)
+
+    # Add a button to process the selected checkboxes
+    tk.Button(result_label.master, text="Submit Selections",
+              command=lambda: process_selections(checkboxes, result_dict)).grid(row=4 + len(result_dict), columnspan=2,
+                                                                                pady=20)
+
+
+def create_checkboxes(parent, result_dict):
+    tk.Label(parent, text="Get an explanation for your value, given the selection of which neighbors:").grid(row=3,
+                                                                                                             columnspan=2,
+                                                                                                             pady=10)
+
+    checkboxes = {}
+    for idx, (key, value) in enumerate(result_dict.items()):
+        var = tk.BooleanVar()
+        checkbox = tk.Checkbutton(parent, text=f"A_{key}:{value}", variable=var)
+        checkbox.grid(row=4 + idx, columnspan=2, sticky='w', padx=20)
+        checkboxes[key] = var
+    return checkboxes
+
+
+def process_selections(checkboxes, result_dict):
+    selected_checkboxes = {key: result_dict[key] for key, var in checkboxes.items() if var.get()}
+    print(f"Selected Checkboxes: {selected_checkboxes}")  # Replace with actual processing logic
+
 
 if __name__ == '__main__':
 
@@ -193,8 +232,10 @@ if __name__ == '__main__':
     init_globals()
     dcop = create_dcop()
     dcop.execute()
-    open_agent_input_window()
+    open_agent_input_window(dcop)
     show_agent_results()
+
+
     print()
 
 
