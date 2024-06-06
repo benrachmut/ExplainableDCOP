@@ -25,7 +25,8 @@ user_amount_agents = None
 user_domain = None
 user_seed_number = None
 user_algorithm = None
-
+selected_neighbors = None
+selected_agent = None
 
 def initialize_shared_variables(root):
     global dcop_type_var, algorithm_var, agents_scale, seed_entry, domain_scale
@@ -178,10 +179,15 @@ def open_agent_input_window(dcop):
     result_label = tk.Label(agent_window, text="")
     result_label.grid(row=2, columnspan=2, pady=20)
 
-    tk.Button(agent_window, text="See Results", command=lambda: show_agent_results(agent_number.get(), result_label,dcop)).grid(row=1, columnspan=2, pady=20)
+    see_results_button = tk.Button(agent_window, text="See Results",
+                                   command=lambda: on_see_results(agent_number, result_label, dcop, see_results_button))
+    see_results_button.grid(row=1, columnspan=2, pady=20)
 
     agent_window.mainloop()
 
+def on_see_results(agent_number, result_label, dcop, button):
+    button.config(state=tk.DISABLED)  # Disable the button
+    show_agent_results(agent_number.get(), result_label, dcop)
 
 def get_selected_agent_obj(agent_number, dcop:DCOP):
     for a in dcop.agents:
@@ -189,28 +195,40 @@ def get_selected_agent_obj(agent_number, dcop:DCOP):
             return a
 
 
-def show_agent_results(agent_number, result_label,dcop:DCOP):
+def show_agent_results(agent_number, result_label, dcop):
     agent = get_selected_agent_obj(agent_number, dcop)
-    result = "Results for A_"+str(agent_number)+"="+str(agent.anytime_variable)
+    global selected_agent
+    selected_agent = agent
+    result = "Results for A_" + str(agent_number) + "=" + str(agent.anytime_variable)
     result_label.config(text=result)
 
     # Example dictionary for demonstration purposes
-    result_dict = {1: 10, 2: 20, 3: 30}
+    result_dict = agent.anytime_context
 
     # Create checkboxes for the result dictionary
     checkboxes = create_checkboxes(result_label.master, result_dict)
 
+    def submit_and_get_results(button,window):
+        global selected_values
+        selected_values = process_selections(checkboxes, result_dict)
+
+        if not selected_values:
+            messagebox.showwarning("Selection Error", "You must select at least one checkbox.")
+        else:
+            #print("Selected results:", selected_values)
+            window.destroy()
+            button.config(state=tk.DISABLED)  # Disable the button after successful submission
+
     # Add a button to process the selected checkboxes
-    tk.Button(result_label.master, text="Submit Selections",
-              command=lambda: process_selections(checkboxes, result_dict)).grid(row=4 + len(result_dict), columnspan=2,
-                                                                                pady=20)
+    submit_button = tk.Button(result_label.master, text="Submit Selections",
+                              command=lambda: submit_and_get_results(submit_button,result_label.master))
+    submit_button.grid(row=4 + len(result_dict), columnspan=2, pady=20)
 
 
 def create_checkboxes(parent, result_dict):
-    tk.Label(parent, text="Get an explanation for your value, given the selection of which neighbors:").grid(row=3,
+    tk.Label(parent, text="Get an explanation for your value, given the following selections:").grid(row=3,
                                                                                                              columnspan=2,
                                                                                                              pady=10)
-
     checkboxes = {}
     for idx, (key, value) in enumerate(result_dict.items()):
         var = tk.BooleanVar()
@@ -221,9 +239,10 @@ def create_checkboxes(parent, result_dict):
 
 
 def process_selections(checkboxes, result_dict):
-    selected_checkboxes = {key: result_dict[key] for key, var in checkboxes.items() if var.get()}
-    print(f"Selected Checkboxes: {selected_checkboxes}")  # Replace with actual processing logic
+    selected_checkboxes = {key: var.get() for key, var in checkboxes.items()}
+    ans = {k: v for k, v in result_dict.items() if selected_checkboxes[k]}
 
+    return ans
 
 if __name__ == '__main__':
 
@@ -233,12 +252,5 @@ if __name__ == '__main__':
     dcop = create_dcop()
     dcop.execute()
     open_agent_input_window(dcop)
-    show_agent_results()
-
-
-    print()
-
-
-
-
+    explanations_per_domain = dcop.get_explaination(selected_agent.id_,selected_neighbors.keys())
     open_hello_world_window()

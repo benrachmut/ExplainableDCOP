@@ -146,9 +146,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.above_me = []
         #self.records_dict = {}
         self.local_UB = None
-        self.anytime_variable=None
-        self.anytime_context=None
-        self.anytime_constraints=None
+
 
     def is_algorithm_complete(self):
         return self.status == BNB_Status.finished_algorithm
