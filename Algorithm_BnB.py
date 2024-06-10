@@ -10,11 +10,7 @@ from Globals_ import *
 from General_Entities import *
 
 
-def copy_dict(dict):
-    ans = {}
-    for k,v in dict.items():
-        ans[k]=v
-    return ans
+
 
 class BNB_msg_type(Enum):
     token_from_father = 1
@@ -144,7 +140,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.my_height = None
         self.heights = {}
         self.above_me = []
-        #self.records_dict = {}
         self.local_UB = None
 
 
@@ -163,9 +158,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if msg.msg_type == BNB_msg_type.finish_algorithm:
                 self.token = msg.information.__deepcopy__()
                 self.anytime_variable, self.anytime_context, self.anytime_constraints = self.token.best_UB.get_anytime_info(
-                    self.id_, self.neighbors_agents_id)
-
-
+                    self.id_)
+                self.best_global_UB = self.token.best_UB.__deepcopy__()
             if debug_BNB:
                 print(self.__str__(), "receive", msg.msg_type,"from A_",msg.sender,"info:", msg.information)
 
@@ -303,18 +297,19 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if debug_BNB:
             print(self, "finished going over domain", self.variable)
 
+
     def try_to_update_lb(self,lb_to_update):
         if self.is_need_to_update_lb(lb_to_update):
+            if self.id_ in self.token.LB.context.keys():
+                self.add_to_records(self.token.LB.__deepcopy__())
             self.token.LB = lb_to_update
             if debug_BNB:
                 print(self, "variable changed to", self.variable)
             return True
         else:
-            #is_better_then_UB, is_better_then_best_UB = self.get_the_reason_for_failure(lb_to_update)
-            #pe = self.get_explanation(is_better_then_UB, is_better_then_best_UB)
-            #self.records_dict[pe.winner] = pe
+            if self.id_ in lb_to_update.context.keys():
+                self.add_to_records(lb_to_update.__deepcopy__())
 
-            self.records.append(self.token.LB.__deepcopy__())
             if debug_BNB:
                 print(self, "variable did not change to", self.variable)
             return False
@@ -342,7 +337,9 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         potential_value_and_information = self.get_potential_values_dict()
         min_variable, min_lb = self.find_min_lb(potential_value_and_information)
         lbs = potential_value_and_information.values()
-        self.add_to_records(losers=lbs)
+        for lb in lbs:
+            if lb.context[self.id_] != min_variable:
+                self.add_to_records(lb)
         should_update_token = self.get_should_update_token(min_lb)
         if should_update_token:
             self.token.LB = min_lb
@@ -361,16 +358,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
                 min_cost = value.cost
                 min_key = key
                 min_value = value
-
         return min_key, min_value
 
-    def add_to_records(self,  losers):
-        for lb in losers:
-            self.records.append(lb)
-        return
 
     def get_should_update_token(self, min_lb):
-
         if self.token.best_UB is not None and self.token.best_UB.cost <= min_lb.cost:
             raise Exception("need to check that it works")
             return False
@@ -391,9 +382,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.reset_token_after_add_from_all_children()
         self.token.best_UB = self.local_UB.__deepcopy__()
         self.best_global_UB = self.local_UB.__deepcopy__()
-        self.anytime_variable, self.anytime_context, self.anytime_constraints = self.best_global_UB.get_anytime_info(self.id_, self.neighbors_agents_id)
-
-
+        self.anytime_variable, self.anytime_context, self.anytime_constraints = self.best_global_UB.get_anytime_info(self.id_)
         self.select_next_value()
         if self.status == BNB_Status.finished_going_over_domain:
             self.status = BNB_Status.finished_algorithm
@@ -406,12 +395,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             lb_to_update = self.get_lb_to_update(potential_domain)
             ans[potential_domain] = lb_to_update
         return ans
-
-
-
-
     # select_next_value #################################################################################################
-
     def get_lb_to_update(self,variable_input):
         current_context = self.token.get_lb_copy().context
         constraints = self.get_constraints(current_context = current_context,my_current_value=variable_input)
@@ -429,8 +413,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def is_need_to_update_lb(self, lb_to_update):
         is_better_then_UB = self.check_specific_ub(lb_to_update, self.local_UB)
+        is_better_then_UB_in_token = self.check_specific_ub(lb_to_update, self.token.UB)
+
         is_better_then_best_UB = self.check_specific_ub(lb_to_update, self.token.best_UB)
-        return is_better_then_UB and is_better_then_best_UB
+        return is_better_then_UB and is_better_then_best_UB and is_better_then_UB_in_token
 
     def get_explanation(self, is_better_then_UB, is_better_then_best_UB):
         pe = None
@@ -549,8 +535,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.local_UB is not None:
             prev_local_UB = self.local_UB.__deepcopy__()
             self.local_UB = aggregated_token.LB.__deepcopy__()
-            text = "local UB is not valid any more, children found a lower UB"
-            self.add_to_records( losers=[prev_local_UB.__deepcopy__()])
+            self.add_to_records(prev_local_UB.__deepcopy__())
         else:
             if self.best_global_UB is None or (self.best_global_UB is not None and self.local_UB<self.best_global_UB):
                 self.local_UB = aggregated_token.LB.__deepcopy__()
@@ -592,15 +577,18 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def create_token_from_children(self):
         local_token_temp = None
+        flag = False
         for child_token in self.tokens_from_children.values():
             if local_token_temp is None:
                 local_token_temp = child_token
             else:
                 local_token_temp = local_token_temp + child_token
-                self.add_to_records(losers=[local_token_temp.LB])
                 did_survive = self.check_if_cumulative_token_survived(local_token_temp)
                 if not did_survive:
-                    return False
+                    flag = True
+        if flag:
+            self.add_to_records(local_token_temp.LB.__deepcopy__())
+            return False
         self.update_local_UB(local_token_temp)
         return True
 
@@ -628,7 +616,13 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
         self.token.heights = copy_dict(self.heights)
 
+    def add_to_records(self, si:SingleInformation):
+        self.records.append(si)
 
+        above_me_si =  si.get_reduction_si(self.above_me)
+        if above_me_si not in self.records_dict.keys():
+            self.records_dict[above_me_si] = []
+        self.records_dict[above_me_si].append(si)
 
 
 

@@ -1,3 +1,5 @@
+from Globals_ import *
+
 class SingleInformation:
     def __init__(self, context: {}, constraints: {}):
         self.context = context
@@ -12,12 +14,11 @@ class SingleInformation:
         else:
             return False
 
-    def get_context_anytime(self,neighbors):
-        ans = {}
-        for id_, value in self.context.items():
-            if id_ in neighbors:
-                ans[id_] = value
-        return ans
+    # def get_context_anytime(self,neighbors):
+    #     ans = {}
+    #     for id_, value in self.context.items():
+    #         ans[id_] = value
+    #     return ans
 
     def get_constraints_anytime(self,id_):
         ans = {}
@@ -31,10 +32,10 @@ class SingleInformation:
                ans[first_agent] = cost
         return ans
 
-    def get_anytime_info (self,id_, neighbors):
+    def get_anytime_info (self,id_):
         variable_anytime = self.context[id_]
-        context_anytime = self.get_context_anytime(neighbors)
-        constraints_anytime = self.get_constraints_anytime(id_)
+        context_anytime =copy_dict(self.context) #self.get_context_anytime(neighbors)
+        constraints_anytime = self.get_constraints_readable()# self.get_constraints_anytime(id_)
         return variable_anytime,context_anytime,constraints_anytime
 
 
@@ -129,6 +130,19 @@ class SingleInformation:
         constraints_items = frozenset((k, frozenset(v.items())) for k, v in self.constraints.items())
         return hash((context_items, constraints_items))
 
+    def get_reduction_si(self, id_to_include):
+        context_input = {}
+        for k,v in self.context.items():
+            if k in id_to_include:
+                context_input[k]=v
+
+
+        constraints_input = {}
+        for k,v in self.constraints.items():
+            if k in id_to_include:
+                constraints_input[k]=v
+
+        return SingleInformation(context = context_input, constraints = constraints_input )
 
 
 class PruneExplanation:

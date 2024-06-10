@@ -24,6 +24,7 @@ class Agent(ABC):
         self.outbox = None
         self.local_clock = 0
         self.records = []
+        self.records_dict = {}
 
     def set_neighbors(self,neighbors):
         self.neighbors_obj = neighbors
@@ -95,8 +96,7 @@ class Agent(ABC):
     @abstractmethod
     def send_msgs(self): pass
 
-    @abstractmethod
-    def add_to_records(self): pass
+
 
     @abstractmethod
     def change_status_after_update_msgs_in_context(self, msgs): pass

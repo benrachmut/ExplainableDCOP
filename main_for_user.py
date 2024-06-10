@@ -252,5 +252,7 @@ if __name__ == '__main__':
     dcop = create_dcop()
     dcop.execute()
     open_agent_input_window(dcop)
+    raise Exception("stop here")
     explanations_per_domain = dcop.get_explaination(selected_agent.id_,selected_neighbors.keys())
+
     open_hello_world_window()

@@ -253,6 +253,12 @@ def draw_result(dcop):
 
 
 
+def copy_dict(dict):
+    ans = {}
+    for k,v in dict.items():
+        ans[k]=v
+    return ans
+
 
 
 debug_draw_graph = False
