@@ -153,7 +153,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if msg.msg_type == BNB_msg_type.token_from_child:
                 self.tokens_from_children[msg.sender] = msg.information.__deepcopy__()
             if msg.msg_type == BNB_msg_type.token_empty:
-                self.tokens_from_children[msg.sender] = msg.information.__deepcopy__()
+                self.tokens_from_children[msg.sender] = msg.information.__deepcopy__() # todo, id = 2 stop here,because receive empty did not place it in records
                 self.receive_empty_msg_flag = True
             if msg.msg_type == BNB_msg_type.finish_algorithm:
                 self.token = msg.information.__deepcopy__()
@@ -330,7 +330,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             self.status = BNB_Status.send_token_to_children
         else:
             self.status = BNB_Status.send_empty_to_father
-            raise Exception("need to check this")
+            #raise Exception("need to check this")
 
     def compute_receive_token_from_father_leaf(self):
         self.update_height_and_above_me()
@@ -566,7 +566,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.finished_going_over_domain:
             if self.local_UB is None:
                 self.status = BNB_Status.send_empty_to_father
-                raise Exception("need to check everything in if  self.local_UB is None")
+                #raise Exception("need to check everything in if  self.local_UB is None")
             else:
                 self.token.UB = self.local_UB.__deepcopy__()
                 self.token.LB = self.local_UB.__deepcopy__()
