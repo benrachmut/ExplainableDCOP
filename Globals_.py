@@ -14,12 +14,10 @@ from itertools import chain
 
 import graphviz
 
-
 is_complete = None
 repetitions = 1
 incomplete_iterations = 1000
 draw_dfs_tree_flag = False
-
 
 #### DCOPS_INPUT ####
 
@@ -29,7 +27,7 @@ draw_dfs_tree_flag = False
 
 
 
-sparse_p1 = 0.5
+sparse_p1 = 0.2
 sparse_p2 = 1
 sparse_min_cost = 1
 sparse_max_cost = 100

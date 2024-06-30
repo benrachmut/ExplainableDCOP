@@ -136,3 +136,9 @@ class IncompleteAlgorithm(Completeness,ABC):
             return False
 
 
+
+class DSA_C(IncompleteAlgorithm):
+    pass
+
+class MGM(IncompleteAlgorithm):
+    pass

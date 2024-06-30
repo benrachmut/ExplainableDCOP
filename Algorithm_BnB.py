@@ -153,8 +153,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if msg.msg_type == BNB_msg_type.token_from_child:
                 self.tokens_from_children[msg.sender] = msg.information.__deepcopy__()
             if msg.msg_type == BNB_msg_type.token_empty:
-                self.tokens_from_children[msg.sender] = msg.information.__deepcopy__() # todo, id = 2 stop here,because receive empty did not place it in records
+                self.tokens_from_children[msg.sender] = msg.information # todo, id = 2 stop here,because receive empty did not place it in records
                 self.receive_empty_msg_flag = True
+                for lb in msg.information:
+                    self.add_to_records(lb)
             if msg.msg_type == BNB_msg_type.finish_algorithm:
                 self.token = msg.information.__deepcopy__()
                 self.anytime_variable, self.anytime_context, self.anytime_constraints = self.token.best_UB.get_anytime_info(
@@ -338,10 +340,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         min_variable, min_lb = self.find_min_lb(potential_value_and_information)
         lbs = potential_value_and_information.values()
         for lb in lbs:
-            if lb.context[self.id_] != min_variable:
+            if lb.context[self.id_] != min_variable or(self.token.UB is not None and min_lb.cost>=self.token.UB.cost):
                 self.add_to_records(lb)
-        should_update_token = self.get_should_update_token(min_lb)
-        if should_update_token:
+        found_better_solution = self.get_should_update_token(min_lb)
+        if found_better_solution:
             self.token.LB = min_lb
             self.status = BNB_Status.send_token_to_leaf_to_father
         else:
@@ -478,10 +480,12 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             raise Exception("only leaf should be in this status")
 
     def send_msgs_empty_up_the_tree(self):
-        msg = Msg(sender=self.id_, receiver=self.dfs_father, information=self.token.__deepcopy__(),
+        list_of_lbs = self.records_dict[self.token.LB]
+        msg = Msg(sender=self.id_, receiver=self.dfs_father, information=list_of_lbs,
                   msg_type=BNB_msg_type.token_empty)
         self.outbox.insert([msg])
         self.domain_index = -1
+
 
     def sends_msgs_UB_up_the_tree(self):
         self.token.LB =  self.local_UB.__deepcopy__()
@@ -521,6 +525,7 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         UB = self.local_UB.__deepcopy__()
         heights = first_value.heights
         self.token = BranchAndBoundToken(LB=LB, UB=UB, heights=heights)
+
 
 
     def check_if_cumulative_token_survived(self,local_token_temp):
@@ -566,7 +571,6 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         if self.status == BNB_Status.finished_going_over_domain:
             if self.local_UB is None:
                 self.status = BNB_Status.send_empty_to_father
-                #raise Exception("need to check everything in if  self.local_UB is None")
             else:
                 self.token.UB = self.local_UB.__deepcopy__()
                 self.token.LB = self.local_UB.__deepcopy__()

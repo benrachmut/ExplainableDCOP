@@ -218,7 +218,7 @@ class DCOP(ABC):
                 print("DCOP:",str(self.dcop_id),"global clock:",str(self.global_clock), "is over because there are no messages in system ")
                 break
             self.agents_perform_iteration(self.global_clock)
-            self.draw_global_things()
+            #self.draw_global_things()
         #self.collect_records()
 
     def __str__(self):
