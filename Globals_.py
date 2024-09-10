@@ -17,21 +17,16 @@ import graphviz
 is_complete = None
 repetitions = 1
 incomplete_iterations = 1000
-draw_dfs_tree_flag = False
 
 #### DCOPS_INPUT ####
-
 #*******************************************#
 # dcop_type = DcopType.sparse_random_uniform
 #*******************************************#
-
-
 
 sparse_p1 = 0.2
 sparse_p2 = 1
 sparse_min_cost = 1
 sparse_max_cost = 100
-
 
 
 def sparse_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
@@ -86,11 +81,9 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
         return 0
 
 
-#*******************************************#
-# dcop_type = DcopType.meeting_scheduling
-#*******************************************#
 
-meeting_schedule_meet_amount = 20
+
+
 
 
 
@@ -238,15 +231,8 @@ def get_distinct_values_colors(dcop):
         distinct_values_colors[value] = color
     return  distinct_values_colors
 
-def draw_dcop_result(dcop):
-    distinct_values_colors = get_distinct_values_colors(dcop)
-    for a in dcop.agents:
-       pass
 
 
-def draw_result(dcop):
-    if debug_draw_result:
-        draw_dcop_result(dcop)
 
 
 
@@ -259,8 +245,8 @@ def copy_dict(dict):
 
 
 
-debug_draw_graph = False
-debug_draw_result = False
-debug_DFS_tree = False
+debug_draw_graph = True
+debug_DFS_tree = True
 debug_DFS_draw_tree = False
+draw_dfs_tree_flag = False
 debug_BNB = True

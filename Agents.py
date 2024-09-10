@@ -125,7 +125,8 @@ class Completeness(ABC):
 
 class CompleteAlgorithm(Completeness,ABC):
 
-    def is_algorithm_complete(self): pass
+    def is_algorithm_complete(self):
+        pass
 
 
 class IncompleteAlgorithm(Completeness,ABC):

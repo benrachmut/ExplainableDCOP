@@ -16,9 +16,6 @@ class DFS_MSG(Enum):
     tree_token = 2
 
 
-
-
-
 class DFS(Agent,ABC):
 
     def __init__(self, id_, D):

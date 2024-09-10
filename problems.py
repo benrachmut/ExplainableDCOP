@@ -209,6 +209,8 @@ class DCOP(ABC):
         return ans
 
     def execute(self):
+        self.draw_global_things()
+
         self.global_clock = 0
         self.agents_init()
         while not self.all_agents_complete():
@@ -303,5 +305,5 @@ class DCOP_GraphColoring(DCOP):
             for j in range(i+1,self.A):
                 a2 = self.agents[j]
                 rnd_number = self.rnd_neighbors.random()
-                if rnd_number<sparse_p1:
+                if rnd_number<graph_coloring_p1:
                     self.neighbors.append(Neighbors(a1, a2, graph_coloring_cost_function, self.dcop_id))

@@ -155,8 +155,8 @@ class BranchAndBound(DFS,CompleteAlgorithm):
             if msg.msg_type == BNB_msg_type.token_empty:
                 self.tokens_from_children[msg.sender] = msg.information # todo, id = 2 stop here,because receive empty did not place it in records
                 self.receive_empty_msg_flag = True
-                for lb in msg.information:
-                    self.add_to_records(lb)
+                for token in msg.information:
+                    self.add_to_records(token.LB)
             if msg.msg_type == BNB_msg_type.finish_algorithm:
                 self.token = msg.information.__deepcopy__()
                 self.anytime_variable, self.anytime_context, self.anytime_constraints = self.token.best_UB.get_anytime_info(
@@ -481,7 +481,10 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def send_msgs_empty_up_the_tree(self):
         list_of_lbs = self.records_dict[self.token.LB]
-        msg = Msg(sender=self.id_, receiver=self.dfs_father, information=list_of_lbs,
+        list_of_tokens = []
+        for lb in list_of_lbs:
+            list_of_tokens.append(BranchAndBoundToken(heights=self.heights,LB = lb))
+        msg = Msg(sender=self.id_, receiver=self.dfs_father, information=list_of_tokens,
                   msg_type=BNB_msg_type.token_empty)
         self.outbox.insert([msg])
         self.domain_index = -1
@@ -547,8 +550,12 @@ class BranchAndBound(DFS,CompleteAlgorithm):
 
     def sanity_check_all_tokens_identical_from_my_height(self):
         variables = []
+
         for child_token in self.tokens_from_children.values():
+            if isinstance(child_token,SingleInformation) == False:
+                return
             variables.append(child_token.reset_LB_given_id(self.id_))
+
         all_equal = all(item == variables[0] for item in variables)
         if not all_equal:
             raise Exception("check is wrong")
@@ -557,8 +564,11 @@ class BranchAndBound(DFS,CompleteAlgorithm):
         self.sanity_check_all_tokens_identical_from_my_height()
         tokens =  self.tokens_from_children.values()
         first_value = next(iter(tokens), None)
-        LB =first_value.reset_LB_given_id(self.id_)
-        heights  = first_value.heights
+        if isinstance(first_value,BranchAndBoundToken)==False:
+            first_value = first_value[0]
+        LB = first_value.reset_LB_given_id(self.id_)
+        heights = first_value.heights
+
         UB = None
         if self.local_UB is not None:
             UB = self.local_UB.__deepcopy__()
