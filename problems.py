@@ -4,41 +4,14 @@ import threading
 import Globals_
 from Algorithm_BnB import BranchAndBound
 from Agents import *
+from Algorithm_BnB_Central import Bnb_central
 from Globals_ import *
 
 from enums import *
 from abc import ABC, abstractmethod
+from ortools.sat.python import cp_model
+import pulp
 
-
-class AgentPair():
-    def __init__(self, a1_id, a1_domain, a2_id, a2_domain):
-        self.a1_id =a1_id
-        self.a2_id =a2_id
-        self.a1_domain = a1_domain
-        self.a2_domain = a2_domain
-
-        if a1_id < a2_id:
-            self.agent_pair = (a1_id, a2_id)
-            self.domain_pair = (a1_domain, a2_domain)
-        else:
-            self.agent_pair_identifier = (a2_id, a1_id)
-            self.domain_pair = (a2_domain, a1_domain)
-
-    def __str__(self):
-        return "<"+self.a1_id+":"+self.a1_domain+"> <"+self.a2_id+":"+self.a2_domain+">"
-    def __repr__(self):
-        return self.__str__()
-
-
-    def __hash__(self):
-        return 0
-
-    def __eq__(self, other):
-        first = other.a1_id == self.a1_id
-        second = other.a2_id == self.a2_id
-        third = other.a1_domain == self.a1_domain
-        forth = other.a2_domain == self.a2_domain
-        return first and second and third and forth
 
 class Neighbors():
     def __init__(self, a1:Agent, a2:Agent, cost_generator,dcop_id):
@@ -57,6 +30,8 @@ class Neighbors():
         self.cost_table = {}
         self.create_dictionary_of_costs(cost_generator)
 
+    def __str__(self):
+        return self.a1.__str__()+":"+self.a2.__str__()
 
 
     def is_ids_this_object(self,id_1,id_2):
@@ -74,6 +49,14 @@ class Neighbors():
         ans = self.cost_table[ap]
         return ans
 
+    def get_cost_for_model(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
+
+        if first_agent_id_input < second_agent_id_input:
+            ap = (("A_"+str(first_agent_id_input), first_agent_variable), ("A_"+str(second_agent_id_input), second_agent_variable))
+        else:
+            ap = (("A_"+str(second_agent_id_input), second_agent_variable), ("A_"+str(first_agent_id_input), first_agent_variable))
+        ans = self.cost_table[ap]
+        return ans
 
     def create_dictionary_of_costs(self,cost_generator):
         for d_a1 in self.a1.domain:
@@ -81,7 +64,6 @@ class Neighbors():
                 first_tuple = ("A_"+str(self.a1.id_),d_a1)
                 second_tuple = ("A_"+str(self.a2.id_),d_a2)
                 ap = (first_tuple,second_tuple)
-                #ap = (self.a1.id_,d_a1,self.a2.id_,d_a2)#AgentPair(self.a1.id_, d_a1, self.a2.id_, d_a2)
                 cost = cost_generator(self.rnd_cost,self.a1,self.a2,d_a1,d_a2)
                 self.cost_table[ap] = cost
 
@@ -114,15 +96,11 @@ class UnboundedBuffer():
         self.cond = threading.Condition(threading.RLock())
 
     def insert(self, list_of_msgs):
-        #with self.cond:
         for msg in list_of_msgs:
             self.buffer.append(msg)
-        #    self.cond.notify_all()
 
     def extract(self):
-       #with self.cond:
-        #    while len(self.buffer) == 0:
-        #        self.cond.wait()
+
         ans = []
         for msg in self.buffer:
             if msg is None:
@@ -180,7 +158,6 @@ class DCOP(ABC):
         self.mailer = Mailer(self.agents)
         self.global_clock = 0
         self.inform_root()
-        self.records_dcop = {}
 
 
     def create_agents(self):
@@ -201,6 +178,7 @@ class DCOP(ABC):
             neighbors_of_a = self.get_all_neighbors_obj_of_agent(a)
             a.set_neighbors(neighbors_of_a)
 
+
     def get_all_neighbors_obj_of_agent(self, agent:Agent):
         ans = []
         for n in self.neighbors:
@@ -208,7 +186,18 @@ class DCOP(ABC):
                 ans.append(n)
         return ans
 
-    def execute(self):
+    import pulp
+
+    from ortools.sat.python import cp_model
+
+    from ortools.sat.python import cp_model
+
+
+
+    def execute_center(self):
+        bnb  = Bnb_central(self.agents)
+
+    def execute_distributed(self):
         self.draw_global_things()
 
         self.global_clock = 0
@@ -281,7 +270,7 @@ class DCOP(ABC):
 
 
 
-class DCOP_RandomUniform(DCOP):
+class DCOP_RandomUniformSparse(DCOP):
     def __init__(self, id_,A,D,dcop_name,algorithm):
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 

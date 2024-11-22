@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 
 # Example choices for DCOP type and Algorithm
 from enums import DcopType, Algorithm
-from problems import DCOP_RandomUniform, DCOP_GraphColoring, DCOP
+from problems import DCOP_RandomUniformSparse, DCOP_GraphColoring, DCOP
 
 dcop_types = ["Graph Coloring", "Type2", "Type3"]
 algorithms = ["Branch and Bound", "Algorithm2", "Algorithm3"]
@@ -163,7 +163,7 @@ def init_globals():
 def create_dcop():
     if dcop_type == DcopType.sparse_random_uniform:
         dcop_name = "Sparse Uniform"
-        return DCOP_RandomUniform(seed, A, D, dcop_name, algorithm)
+        return DCOP_RandomUniformSparse(seed, A, D, dcop_name, algorithm)
     if dcop_type == DcopType.graph_coloring:
         dcop_name = "Graph Coloring"
         return DCOP_GraphColoring(seed, A, D, dcop_name, algorithm)
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     root.mainloop()
     init_globals()
     dcop = create_dcop()
-    dcop.execute()
+    dcop.execute_distributed()
     open_agent_input_window(dcop)
     raise Exception("stop here")
     explanations_per_domain = dcop.get_explaination(selected_agent.id_,selected_neighbors.keys())

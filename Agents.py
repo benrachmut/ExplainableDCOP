@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 from Globals_ import *
+import pulp
 
 
 
@@ -19,6 +20,8 @@ class Agent(ABC):
         self.domain = []
         for i in range(D): self.domain.append(i)
         self.neighbors_obj = None
+        self.neighbors_obj_dict = None #id, obj
+
         self.neighbors_agents_id = []
         self.inbox = None
         self.outbox = None
@@ -26,11 +29,14 @@ class Agent(ABC):
         self.records = []
         self.records_dict = {}
 
+
+
     def set_neighbors(self,neighbors):
         self.neighbors_obj = neighbors
         for n in neighbors:
             a_other = n.get_other_agent(self)
             self.neighbors_agents_id.append(a_other)
+            self.neighbors_obj_dict[a_other.id_] = a_other
 
     def get_neighbors_tuples(self):
         ans = []

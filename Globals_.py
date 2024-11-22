@@ -4,8 +4,7 @@ from enums import *
 from random import Random
 import pandas as pd
 
-import networkx as nx
-import matplotlib.pyplot as plt
+
 import os
 
 
@@ -13,6 +12,8 @@ os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz-10.0.1-win64
 from itertools import chain
 
 import graphviz
+
+is_center_solver = True
 
 is_complete = None
 repetitions = 1
@@ -47,7 +48,7 @@ dense_max_cost = 100
 
 def dense_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if rnd_cost.random()<dense_p2:
-        return rnd_cost.randint(sparse_min_cost, sparse_max_cost)
+        return rnd_cost.randint(dense_min_cost, dense_max_cost)
     else:
         return 0
 

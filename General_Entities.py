@@ -183,19 +183,19 @@ class PruneExplanation:
         winner_constraints = self.winner.constraints
         loser_constraints = self.loser.constraints
         for n_id, constraints_dict in loser_constraints.items():
-            if n_id not in winner_constraints:
+            if n_id not in winner_constraints.keys():
                 for variables_tuple, cost in constraints_dict.items():
-                    self.disjoint_winner_constraints[variables_tuple] = cost
+                    #self.disjoint_winner_constraints[variables_tuple] = cost
                     self.disjoint_loser_constraints[variables_tuple] = cost
 
     def check_if_in_winner_and_not_in_loser(self):
         winner_constraints = self.winner.constraints
         loser_constraints = self.loser.constraints
         for n_id, constraints_dict in winner_constraints.items():
-            if n_id not in loser_constraints:
+            if n_id not in loser_constraints.keys():
                 for variables_tuple, cost in constraints_dict.items():
                     self.disjoint_winner_constraints[variables_tuple] = cost
-                    self.disjoint_loser_constraints[variables_tuple] = cost
+                    #self.disjoint_loser_constraints[variables_tuple] = cost
 
     @staticmethod
     def get_ids_with_different_values(winner_context, loser_context):

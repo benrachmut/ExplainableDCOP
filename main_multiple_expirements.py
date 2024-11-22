@@ -11,16 +11,16 @@ def create_selected_dcop(i,dcop_type,algorithm):
         A = 10
         D = 10
         dcop_name = "Sparse Uniform"
-        return DCOP_RandomUniform(i,A,D,dcop_name,algorithm)
+        return DCOP_RandomUniformSparse(i, A, D, dcop_name, algorithm)
     if dcop_type == DcopType.dense_random_uniform:
         A = 10
         D = 10
         dcop_name = "Dense Uniform"
-        return DCOP_RandomUniform(i,A,D,dcop_name,algorithm)
+        return DCOP_RandomUniformSparse(i, A, D, dcop_name, algorithm)
     if dcop_type == DcopType.graph_coloring:
-        A = 10
+        A = 5
         D = 3
-        dcop_name = "Dense Uniform"
+        dcop_name = "Graph Coloring"
         return DCOP_GraphColoring(i,A,D,dcop_name,algorithm)
 
 
@@ -31,7 +31,10 @@ if __name__ == '__main__':
     for i in range(repetitions):
         dcop = create_selected_dcop(i,dcop_type,algorithm)
         #draw_dcop(dcop)
-        dcop.execute()
+        if is_center_solver:
+            dcop.execute_center()
+        else:
+            dcop.execute_distributed()
         print("X")
         #dcop.create_queries()
     #create_data(dcops)
