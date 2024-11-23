@@ -32,6 +32,8 @@ sparse_max_cost = 100
 
 def sparse_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if rnd_cost.random()<sparse_p2:
+        for _ in range(5):
+            rnd_cost.randint(sparse_min_cost, sparse_max_cost)
         return rnd_cost.randint(sparse_min_cost, sparse_max_cost)
     else:
         return 0
@@ -244,10 +246,11 @@ def copy_dict(dict):
         ans[k]=v
     return ans
 
+central_bnb_problem_details_debug = True
 
-
+central_bnb_debug = True
 debug_draw_graph = True
 debug_DFS_tree = True
 debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
-debug_BNB = True
+debug_BNB = False

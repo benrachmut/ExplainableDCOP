@@ -24,7 +24,7 @@ class Neighbors():
             self.a2 = a1
 
         self.dcop_id = dcop_id
-        self.rnd_cost = random.Random((((dcop_id+1)+100)+((a1.id_+1)+10)+((a2.id_+1)*1))*17)
+        self.rnd_cost = random.Random((((dcop_id+1)+100)+((a1.id_+1)*1710)+((a2.id_*281)*13))*17)
         for _ in range(5):
             self.rnd_cost.random()
         self.cost_table = {}
@@ -41,7 +41,8 @@ class Neighbors():
             return False
 
     def get_cost(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
-
+        if isinstance(first_agent_id_input,int):
+            return self.get_cost_for_model(first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable)
         if first_agent_id_input<second_agent_id_input:
             ap =(first_agent_id_input,first_agent_variable,second_agent_id_input,second_agent_variable)
         else:
@@ -195,7 +196,12 @@ class DCOP(ABC):
 
 
     def execute_center(self):
-        bnb  = Bnb_central(self.agents)
+        if central_bnb_problem_details_debug:
+            for a in self.agents:
+                print("variable:",a,"domain:",a.domain)
+            for n in self.neighbors:
+                print(n.cost_table)
+        bnb = Bnb_central(self.agents)
 
     def execute_distributed(self):
         self.draw_global_things()
