@@ -1,7 +1,6 @@
 import random
 import threading
 
-import Globals_
 from Algorithm_BnB import BranchAndBound
 from Agents import *
 from Algorithm_BnB_Central import Bnb_central
@@ -9,8 +8,7 @@ from Globals_ import *
 
 from enums import *
 from abc import ABC, abstractmethod
-from ortools.sat.python import cp_model
-import pulp
+
 
 
 class Neighbors():
@@ -94,7 +92,6 @@ class UnboundedBuffer():
 
     def __init__(self):
         self.buffer = []
-        self.cond = threading.Condition(threading.RLock())
 
     def insert(self, list_of_msgs):
         for msg in list_of_msgs:
@@ -202,6 +199,13 @@ class DCOP(ABC):
             for n in self.neighbors:
                 print(n.cost_table)
         bnb = Bnb_central(self.agents)
+        UB = bnb.UB
+        for agent in self.agents:
+            agent.variable = UB[0][agent.id_]
+            for n_id in agent.neighbors_agents_id:
+                agent.neighbors_values[n_id] = UB[0][n_id]
+
+
 
     def execute_distributed(self):
         self.draw_global_things()
@@ -252,10 +256,7 @@ class DCOP(ABC):
         for a in self.agents:
             a.execute_iteration(global_clock)
 
-    def draw_global_things(self):
-        if Globals_.draw_dfs_tree_flag:
-            draw_dfs_tree(self.agents,self.dcop_id)
-            Globals_.draw_dfs_tree_flag = False
+
 
     def collect_records(self):
         ans = {}
@@ -276,8 +277,9 @@ class DCOP(ABC):
 
 
 
-class DCOP_RandomUniformSparse(DCOP):
-    def __init__(self, id_,A,D,dcop_name,algorithm):
+class DCOP_RandomUniform(DCOP):
+    def __init__(self, id_,A,D,dcop_name,algorithm,p1):
+        self.p1 = p1
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 
     def create_neighbors(self):
@@ -286,7 +288,7 @@ class DCOP_RandomUniformSparse(DCOP):
             for j in range(i+1,self.A):
                 a2 = self.agents[j]
                 rnd_number = self.rnd_neighbors.random()
-                if rnd_number<sparse_p1:
+                if rnd_number<self.p1:
                     self.neighbors.append(Neighbors(a1, a2, sparse_random_uniform_cost_function, self.dcop_id))
 
 class DCOP_GraphColoring(DCOP):

@@ -21,7 +21,7 @@ class Agent(ABC):
         for i in range(D): self.domain.append(i)
         self.neighbors_obj = None
         self.neighbors_obj_dict = {} #id, obj
-
+        self.neighbors_values = {}
         self.neighbors_agents_id = []
         self.inbox = None
         self.outbox = None
@@ -37,6 +37,9 @@ class Agent(ABC):
             a_other = n.get_other_agent(self)
             self.neighbors_agents_id.append(a_other)
             self.neighbors_obj_dict[a_other] = n
+
+        for n_id in self.neighbors_agents_id:
+            self.neighbors_values[n_id] = None
 
     def get_neighbors_tuples(self):
         ans = []

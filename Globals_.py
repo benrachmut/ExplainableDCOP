@@ -13,10 +13,7 @@ from itertools import chain
 
 import graphviz
 
-is_center_solver = True
-
 is_complete = None
-repetitions = 1
 incomplete_iterations = 1000
 
 #### DCOPS_INPUT ####
@@ -28,6 +25,7 @@ sparse_p1 = 0.2
 sparse_p2 = 1
 sparse_min_cost = 1
 sparse_max_cost = 100
+sparse_D = 10
 
 
 def sparse_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
@@ -47,6 +45,7 @@ dense_p1 = 0.7
 dense_p2 = 1
 dense_min_cost = 1
 dense_max_cost = 100
+dense_D = 10
 
 def dense_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if rnd_cost.random()<dense_p2:
@@ -64,6 +63,7 @@ scale_free_hubs = 10
 scale_others_number_of_neighbors = 3
 scale_min_cost = 1
 scale_max_cost = 100
+scale_D = 10
 
 def scale_free_network_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     #TODO
@@ -76,6 +76,7 @@ def scale_free_network_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 
 graph_coloring_p1 = 0.5
 graph_coloring_constant_cost = 10
+graph_coloring_D = 3
 
 def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
@@ -246,9 +247,9 @@ def copy_dict(dict):
         ans[k]=v
     return ans
 
-central_bnb_problem_details_debug = True
+central_bnb_problem_details_debug = False
 
-central_bnb_debug = True
+central_bnb_debug = False
 debug_draw_graph = True
 debug_DFS_tree = True
 debug_DFS_draw_tree = False
