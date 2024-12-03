@@ -13,6 +13,20 @@ from itertools import chain
 
 import graphviz
 
+dcop_type = DcopType.dense_random_uniform
+
+# for x dcop
+
+
+is_create_dcops_pickle = False
+
+
+# for DCOPS
+algorithm = Algorithm.branch_and_bound
+amount_agents = range(10,110,10)
+is_center_solver = True
+repetitions = 100
+
 is_complete = None
 incomplete_iterations = 1000
 

@@ -156,6 +156,9 @@ class DCOP(ABC):
         self.mailer = Mailer(self.agents)
         self.global_clock = 0
         self.inform_root()
+        self.agents_dict = {}
+        self.complete_assignment = {}
+
 
 
     def create_agents(self):
@@ -163,7 +166,32 @@ class DCOP(ABC):
             if self.algorithm == Algorithm.branch_and_bound:
                 self.agents.append(BranchAndBound(i + 1, self.D))
 
+    def get_random_agents(self, rnd, without, amount_of_variables):
+        # Filter out the agent specified in 'without'
+        filtered_agents = [agent for agent in self.agents if agent != without]
+        # Ensure the filtered list is large enough
+        if len(filtered_agents) < amount_of_variables:
+            raise ValueError("Not enough agents available to select the requested number.")
 
+        # Use the provided random generator to select a sublist
+        return rnd.sample(filtered_agents, amount_of_variables)
+
+
+    def create_agent_dict(self):
+        self.agents_dict = {}
+        for agent in self.agents:
+            self.agents_dict[agent.id_]=agent
+
+
+    def get_complete_assignment(self):
+        self.complete_assignment = {}
+        for agent in self.agents:
+            self.complete_assignment[agent.id_] = agent.variable
+        return self.complete_assignment
+
+
+    def select_random_agent(self,rnd:Random):
+        return rnd.choice(self.agents)
 
 
     def most_dense_agent(self):
@@ -183,12 +211,6 @@ class DCOP(ABC):
             if n.is_agent_in_obj(agent.id_):
                 ans.append(n)
         return ans
-
-    import pulp
-
-    from ortools.sat.python import cp_model
-
-    from ortools.sat.python import cp_model
 
 
 
