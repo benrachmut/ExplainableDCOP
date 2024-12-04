@@ -43,27 +43,24 @@ def get_dcops(A, property= "complete"):
 
 if __name__ == '__main__':
     A = 10
+    k=A
     if is_create_dcops_pickle:
         create_pickles()
     else:
         dcops = get_dcops(A)
         with_connectivity_constraint = True
-        seeds_xdcop = range(0, 100)
-        nums_variables = range(7, A)
+        seeds_xdcop = range(0, 2)
+        nums_variables = [2]#range(2, A)
         max_domain = len(dcops[0].agents[0].domain)
-        nums_values = [5]  # range(1, max_domain-1)
-
-
+        nums_values = [2]  # range(1, max_domain-1)
         x_dcops = []
         for dcop in dcops:
             dcop.create_agent_dict()
             for num_variables in nums_variables:
                 for num_values in nums_values:
                     for seed_ in seeds_xdcop:
-                        query = QueryGenerator(dcop,seed_,num_variables,num_values,with_connectivity_constraint)
-
-
-
-        print()
+                        query_generator = QueryGenerator(dcop,(seed_+1),num_variables,num_values,with_connectivity_constraint)
+                        query = query_generator.get_query()
+                        x_dcops.append(XDCOP(dcop,query))
 
 

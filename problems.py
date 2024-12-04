@@ -190,8 +190,7 @@ class DCOP(ABC):
         return self.complete_assignment
 
 
-    def select_random_agent(self,rnd:Random):
-        return rnd.choice(self.agents)
+
 
 
     def most_dense_agent(self):
