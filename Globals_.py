@@ -1,5 +1,7 @@
 import random
 
+from matplotlib import pyplot as plt
+
 from enums import *
 from random import Random
 import pandas as pd
@@ -13,12 +15,10 @@ from itertools import chain
 
 import graphviz
 
-dcop_type = DcopType.dense_random_uniform
 
 # for x dcop
 
 
-is_create_dcops_pickle = False
 
 
 # for DCOPS
@@ -260,6 +260,78 @@ def copy_dict(dict):
     for k,v in dict.items():
         ans[k]=v
     return ans
+
+
+class PrepData():
+    def __init__(self, num_variables,num_values):
+        self.num_variables = num_variables
+        self.num_values = num_values
+        self.x_dcops =[]
+        self.id_ = self.num_variables*100+self.num_values*10
+        self.avg_cum_delta_over_dcop = {}
+
+    def __eq__(self, other):
+        return self.id_ == other.id_
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "variables_"+str(self.num_variables)+"_values_"+str(self.num_values)+"_"
+
+    def execute_data(self,x_dcops):
+        self.generate_avg_cum_delta_over_dcops(x_dcops)
+
+    def generate_avg_cum_delta_over_dcops(self,x_dcops):
+        lists = []
+        for xdcop in x_dcops:
+            lists.append(list(xdcop.explanation.min_cum_delta_from_solution.values()))
+        ans = {}
+
+        max_constraints_list = max(lists,key=len)
+        for i in range(len(max_constraints_list)):
+            delta_per_i = []
+            for l in lists:
+                try:
+                    delta_per_i.append(l[i])
+                except:
+                    delta_per_i.append(l[len(l)-1])
+
+            ans[i]= sum(delta_per_i)/len(delta_per_i)
+        self.avg_cum_delta_over_dcop = ans
+
+
+def plot_dictionaries(dicts, colors, labels, amount_variables, legend_title,name):
+    """
+    Plots multiple dictionaries on a graph with different colors.
+
+    Args:
+        dicts (list): List of dictionaries to plot.
+        colors (list): List of colors corresponding to each dictionary.
+        labels (list): List of labels for each dictionary (for the legend).
+        amount_variables (int): Number of variables for the title.
+        legend_title (str): Title for the legend.
+    """
+    if len(dicts) != len(colors) or len(dicts) != len(labels):
+        raise ValueError("The number of dictionaries, colors, and labels must match.")
+
+    plt.figure(figsize=(10, 6))
+
+    for i, dictionary in enumerate(dicts):
+        x = list(dictionary.keys())
+        y = list(dictionary.values())
+        plt.plot(x, y, color=colors[i], label=labels[i], marker='o')  # Ensure labels[i] is passed
+
+    plt.xlabel("Amount of Constraints")
+    plt.ylabel("Average cumulative delta from solution")
+    plt.title("|X|=" + str(amount_variables))
+    plt.legend(title=legend_title)  # Add the legend title here
+    plt.grid(True, linestyle='--', alpha=0.7)
+    #plt.show()
+    file_name = str(amount_variables)+"_"+name+".png"
+    plt.savefig(file_name, format='png', dpi=300)  # Use high resolution
+    plt.close()  # Close the plot to avoid display
+
 
 central_bnb_problem_details_debug = False
 

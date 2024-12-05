@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 
 # Example choices for DCOP type and Algorithm
 from enums import DcopType, Algorithm
-from problems import DCOP_RandomUniformSparse, DCOP_GraphColoring, DCOP
+from problems import DCOP_RandomUniform, DCOP_GraphColoring, DCOP
 
 dcop_types = ["Graph Coloring", "Type2", "Type3"]
 algorithms = ["Branch and Bound", "Algorithm2", "Algorithm3"]
@@ -147,7 +147,7 @@ def init_algorithm_type():
     if user_algorithm == "Branch and Bound":
         global algorithm
         algorithm = Algorithm.branch_and_bound
-        print()
+
 
 
 def init_globals():

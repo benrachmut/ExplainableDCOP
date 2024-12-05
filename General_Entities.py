@@ -60,7 +60,7 @@ class SingleInformation:
         for id_,value in self.context.items(): context[id_]=value
 
         constraints = {}
-        for id_,value in other.constraints.items(): constraints[id_] = value
+        for id_,value in other.constraints_collections.items(): constraints[id_] = value
         for id_,value in self.constraints.items(): constraints[id_] = value
         return SingleInformation(context=context, constraints=constraints)
 
@@ -233,7 +233,7 @@ class PruneExplanation:
 
     def create_disjoint_constraints(self, ids_with_different_values, single_info):
         ans = {}
-        constraints_per_id = single_info.constraints
+        constraints_per_id = single_info.constraints_collections
         for constraints in constraints_per_id.values():
             for tuples_, cost in constraints.items():
                 first_agent = tuples_[0][0]

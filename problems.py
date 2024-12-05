@@ -9,7 +9,32 @@ from Globals_ import *
 from enums import *
 from abc import ABC, abstractmethod
 
+class Constraint():
+    def __init__(self, ap,cost):
+        self.ap = ap
+        self.cost = cost
+        self.first_variable = int(self.ap[0][0].split('_')[1])
+        self.first_value = self.ap[0][1]
+        self.second_variable = int(self.ap[1][0].split('_')[1])
+        self.second_value = self.ap[1][1]
 
+
+    def __hash__(self):
+        return 0
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return str(self.ap)+",cost="+str(self.cost)
+
+    def __eq__(self, other):
+        if self.first_variable == other.first_variable and self.second_variable == other.second_variable:
+            if self.first_value == other.first_value and self.second_value == other.second_value:
+                return True
+        if self.first_variable == other.second_variable and self.second_variable == other.first_variable:
+            if self.first_value == other.second_value and self.second_value == other.first_value:
+                return True
+        return False
 
 class Neighbors():
     def __init__(self, a1:Agent, a2:Agent, cost_generator,dcop_id):
@@ -40,7 +65,7 @@ class Neighbors():
 
     def get_cost(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
         if isinstance(first_agent_id_input,int):
-            return self.get_cost_for_model(first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable)
+            return self.get_cost_given_id_int(first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable)
         if first_agent_id_input<second_agent_id_input:
             ap =(first_agent_id_input,first_agent_variable,second_agent_id_input,second_agent_variable)
         else:
@@ -48,7 +73,7 @@ class Neighbors():
         ans = self.cost_table[ap]
         return ans
 
-    def get_cost_for_model(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
+    def get_cost_given_id_int(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
 
         if first_agent_id_input < second_agent_id_input:
             ap = (("A_"+str(first_agent_id_input), first_agent_variable), ("A_"+str(second_agent_id_input), second_agent_variable))
@@ -57,6 +82,14 @@ class Neighbors():
         ans = self.cost_table[ap]
         return ans
 
+    def get_ap_and_cost(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
+
+        if first_agent_id_input < second_agent_id_input:
+            ap = (("A_"+str(first_agent_id_input), first_agent_variable), ("A_"+str(second_agent_id_input), second_agent_variable))
+        else:
+            ap = (("A_"+str(second_agent_id_input), second_agent_variable), ("A_"+str(first_agent_id_input), first_agent_variable))
+        cost = self.cost_table[ap]
+        return ap,cost
     def create_dictionary_of_costs(self,cost_generator):
         for d_a1 in self.a1.domain:
             for d_a2 in self.a2.domain:
@@ -65,6 +98,7 @@ class Neighbors():
                 ap = (first_tuple,second_tuple)
                 cost = cost_generator(self.rnd_cost,self.a1,self.a2,d_a1,d_a2)
                 self.cost_table[ap] = cost
+
 
 
     def get_constraint(self,first_tuple,second_tuple):
