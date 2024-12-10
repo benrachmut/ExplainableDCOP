@@ -23,10 +23,7 @@ import graphviz
 
 # for DCOPS
 algorithm = Algorithm.branch_and_bound
-amount_agents = range(10,110,10)
-is_center_solver = True
-repetitions = 100
-
+amount_agents = [8]
 is_complete = None
 incomplete_iterations = 1000
 
@@ -99,13 +96,42 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
         return 0
 
 
+#*******************************************#
+# dcop_type = DcopType.meeting_schedualing
+#*******************************************#
+meetings = 4
+meetings_per_agent=2
+time_slots_D=6
 
 
 
 
+class Constraint():
+    def __init__(self, ap,cost):
+        self.ap = ap
+        self.cost = cost
+        self.first_variable = int(self.ap[0][0].split('_')[1])
+        self.first_value = self.ap[0][1]
+        self.second_variable = int(self.ap[1][0].split('_')[1])
+        self.second_value = self.ap[1][1]
 
 
+    def __hash__(self):
+        return 0
+    def __repr__(self):
+        return self.__str__()
 
+    def __str__(self):
+        return str(self.ap)+",cost="+str(self.cost)
+
+    def __eq__(self, other):
+        if self.first_variable == other.first_variable and self.second_variable == other.second_variable:
+            if self.first_value == other.first_value and self.second_value == other.second_value:
+                return True
+        if self.first_variable == other.second_variable and self.second_variable == other.first_variable:
+            if self.first_value == other.second_value and self.second_value == other.first_value:
+                return True
+        return False
 
 
 
@@ -262,13 +288,30 @@ def copy_dict(dict):
     return ans
 
 
+def plot_graph(graph_data):
+    """
+    Generates a plot for the cumulative delta from the solution.
+    """
+    plt.figure(figsize=(10, 6))
+    for auc, (x_values, y_values) in graph_data.items():
+        plt.plot(x_values, y_values, label=f'Collection {auc}')
+
+    plt.title('Cumulative Delta from Solution')
+    plt.xlabel('Constraint Count')
+    plt.ylabel('Delta Value')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 class PrepData():
-    def __init__(self, num_variables,num_values):
+    def __init__(self, num_variables,num_values,x_dcop):
         self.num_variables = num_variables
         self.num_values = num_values
         self.x_dcops =[]
         self.id_ = self.num_variables*100+self.num_values*10
         self.avg_cum_delta_over_dcop = {}
+        self.x_dcop = x_dcop
+        self.cum_delta_from_solution_dict = x_dcop.explaination.avg_cum_delta_over_dcops()
 
     def __eq__(self, other):
         return self.id_ == other.id_
@@ -279,12 +322,10 @@ class PrepData():
     def __str__(self):
         return "variables_"+str(self.num_variables)+"_values_"+str(self.num_values)+"_"
 
-    def execute_data(self,x_dcops):
-        self.generate_avg_cum_delta_over_dcops(x_dcops)
 
-    def generate_avg_cum_delta_over_dcops(self,x_dcops):
+    def generate_avg_cum_delta_over_dcops(self):
         lists = []
-        for xdcop in x_dcops:
+        for xdcop in self.x_dcops:
             lists.append(list(xdcop.explanation.min_cum_delta_from_solution.values()))
         ans = {}
 

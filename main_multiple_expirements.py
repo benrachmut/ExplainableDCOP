@@ -22,7 +22,10 @@ def get_DCOP(i,algorithm,dcop_type,A = 50):
         return DCOP_RandomUniform(i, A, dense_D, "Dense Uniform", algorithm,dense_p1)
     if dcop_type == DcopType.graph_coloring:
         return DCOP_GraphColoring(i, A,graph_coloring_D, "Graph Coloring", algorithm)
-
+    if dcop_type == DcopType.meeting_scheduling:
+        return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_agent,
+                                        time_slots_D=time_slots_D, dcop_name="Meeting Schedualing",
+                                       algorithm = algorithm)
 
 def read_pickle_files(folder_name):
     """
@@ -113,14 +116,14 @@ def create_xdcop():
 
 
 if __name__ == '__main__':
-    run_what = RunWhat.handle_data
+    run_what = RunWhat.dcops
     dcop_type = DcopType.dense_random_uniform
-
-    A = 10
+    repetitions = 100
+    is_center_solver = True
+    A = 5
     with_connectivity_constraint = True
     seeds_xdcop = [1]  # range(0, 2)
     nums_variables = [1,2,3,4,5]#[1, 5, 9]  # range(2, A)
-
     nums_values = [1,2,3,4,5]#[1,5,9]  # range(1, max_domain-1)
 
     if run_what == RunWhat.dcops :
@@ -147,7 +150,6 @@ if __name__ == '__main__':
                 dicts.append(data_.avg_cum_delta_over_dcop)
                 labels.append(str(data_.num_values))
             plot_dictionaries(dicts, colors, labels,variables,"Amount of Values",get_name_of_exp(A))
-
 
 
 

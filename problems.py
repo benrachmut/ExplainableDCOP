@@ -1,5 +1,6 @@
 import random
 import threading
+from operator import truediv
 
 from Algorithm_BnB import BranchAndBound
 from Agents import *
@@ -8,33 +9,9 @@ from Globals_ import *
 
 from enums import *
 from abc import ABC, abstractmethod
-
-class Constraint():
-    def __init__(self, ap,cost):
-        self.ap = ap
-        self.cost = cost
-        self.first_variable = int(self.ap[0][0].split('_')[1])
-        self.first_value = self.ap[0][1]
-        self.second_variable = int(self.ap[1][0].split('_')[1])
-        self.second_value = self.ap[1][1]
+from collections import defaultdict
 
 
-    def __hash__(self):
-        return 0
-    def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
-        return str(self.ap)+",cost="+str(self.cost)
-
-    def __eq__(self, other):
-        if self.first_variable == other.first_variable and self.second_variable == other.second_variable:
-            if self.first_value == other.first_value and self.second_value == other.second_value:
-                return True
-        if self.first_variable == other.second_variable and self.second_variable == other.first_variable:
-            if self.first_value == other.second_value and self.second_value == other.first_value:
-                return True
-        return False
 
 class Neighbors():
     def __init__(self, a1:Agent, a2:Agent, cost_generator,dcop_id):
@@ -192,13 +169,13 @@ class DCOP(ABC):
         self.inform_root()
         self.agents_dict = {}
         self.complete_assignment = {}
-
+        for a in self.agents: self.agents_dict[a.id_] = a
 
 
     def create_agents(self):
         for i in range(self.A):
-            if self.algorithm == Algorithm.branch_and_bound:
-                self.agents.append(BranchAndBound(i + 1, self.D))
+            self.create_agent(i)
+
 
     def get_random_agents(self, rnd, without, amount_of_variables):
         # Filter out the agent specified in 'without'
@@ -327,9 +304,9 @@ class DCOP(ABC):
                     ans[k].append(v)
         return ans
 
-
-
-
+    def create_agent(self,i):
+        if self.algorithm == Algorithm.branch_and_bound:
+            self.agents.append(BranchAndBound(i + 1, self.D))
 
 
 class DCOP_RandomUniform(DCOP):
@@ -359,3 +336,87 @@ class DCOP_GraphColoring(DCOP):
                 rnd_number = self.rnd_neighbors.random()
                 if rnd_number<graph_coloring_p1:
                     self.neighbors.append(Neighbors(a1, a2, graph_coloring_cost_function, self.dcop_id))
+
+
+
+class DCOP_MeetingSchedualing(DCOP):
+    def __init__(self,id_, A, meetings,meetings_per_agent,time_slots_D, dcop_name, algorithm):
+        if A*meetings_per_agent<meetings*2:
+            raise ValueError(A*meetings_per_agent<meetings*2)
+        DCOP.__init__(self, id_, A*meetings_per_agent, time_slots_D, dcop_name, algorithm)
+        self.rnd_meeting_per_agent = random.Random((id_+412)*47)
+        for _ in range(5):self.rnd_meeting_per_agent.random()
+        self.meetings_per_agent_dict = self.divide_agents_to_groups(meetings_per_agent)
+
+        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
+        for _ in range(5): self.rnd_agents_per_meet.random()
+        self.agents_assigned_to_meetings_dict = self.get_agents_assigned_to_meetings_dict(meetings)
+
+        print()
+
+    def get_agents_assigned_to_meetings_dict(self,meetings):
+        """
+        Allocate each variable in a group to a different meeting.
+
+        Returns:
+            dict: A dictionary with keys as meeting indices (running integers) and values as lists of agents.
+        """
+
+        meetings_per_agent_dict_copy = {}
+        for i, agents in self.meetings_per_agent_dict.items():meetings_per_agent_dict_copy[i] = agents
+
+        agents_in_meeting_dict = {}  # Dictionary to store the result
+        for meet_id in range(meetings):agents_in_meeting_dict[meet_id] = []
+
+        self.allocate_min_amount_per_meet(2,meetings_per_agent_dict_copy,agents_in_meeting_dict)
+        # Iterate over the values of meetings_per_agent_dict_copy
+
+
+        return agents_in_meeting_dict
+
+
+        return
+
+
+    def divide_agents_to_groups(self, k):
+        # Shuffle the agents list
+        shuffled_agents = self.agents[:]
+        self.rnd_meeting_per_agent.shuffle(shuffled_agents)
+
+        # Divide the shuffled list into groups of size k
+        groups = [shuffled_agents[i:i + k] for i in range(0, len(shuffled_agents), k)]
+
+        agents_dict = {}  # Dictionary to store the result
+        agents_index = 0  # Running integer for meeting indices
+        for group in groups:
+            agents_dict[agents_index] = group
+        return agents_dict
+
+
+
+        #sparse_random_uniform_cost_function()
+    def create_neighbors(self):
+        pass
+
+
+
+    def allocate_min_amount_per_meet(self,min_amount_per_meet,meetings_per_agent_dict_copy,agents_in_meeting_dict):
+        for agent in meetings_per_agent_dict_copy.values():
+            meeting_indexes=[]
+            for meeting_per_agent in agent:
+                if self.there_is_min_amount_per_meet(min_amount_per_meet,agents_in_meeting_dict):
+                    return
+                # Find the list with the minimum size in agents_in_meeting_dict
+                min_size = min(len(v) for v in agents_in_meeting_dict.values())
+                min_keys = [k for k, v in agents_in_meeting_dict.items() if len(v) == min_size]
+
+                # Randomly allocate the agent to one of the smallest lists
+                while True:
+                    chosen_meeting = self.rnd_agents_per_meet.choice(min_keys)
+                    if chosen_meeting not in meeting_indexes:
+                        meeting_indexes.append(chosen_meeting)
+                        break
+                agents_in_meeting_dict[chosen_meeting].append(meeting_per_agent)
+
+    def there_is_min_amount_per_meet(self, min_amount_per_meet, agents_in_meeting_dict):
+        for

@@ -2,8 +2,8 @@ import copy
 import random
 from collections import defaultdict
 from itertools import product
+from Globals_ import *
 
-from problems import DCOP, Constraint
 
 
 class Query:
@@ -41,7 +41,7 @@ class Query:
 
 
 class QueryGenerator:
-    def __init__(self, dcop: DCOP, seed, num_variables, num_values, with_connectivity_constraint):
+    def __init__(self, dcop, seed, num_variables, num_values, with_connectivity_constraint):
         self.id_ = seed
         self.seed_ = (1+seed)*17+(1+dcop.dcop_id)*18
         self.rnd = random.Random(self.seed_ )
@@ -234,6 +234,5 @@ class XDCOP:
         self.dcop = dcop
         self.query = query
         self.explanation = Explanation(query)
-
 
 

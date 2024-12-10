@@ -1,258 +1,140 @@
 import tkinter as tk
+
+from Globals_ import *
 from tkinter import ttk, messagebox
 
+from XDCOPS import *
 # Example choices for DCOP type and Algorithm
 from enums import DcopType, Algorithm
-from problems import DCOP_RandomUniform, DCOP_GraphColoring, DCOP
-
-dcop_types = ["Graph Coloring", "Type2", "Type3"]
-algorithms = ["Branch and Bound", "Algorithm2", "Algorithm3"]
-dcop_type = None
-algorithm = None
-A = None
-D = None
-seed = None
-
-# Global variables to store user's input
-dcop_type_var = None
-algorithm_var = None
-agents_scale = None
-domain_scale = None
-seed_entry = None
-
-user_dcop_type = None
-user_amount_agents = None
-user_domain = None
-user_seed_number = None
-user_algorithm = None
-selected_neighbors = None
-selected_agent = None
-
-def initialize_shared_variables(root):
-    global dcop_type_var, algorithm_var, agents_scale, seed_entry, domain_scale
-    dcop_type_var = tk.StringVar(value=dcop_types[0])
-    algorithm_var = tk.StringVar(value=algorithms[0])
-    agents_scale = tk.Scale(root, from_=2, to=50, orient=tk.HORIZONTAL)
-    agents_scale.set(10)
-    domain_scale = tk.Scale(root, from_=2, to=50, orient=tk.HORIZONTAL)
-    domain_scale.set(3)
-    seed_entry = tk.Entry(root)
-    seed_entry.insert(0, "0")  # Set default value to 0
-
-
-def create_main_window():
-    root = tk.Tk()
-    root.title("DCOP Configuration")
-
-    initialize_shared_variables(root)
-    add_dcop_type_section(root)
-    add_amount_agents_section(root)
-    add_amount_domain_section(root)
-    add_seed_number_section(root)
-    add_algorithm_section(root)
-    add_submit_button(root)
-
-    return root
-
-
-def add_dcop_type_section(root):
-    global dcop_type_var
-    tk.Label(root, text="Type of DCOP:").grid(row=0, column=0, padx=10, pady=5, sticky='e')
-    dcop_type_menu = ttk.Combobox(root, textvariable=dcop_type_var, values=dcop_types)
-    dcop_type_menu.grid(row=0, column=1, padx=10, pady=5)
-
-
-def add_amount_agents_section(root):
-    global agents_scale
-    tk.Label(root, text="Amount of Agents (2-50):").grid(row=1, column=0, padx=10, pady=5, sticky='e')
-    agents_scale.grid(row=1, column=1, padx=10, pady=5)
-
-
-def add_amount_domain_section(root):
-    global domain_scale
-    tk.Label(root, text="Domain Size (2-50):").grid(row=2, column=0, padx=10, pady=5, sticky='e')
-    domain_scale.grid(row=2, column=1, padx=10, pady=5)
-
-
-def add_seed_number_section(root):
-    global seed_entry
-    tk.Label(root, text="Seed Number:").grid(row=3, column=0, padx=10, pady=5, sticky='e')
-    seed_entry.grid(row=3, column=1, padx=10, pady=5)
-
-
-def add_algorithm_section(root):
-    global algorithm_var
-    tk.Label(root, text="Algorithm:").grid(row=4, column=0, padx=10, pady=5, sticky='e')
-    algorithm_menu = ttk.Combobox(root, textvariable=algorithm_var, values=algorithms)
-    algorithm_menu.grid(row=4, column=1, padx=10, pady=5)
-
-
-def add_submit_button(root):
-    tk.Button(root, text="Submit", command=lambda: submit(root)).grid(row=5, columnspan=2, pady=20)
-
-
-def submit(root):
-    global user_dcop_type, user_amount_agents, user_domain, user_seed_number, user_algorithm
-
-    user_dcop_type = dcop_type_var.get()
-    user_amount_agents = agents_scale.get()
-    user_domain = domain_scale.get()
-    user_seed_number = seed_entry.get()
-    user_algorithm = algorithm_var.get()
-
-    if not validate_seed_number(user_seed_number):
-        return
-
-    #show_collected_information()
-
-    root.destroy()
-
-def validate_seed_number(seed_number):
-    try:
-        seed_int = int(seed_number)
-        if seed_int >= 0:
-            return True
-        else:
-            messagebox.showerror("Input Error", "Seed number must be a positive integer")
-            return False
-    except ValueError:
-        messagebox.showerror("Input Error", "Seed number must be an integer")
-        return False
-
-
-def show_collected_information():
-    result = (f"DCOP Type: {user_dcop_type}\n"
-              f"Amount of Agents: {user_amount_agents}\n"
-              f"Domain Size: {user_domain}\n"
-              f"Seed Number: {user_seed_number}\n"
-              f"Algorithm: {user_algorithm}")
-    messagebox.showinfo("Submitted Information", result)
-
-
-def open_hello_world_window():
-    new_window = tk.Tk()
-    new_window.title("Hello World")
-    tk.Label(new_window, text="Hello, World!").pack(padx=50, pady=50)
-    new_window.mainloop()
-
-
-def init_dcop_type():
-    if user_dcop_type == "Graph Coloring":
-        global dcop_type
-        dcop_type = DcopType.graph_coloring
+from problems import *
+import plotly.graph_objects as go
 
 
 
-def init_algorithm_type():
-    if user_algorithm == "Branch and Bound":
-        global algorithm
-        algorithm = Algorithm.branch_and_bound
 
-
-
-def init_globals():
-    init_dcop_type()
-    init_algorithm_type()
-    global A,D,seed
-    A = user_amount_agents
-    D = user_domain
-    seed = int(user_seed_number)
-
-
-# Create the main window and run the application
-def create_dcop():
+def get_DCOP(i,algorithm,dcop_type,A = 50):
     if dcop_type == DcopType.sparse_random_uniform:
-        dcop_name = "Sparse Uniform"
-        return DCOP_RandomUniformSparse(seed, A, D, dcop_name, algorithm)
+        return DCOP_RandomUniform(i, A, sparse_D, "Sparse Uniform", algorithm,sparse_p1)
+    if dcop_type == DcopType.dense_random_uniform:
+        return DCOP_RandomUniform(i, A, dense_D, "Dense Uniform", algorithm,dense_p1)
     if dcop_type == DcopType.graph_coloring:
-        dcop_name = "Graph Coloring"
-        return DCOP_GraphColoring(seed, A, D, dcop_name, algorithm)
-
-def open_agent_input_window(dcop):
-    agent_window = tk.Tk()
-    agent_window.title("Agent Input")
-
-    tk.Label(agent_window, text="Which Agent are you?").grid(row=0, column=0, padx=10, pady=5, sticky='e')
-    agent_number = tk.Scale(agent_window, from_=1, to=user_amount_agents, orient=tk.HORIZONTAL)
-    agent_number.grid(row=0, column=1, padx=10, pady=5)
-
-    result_label = tk.Label(agent_window, text="")
-    result_label.grid(row=2, columnspan=2, pady=20)
-
-    see_results_button = tk.Button(agent_window, text="See Results",
-                                   command=lambda: on_see_results(agent_number, result_label, dcop, see_results_button))
-    see_results_button.grid(row=1, columnspan=2, pady=20)
-
-    agent_window.mainloop()
-
-def on_see_results(agent_number, result_label, dcop, button):
-    button.config(state=tk.DISABLED)  # Disable the button
-    show_agent_results(agent_number.get(), result_label, dcop)
-
-def get_selected_agent_obj(agent_number, dcop:DCOP):
-    for a in dcop.agents:
-        if a.id_ == agent_number:
-            return a
+        return DCOP_GraphColoring(i, A,graph_coloring_D, "Graph Coloring", algorithm)
+    if dcop_type == DcopType.meeting_scheduling:
+        return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_agent,
+                                        time_slots_D=time_slots_D, dcop_name="Meeting Schedualing",
+                                       algorithm = algorithm)
 
 
-def show_agent_results(agent_number, result_label, dcop):
-    agent = get_selected_agent_obj(agent_number, dcop)
-    global selected_agent
-    selected_agent = agent
-    result = "Results for A_" + str(agent_number) + "=" + str(agent.anytime_variable)
-    result_label.config(text=result)
-
-    # Example dictionary for demonstration purposes
-    result_dict = agent.anytime_context
-
-    # Create checkboxes for the result dictionary
-    checkboxes = create_checkboxes(result_label.master, result_dict)
-
-    def submit_and_get_results(button,window):
-        global selected_values
-        selected_values = process_selections(checkboxes, result_dict)
-
-        if not selected_values:
-            messagebox.showwarning("Selection Error", "You must select at least one checkbox.")
-        else:
-            #print("Selected results:", selected_values)
-            window.destroy()
-            button.config(state=tk.DISABLED)  # Disable the button after successful submission
-
-    # Add a button to process the selected checkboxes
-    submit_button = tk.Button(result_label.master, text="Submit Selections",
-                              command=lambda: submit_and_get_results(submit_button,result_label.master))
-    submit_button.grid(row=4 + len(result_dict), columnspan=2, pady=20)
+def get_dcop_and_solve():
+    dcop = get_DCOP(seed_dcop, algorithm, dcop_type, A)
+    if is_center_solver:
+        dcop.execute_center()
+    else:
+        dcop.execute_distributed()
+    return dcop
 
 
-def create_checkboxes(parent, result_dict):
-    tk.Label(parent, text="Get an explanation for your value, given the following selections:").grid(row=3,
-                                                                                                             columnspan=2,
-                                                                                                             pady=10)
-    checkboxes = {}
-    for idx, (key, value) in enumerate(result_dict.items()):
-        var = tk.BooleanVar()
-        checkbox = tk.Checkbutton(parent, text=f"A_{key}:{value}", variable=var)
-        checkbox.grid(row=4 + idx, columnspan=2, sticky='w', padx=20)
-        checkboxes[key] = var
-    return checkboxes
+def create_x_dcop():
+    query = QueryGenerator(dcop, seed_query, num_variables, num_values, with_connectivity_constraint).get_query()
+    return XDCOP(dcop, query)
 
 
-def process_selections(checkboxes, result_dict):
-    selected_checkboxes = {key: var.get() for key, var in checkboxes.items()}
-    ans = {k: v for k, v in result_dict.items() if selected_checkboxes[k]}
+def create_curves(ys,extra_infos,con_collections):
+    curves = []
+    for i in range(len(ys)):
+        y = ys[i]
+        infos = extra_infos[i]
+        name = con_collections[i]
+        curves.append({"y": y, "info": infos, "name": name})
+    return curves
+def create_graph_ui(x,ys,extra_infos,con_collections,y_title):
+    curves = create_curves(ys,extra_infos,con_collections)
 
-    return ans
+    # Create the figure
+    fig = go.Figure()
+
+    # Add curves in a loop
+    for curve in curves:
+        fig.add_trace(go.Scatter(
+            x=x,
+            y=curve["y"],
+            mode='lines+markers',
+            hovertemplate='<b>X:</b> %{x}<br><b>Y:</b> %{y}<br><b>Info:</b> %{text}',
+            text=curve["info"],
+            name=curve["name"]
+        ))
+
+    # Customize the layout
+    fig.update_layout(
+        title="Interactive Graph with Multiple Curves (Loop)",
+        xaxis_title="Constraint Count",
+        yaxis_title=y_title,
+        template="plotly_white",
+        legend_title="PA"
+    )
+
+
+
+    fig.write_html("my_interactive_graph.html")
+
+
+
+def get_data_for_cum_delta_from_sol(x_dcop):
+    cum_delta_from_solution_dict = x_dcop.explanation.cum_delta_from_solution_dict
+    sum_of_alternative_cost_dict = x_dcop.explanation.sum_of_alternative_cost_dict
+    con_collections = []
+    ys_sum_of_alternative = []
+    ys_cum_delta = []
+    extra_infos = []
+
+    for con_collection,dict_ in cum_delta_from_solution_dict.items():
+        x = []
+        counter = 0
+        con_collections.append(con_collection.__str__())
+        extra_info = []
+        y_cum_delta = []
+        y_sum_of_alternative=[]
+        for constraint, value in dict_.items():
+            x.append(counter)
+            counter += 1
+            y_cum_delta.append(value)
+            y_sum_of_alternative.append(sum_of_alternative_cost_dict[con_collection][constraint])
+            extra_info.append(constraint.__str__())
+        ys_cum_delta.append(y_cum_delta)
+        ys_sum_of_alternative.append(y_sum_of_alternative)
+        extra_infos.append(extra_info)
+
+    create_graph_ui(x=x,ys=ys_cum_delta,extra_infos=extra_infos,con_collections=con_collections, y_title="")
+    # Save the figure as a PDF file (optional)
+    print()
+
+    #ys = [10, 20, 30, 40, 50]
+    #extra_infos = ["Point A", "Point B", "Point C", "Point D", "Point E"]  # Extra data to show on hover
 
 if __name__ == '__main__':
+    ######################--------------------######################
+    seed_dcop=1
+    A = 5
+    dcop_type = DcopType.meeting_scheduling
+    is_center_solver = True
+    dcop = get_dcop_and_solve()
 
-    root = create_main_window()
-    root.mainloop()
-    init_globals()
-    dcop = create_dcop()
-    dcop.execute_distributed()
-    open_agent_input_window(dcop)
-    raise Exception("stop here")
-    explanations_per_domain = dcop.get_explaination(selected_agent.id_,selected_neighbors.keys())
+    # XDCOP
+    seed_query=1
+    num_variables = 2
+    num_values = 3
+    with_connectivity_constraint = True
+    x_dcop = create_x_dcop()
 
-    open_hello_world_window()
+    # explanation presentation
+    get_data_for_cum_delta_from_sol(x_dcop)
+
+    # Sample data
+
+
+
+
+
+
+
+
