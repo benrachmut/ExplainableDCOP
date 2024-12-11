@@ -351,14 +351,20 @@ class DCOP_MeetingSchedualing(DCOP):
         if meetings_per_agent>meetings:
             raise ValueError("meetings_per_agent>meetings")
 
-        self.rnd_meeting_per_agent = random.Random((id_+412)*47)
-        for _ in range(5):self.rnd_meeting_per_agent.random()
+        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
+        self.rnd_meeting_per_agent = random.Random((id_+412)*17)
+
+        for a in self.agents:
+            a.create_unary_costs(self.dcop_id)
+
+
+        for _ in range(5):
+            self.rnd_meeting_per_agent.random()
+            self.rnd_agents_per_meet.random()
 
         #----------
         self.meetings_per_agent_dict = self.divide_agents_to_groups(meetings_per_agent)
 
-        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
-        for _ in range(5): self.rnd_agents_per_meet.random()
 
         #----------
         self.agents_assigned_to_meetings_dict = self.get_agents_assigned_to_meetings_dict(meetings)
@@ -374,7 +380,7 @@ class DCOP_MeetingSchedualing(DCOP):
 
         self.create_inequality_neighbors()
         self.create_equality_neighbors()
-        self.create_unary_constraint()
+        #self.create_unary_constraint()
 
 
         #meeting_scheduling_must_be_non_equal_cost_function(rnd_cost: Random, a1, a2, d_a1, d_a2)

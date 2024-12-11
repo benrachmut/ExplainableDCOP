@@ -28,6 +28,15 @@ class Agent(ABC):
         self.local_clock = 0
         self.records = []
         self.records_dict = {}
+        self.unary_constraint = {}
+
+    def create_unary_costs(self,dcop_id):
+        rnd_pref_time = random.Random((self.id_+23)*17+(dcop_id)*97)
+        for _ in range(5): rnd_pref_time.randint(1,5)
+        pref_domain = rnd_pref_time.choice(self.domain)
+        self.unary_constraint = {}
+        for d in self.domain:
+            self.unary_constraint[d] =10*abs(d-pref_domain)
 
 
 

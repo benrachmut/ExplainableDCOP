@@ -105,7 +105,7 @@ time_slots_D=6
 
 def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
-        return a1.prefernce STOP HERE, WANT TO SOLVE THE UNARY CONSTRAINT
+        return a1.unary_constraint[d_a1]+a2.unary_constraint[d_a2]
     else:
         return None
 
@@ -383,7 +383,7 @@ def plot_dictionaries(dicts, colors, labels, amount_variables, legend_title,name
     plt.close()  # Close the plot to avoid display
 
 
-central_bnb_problem_details_debug = False
+central_bnb_problem_details_debug = True
 
 central_bnb_debug = False
 debug_draw_graph = True

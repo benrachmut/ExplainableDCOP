@@ -84,7 +84,10 @@ class Bnb_central:
         for other_agent,value in pa.items():
             if other_agent in current_agent.neighbors_agents_id:
                 neighbors_obj = current_agent.neighbors_obj_dict[other_agent]
-                sum +=neighbors_obj.get_cost(current_agent.id_,d, other_agent,value)
+                cost = neighbors_obj.get_cost(current_agent.id_, d, other_agent, value)
+                if cost is None:  # Skip infeasible assignments
+                    return float('inf')
+                sum +=cost
         return sum
 
     def sort_domain_by_cost(self,current_agent):
