@@ -97,14 +97,23 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 
 
 #*******************************************#
-# dcop_type = DcopType.meeting_schedualing
+# dcop_type = DcopType.meeting_scheduling
 #*******************************************#
 meetings = 4
 meetings_per_agent=2
 time_slots_D=6
 
+def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
+    if d_a1==d_a2:
+        return a1.prefernce STOP HERE, WANT TO SOLVE THE UNARY CONSTRAINT
+    else:
+        return None
 
-
+def meeting_scheduling_must_be_non_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
+    if d_a1==d_a2:
+        return None
+    else:
+        return 0
 
 class Constraint():
     def __init__(self, ap,cost):

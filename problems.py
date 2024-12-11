@@ -1,6 +1,7 @@
 import random
 import threading
 from operator import truediv
+from itertools import combinations
 
 from Algorithm_BnB import BranchAndBound
 from Agents import *
@@ -339,20 +340,59 @@ class DCOP_GraphColoring(DCOP):
 
 
 
+
+
 class DCOP_MeetingSchedualing(DCOP):
     def __init__(self,id_, A, meetings,meetings_per_agent,time_slots_D, dcop_name, algorithm):
-        if A*meetings_per_agent<meetings*2:
-            raise ValueError(A*meetings_per_agent<meetings*2)
         DCOP.__init__(self, id_, A*meetings_per_agent, time_slots_D, dcop_name, algorithm)
+
+        if A*meetings_per_agent<meetings*2  :
+            raise ValueError("A*meetings_per_agent<meetings*2")
+        if meetings_per_agent>meetings:
+            raise ValueError("meetings_per_agent>meetings")
+
         self.rnd_meeting_per_agent = random.Random((id_+412)*47)
         for _ in range(5):self.rnd_meeting_per_agent.random()
+
+        #----------
         self.meetings_per_agent_dict = self.divide_agents_to_groups(meetings_per_agent)
 
         self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
         for _ in range(5): self.rnd_agents_per_meet.random()
+
+        #----------
         self.agents_assigned_to_meetings_dict = self.get_agents_assigned_to_meetings_dict(meetings)
 
-        print()
+        self.agent_id_meetings_ids_dict = self.get_agent_id_meetings_ids_dict()
+        self.check_problem_correctness()
+        self.create_neighbors2()
+        #sparse_random_uniform_cost_function()
+    def create_neighbors(self):
+        pass
+
+    def create_neighbors2(self):
+
+        self.create_inequality_neighbors()
+        self.create_equality_neighbors()
+        self.create_unary_constraint()
+
+
+        #meeting_scheduling_must_be_non_equal_cost_function(rnd_cost: Random, a1, a2, d_a1, d_a2)
+
+        #meeting_scheduling_must_be_equal_cost_function(rnd_cost: Random, a1, a2, d_a1, d_a2)
+    def check_problem_correctness(self):
+        for agent_id,meetings_ids in self.agent_id_meetings_ids_dict.items():
+            if len(meetings_ids) != len(set(meetings_ids)):
+                raise Exception("Allocation of tasks is incorrect:"+str(meetings_ids))
+
+    def get_agent_id_meetings_ids_dict(self):
+        ans = {}
+        for agent_id,meetings_agents in self.meetings_per_agent_dict.items():
+            ans[agent_id] = []
+            for meeting_agent in meetings_agents:
+                meeting_id = self.get_id_of_meeting(meeting_agent)
+                ans[agent_id].append(meeting_id)
+        return ans
 
     def get_agents_assigned_to_meetings_dict(self,meetings):
         """
@@ -363,19 +403,16 @@ class DCOP_MeetingSchedualing(DCOP):
         """
 
         meetings_per_agent_dict_copy = {}
-        for i, agents in self.meetings_per_agent_dict.items():meetings_per_agent_dict_copy[i] = agents
+        for i, agents in self.meetings_per_agent_dict.items():
+            meetings_per_agent_dict_copy[i] = agents[:]
 
         agents_in_meeting_dict = {}  # Dictionary to store the result
         for meet_id in range(meetings):agents_in_meeting_dict[meet_id] = []
-
         self.allocate_min_amount_per_meet(2,meetings_per_agent_dict_copy,agents_in_meeting_dict)
-        # Iterate over the values of meetings_per_agent_dict_copy
-
-
+        self.allocate_the_rest_of_meetings(meetings_per_agent_dict_copy,agents_in_meeting_dict)
         return agents_in_meeting_dict
 
 
-        return
 
 
     def divide_agents_to_groups(self, k):
@@ -390,22 +427,26 @@ class DCOP_MeetingSchedualing(DCOP):
         agents_index = 0  # Running integer for meeting indices
         for group in groups:
             agents_dict[agents_index] = group
+            agents_index+=1
         return agents_dict
 
 
 
-        #sparse_random_uniform_cost_function()
-    def create_neighbors(self):
-        pass
+
 
 
 
     def allocate_min_amount_per_meet(self,min_amount_per_meet,meetings_per_agent_dict_copy,agents_in_meeting_dict):
-        for agent in meetings_per_agent_dict_copy.values():
+        indexes_to_delete = []
+        for index_meeting, meetings_of_agents in meetings_per_agent_dict_copy.items():
             meeting_indexes=[]
-            for meeting_per_agent in agent:
+            while len(meetings_of_agents)>0:
                 if self.there_is_min_amount_per_meet(min_amount_per_meet,agents_in_meeting_dict):
-                    return
+                    break
+                meeting = meetings_of_agents.pop(0)
+                if len(meetings_of_agents) == 0:
+                    indexes_to_delete.append(index_meeting)
+
                 # Find the list with the minimum size in agents_in_meeting_dict
                 min_size = min(len(v) for v in agents_in_meeting_dict.values())
                 min_keys = [k for k, v in agents_in_meeting_dict.items() if len(v) == min_size]
@@ -416,7 +457,45 @@ class DCOP_MeetingSchedualing(DCOP):
                     if chosen_meeting not in meeting_indexes:
                         meeting_indexes.append(chosen_meeting)
                         break
-                agents_in_meeting_dict[chosen_meeting].append(meeting_per_agent)
+                agents_in_meeting_dict[chosen_meeting].append(meeting)
+        for index_to_delete in indexes_to_delete:
+            del meetings_per_agent_dict_copy[index_to_delete]
 
     def there_is_min_amount_per_meet(self, min_amount_per_meet, agents_in_meeting_dict):
-        for
+        for agents in agents_in_meeting_dict.values():
+            if len(agents) < min_amount_per_meet:
+                return False
+        return True
+
+    def allocate_the_rest_of_meetings(self, meetings_per_agent_dict_copy,agents_in_meeting_dict):
+        for agent_index,meeting_agents in meetings_per_agent_dict_copy.items():
+            amount_to_allocate= len(meeting_agents)
+            random_indexes = self.rnd_meeting_per_agent.sample(list(agents_in_meeting_dict.keys()), amount_to_allocate)
+            for i in range (amount_to_allocate):
+                agents_in_meeting_dict[random_indexes[i]].append(meeting_agents[i])
+
+    def get_id_of_meeting(self, meeting_agent_input):
+        for meeting_id,meeting_agents in self.agents_assigned_to_meetings_dict.items():
+            for meeting_agent in meeting_agents:
+                if meeting_agent.id_ == meeting_agent_input.id_:
+                    return meeting_id
+
+    def create_inequality_neighbors(self):
+        for meeting_id,meeting_agents in self.meetings_per_agent_dict.items():
+            all_pairs = list(combinations(meeting_agents, 2))
+            for pair in all_pairs:
+                a1,a2 = [pair[0], pair[1]]
+                self.neighbors.append(Neighbors(a1, a2, meeting_scheduling_must_be_non_equal_cost_function, self.dcop_id))
+
+
+    def create_equality_neighbors(self):
+        for meeting_id, meeting_agents in self.agents_assigned_to_meetings_dict.items():
+            all_pairs = list(combinations(meeting_agents, 2))
+            for pair in all_pairs:
+                a1, a2 = [pair[0], pair[1]]
+                self.neighbors.append(
+                    Neighbors(a1, a2, meeting_scheduling_must_be_equal_cost_function, self.dcop_id))
+
+
+
+
