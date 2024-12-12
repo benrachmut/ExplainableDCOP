@@ -1,3 +1,5 @@
+import math
+import pickle
 import tkinter as tk
 
 from Globals_ import *
@@ -34,8 +36,14 @@ def get_dcop_and_solve():
     return dcop
 
 
-def create_x_dcop():
+def create_x_standard_dcop():
     query = QueryGenerator(dcop, seed_query, num_variables, num_values, with_connectivity_constraint).get_query()
+    return XDCOP(dcop, query)
+
+def create_x_MeetingSchedualing_dcop():
+
+    qg = QueryGeneratorScheduling(dcop, seed_query, num_meetings, num_alternative_slots, with_connectivity_constraint)
+    query =qg.get_query()
     return XDCOP(dcop, query)
 
 
@@ -47,7 +55,8 @@ def create_curves(ys,extra_infos,con_collections):
         name = con_collections[i]
         curves.append({"y": y, "info": infos, "name": name})
     return curves
-def create_graph_ui(x,ys,extra_infos,con_collections,y_title):
+
+def create_graph_ui(x,ys,extra_infos,con_collections,y_title,title):
     curves = create_curves(ys,extra_infos,con_collections)
 
     # Create the figure
@@ -66,7 +75,7 @@ def create_graph_ui(x,ys,extra_infos,con_collections,y_title):
 
     # Customize the layout
     fig.update_layout(
-        title="Interactive Graph with Multiple Curves (Loop)",
+        title=title,
         xaxis_title="Constraint Count",
         yaxis_title=y_title,
         template="plotly_white",
@@ -75,11 +84,11 @@ def create_graph_ui(x,ys,extra_infos,con_collections,y_title):
 
 
 
-    fig.write_html("my_interactive_graph.html")
+    fig.write_html(title.replace(":", "_")+".html")
 
 
 
-def get_data_for_cum_delta_from_sol(x_dcop):
+def get_data_for_cum_delta_from_sol(x_dcop,title):
     cum_delta_from_solution_dict = x_dcop.explanation.cum_delta_from_solution_dict
     sum_of_alternative_cost_dict = x_dcop.explanation.sum_of_alternative_cost_dict
     con_collections = []
@@ -87,6 +96,7 @@ def get_data_for_cum_delta_from_sol(x_dcop):
     ys_cum_delta = []
     extra_infos = []
 
+    inf_constraint_flag = False
     for con_collection,dict_ in cum_delta_from_solution_dict.items():
         x = []
         counter = 0
@@ -95,6 +105,8 @@ def get_data_for_cum_delta_from_sol(x_dcop):
         y_cum_delta = []
         y_sum_of_alternative=[]
         for constraint, value in dict_.items():
+            if constraint.cost == my_inf:
+                inf_constraint_flag = True
             x.append(counter)
             counter += 1
             y_cum_delta.append(value)
@@ -104,30 +116,68 @@ def get_data_for_cum_delta_from_sol(x_dcop):
         ys_sum_of_alternative.append(y_sum_of_alternative)
         extra_infos.append(extra_info)
 
-    create_graph_ui(x=x,ys=ys_cum_delta,extra_infos=extra_infos,con_collections=con_collections, y_title="")
-    # Save the figure as a PDF file (optional)
-    print()
+    is_y_log = inf_constraint_flag
+    y_title = "Cumulative Δ Cost"
 
-    #ys = [10, 20, 30, 40, 50]
-    #extra_infos = ["Point A", "Point B", "Point C", "Point D", "Point E"]  # Extra data to show on hover
+      # Controls the rate of decay
+
+
+    if is_y_log:
+        alpha = 0.1
+        ys_cum_delta = [[math.copysign(1 - math.exp(-alpha * abs(num)), num) for num in sublist] for sublist
+                                  in
+                                  ys_cum_delta]
+        ys_sum_of_alternative = [[math.copysign(1 - math.exp(-alpha * abs(num)), num) for num in sublist] for sublist
+                                  in
+                                  ys_sum_of_alternative]
+        y_title = f"Exponential Decay Transform (alpha={alpha}) of {y_title}"
+
+    create_graph_ui( x=x,ys=ys_cum_delta,extra_infos=extra_infos,con_collections=con_collections, y_title=y_title,title = title)
+    # Save the figure as a PDF file (optional)
+    #print()
+
+def get_name_of_exp(A, property="complete"):
+    return str(dcop_type.name) + "_" + property + "_agents" + str(A)
+
+def get_pickle_name(A, property="complete"):
+    return get_name_of_exp(A, property) + ".pkl"
+
+
+def get_dcops(A, property= "complete"):
+    pickle_name = get_pickle_name(A, property)
+    with open(pickle_name, "rb") as file:
+        return pickle.load(file)
+
 
 if __name__ == '__main__':
     ######################--------------------######################
     seed_dcop=1
-    A = 5
+    A = 4
     dcop_type = DcopType.meeting_scheduling
+    title = "A:"+str(A)+",dcop:"+str(dcop_type.name)+","
     is_center_solver = True
-    dcop = get_dcop_and_solve()
+    try:
+        dcop = get_dcops(A=A, property="complete")[0]
+    except:
+        dcop = get_dcop_and_solve()
 
     # XDCOP
     seed_query=1
-    num_variables = 2
-    num_values = 3
     with_connectivity_constraint = True
-    x_dcop = create_x_dcop()
+    if isinstance(dcop,DCOP_MeetingSchedualing) and special_generator_for_MeetingScheduling:
+        num_meetings = 2
+        num_alternative_slots = 2
+        x_dcop = create_x_MeetingSchedualing_dcop()
+        title += "meetings:"+str(num_meetings)+",alt_slots:"+str(num_alternative_slots)
+    else:
+        num_variables = 2
+        num_values = 2
+        x_dcop = create_x_standard_dcop()
+        title += "vars:"+str(num_variables)+"_values:"+str(num_values)
 
+    # XDCOP - scheduling
     # explanation presentation
-    get_data_for_cum_delta_from_sol(x_dcop)
+    get_data_for_cum_delta_from_sol(x_dcop,title)
 
     # Sample data
 

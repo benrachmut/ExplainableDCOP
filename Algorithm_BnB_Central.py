@@ -88,6 +88,14 @@ class Bnb_central:
                 if cost is None:  # Skip infeasible assignments
                     return float('inf')
                 sum +=cost
+
+
+            if current_agent.id_ in current_agent.neighbors_obj_dict:
+                neighbors_obj = current_agent.neighbors_obj_dict[current_agent.id_]
+                cost = neighbors_obj.get_cost(current_agent.id_, d, current_agent.id_, d)
+                sum += cost
+
+
         return sum
 
     def sort_domain_by_cost(self,current_agent):

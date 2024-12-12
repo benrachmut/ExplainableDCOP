@@ -3,6 +3,8 @@ import threading
 from operator import truediv
 from itertools import combinations
 
+from matplotlib.pyplot import connect
+
 from Algorithm_BnB import BranchAndBound
 from Agents import *
 from Algorithm_BnB_Central import Bnb_central
@@ -17,17 +19,26 @@ from collections import defaultdict
 class Neighbors():
     def __init__(self, a1:Agent, a2:Agent, cost_generator,dcop_id):
 
-        if a1.id_<a2.id_:
+
+        if a2 is None:
             self.a1 = a1
-            self.a2 = a2
-        else:
-            self.a1 = a2
             self.a2 = a1
+        else:
+            if a1.id_<a2.id_:
+                self.a1 = a1
+                self.a2 = a2
+            else:
+                self.a1 = a2
+                self.a2 = a1
 
         self.dcop_id = dcop_id
-        self.rnd_cost = random.Random((((dcop_id+1)+100)+((a1.id_+1)*1710)+((a2.id_*281)*13))*17)
-        for _ in range(5):
-            self.rnd_cost.random()
+
+        if a2 is not None:
+            self.rnd_cost = random.Random((((dcop_id+1)+100)+((a1.id_+1)*1710)+((a2.id_*281)*13))*17)
+        else:
+            self.rnd_cost = random.Random(((dcop_id+1)+100)+((a1.id_+1)*1710))
+
+        for _ in range(5):self.rnd_cost.random()
         self.cost_table = {}
         self.create_dictionary_of_costs(cost_generator)
 
@@ -68,14 +79,22 @@ class Neighbors():
             ap = (("A_"+str(second_agent_id_input), second_agent_variable), ("A_"+str(first_agent_id_input), first_agent_variable))
         cost = self.cost_table[ap]
         return ap,cost
+
     def create_dictionary_of_costs(self,cost_generator):
         for d_a1 in self.a1.domain:
-            for d_a2 in self.a2.domain:
-                first_tuple = ("A_"+str(self.a1.id_),d_a1)
-                second_tuple = ("A_"+str(self.a2.id_),d_a2)
-                ap = (first_tuple,second_tuple)
-                cost = cost_generator(self.rnd_cost,self.a1,self.a2,d_a1,d_a2)
+            if self.a2.id_== self.a1.id_:
+                first_tuple = ("A_" + str(self.a1.id_), d_a1)
+                second_tuple = ("A_" + str(self.a1.id_), d_a1)
+                ap = (first_tuple, second_tuple)
+                cost = cost_generator(self.rnd_cost, self.a1, None, d_a1, None)
                 self.cost_table[ap] = cost
+            else:
+                for d_a2 in self.a2.domain:
+                    first_tuple = ("A_"+str(self.a1.id_),d_a1)
+                    second_tuple = ("A_"+str(self.a2.id_),d_a2)
+                    ap = (first_tuple,second_tuple)
+                    cost = cost_generator(self.rnd_cost,self.a1,self.a2,d_a1,d_a2)
+                    self.cost_table[ap] = cost
 
 
 
@@ -372,20 +391,55 @@ class DCOP_MeetingSchedualing(DCOP):
         self.agent_id_meetings_ids_dict = self.get_agent_id_meetings_ids_dict()
         self.check_problem_correctness()
         self.create_neighbors2()
+        self.connect_agents_to_neighbors()
+        #unary_constraints =
+        #self.connect_unary_to_self(unary_constraints)
+
         #sparse_random_uniform_cost_function()
+
+    def get_same_time_slot_agents(self):
+        same_time_slot_agents = {}
+        for agent in self.agents:
+            value = agent.variable
+            if value not in same_time_slot_agents:
+                same_time_slot_agents[value] = []
+            same_time_slot_agents[value].append(agent)
+        return same_time_slot_agents
+    def get_complete_assignment(self):
+        if special_generator_for_MeetingScheduling:
+            self.complete_assignment = {}
+            same_time_slot_agents = self.get_same_time_slot_agents()
+            self.complete_assignment = self.map_meeting_to_time_slot(same_time_slot_agents)
+
+        else:
+            self.complete_assignment = DCOP.get_complete_assignment(self)
+
+
+        return self.complete_assignment
+
+    def map_meeting_to_time_slot(self,same_time_slot_agents):
+        ans = {}
+        for time_slot,meeting_agents in same_time_slot_agents.items():
+            meeting_ids = []
+            for agent in meeting_agents:
+                meeting_ids.append(self.get_meeting_id_for_meet_agent(agent))
+            if not all(x == meeting_ids[0] for x in meeting_ids):
+                raise Exception("all meetings id should be the same")
+
+            ans[meeting_ids[0]] = time_slot
+            #get_meeting_index_given_meeting_agents()
+        return ans
+
     def create_neighbors(self):
         pass
 
     def create_neighbors2(self):
-
         self.create_inequality_neighbors()
         self.create_equality_neighbors()
-        #self.create_unary_constraint()
+        self.create_unary_constraints()
 
 
-        #meeting_scheduling_must_be_non_equal_cost_function(rnd_cost: Random, a1, a2, d_a1, d_a2)
 
-        #meeting_scheduling_must_be_equal_cost_function(rnd_cost: Random, a1, a2, d_a1, d_a2)
     def check_problem_correctness(self):
         for agent_id,meetings_ids in self.agent_id_meetings_ids_dict.items():
             if len(meetings_ids) != len(set(meetings_ids)):
@@ -418,8 +472,16 @@ class DCOP_MeetingSchedualing(DCOP):
         self.allocate_the_rest_of_meetings(meetings_per_agent_dict_copy,agents_in_meeting_dict)
         return agents_in_meeting_dict
 
+    def get_meeting_id_of_agent(self,meeting_agent):
+        for meeting_id, meeting_agents in self.agents_assigned_to_meetings_dict.items():
+            if meeting_agent in meeting_agents:
+                return meeting_id
 
-
+    def get_meeting_id_of_agent_id(self,meeting_agent_id):
+        for meeting_id, meeting_agents in self.agents_assigned_to_meetings_dict.items():
+            for meeting_agent in meeting_agents:
+                if meeting_agent.id_ == meeting_agent_id:
+                    return meeting_id
 
     def divide_agents_to_groups(self, k):
         # Shuffle the agents list
@@ -487,11 +549,13 @@ class DCOP_MeetingSchedualing(DCOP):
                     return meeting_id
 
     def create_inequality_neighbors(self):
+
         for meeting_id,meeting_agents in self.meetings_per_agent_dict.items():
             all_pairs = list(combinations(meeting_agents, 2))
             for pair in all_pairs:
                 a1,a2 = [pair[0], pair[1]]
-                self.neighbors.append(Neighbors(a1, a2, meeting_scheduling_must_be_non_equal_cost_function, self.dcop_id))
+                n = Neighbors(a1, a2, meeting_scheduling_must_be_non_equal_cost_function, self.dcop_id)
+                self.neighbors.append(n)
 
 
     def create_equality_neighbors(self):
@@ -499,8 +563,28 @@ class DCOP_MeetingSchedualing(DCOP):
             all_pairs = list(combinations(meeting_agents, 2))
             for pair in all_pairs:
                 a1, a2 = [pair[0], pair[1]]
-                self.neighbors.append(
-                    Neighbors(a1, a2, meeting_scheduling_must_be_equal_cost_function, self.dcop_id))
+                self.neighbors.append(Neighbors(a1, a2, meeting_scheduling_must_be_equal_cost_function, self.dcop_id))
+
+    def create_unary_constraints(self):
+        for a1 in self.agents:
+            n = Neighbors(a1, None, meeting_scheduling_unary_constraint_cost_function, self.dcop_id)
+            self.neighbors.append(n)
+
+
+
+
+    def get_meeting_id_for_meet_agent(self, agent):
+        for meeting_id,meeting_agents_in_meet in self.agents_assigned_to_meetings_dict.items():
+            for other in meeting_agents_in_meet:
+                if other.id_ ==  agent.id_:
+                    return meeting_id
+
+    def connect_unary_to_self(self, unary_constraints):
+        for n in unary_constraints:
+            n.a1.neighbors_obj.append(n)
+            n.a1.neighbors_agents_id.append(n.a1.id_)
+            n.a1.neighbors_obj_dict[n.a1.id_] = n
+
 
 
 

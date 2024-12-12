@@ -26,6 +26,8 @@ algorithm = Algorithm.branch_and_bound
 amount_agents = [8]
 is_complete = None
 incomplete_iterations = 1000
+my_inf = 1000
+special_generator_for_MeetingScheduling = True
 
 #### DCOPS_INPUT ####
 #*******************************************#
@@ -99,21 +101,25 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 #*******************************************#
 # dcop_type = DcopType.meeting_scheduling
 #*******************************************#
-meetings = 4
+meetings = 3
 meetings_per_agent=2
-time_slots_D=6
+time_slots_D=4
 
 def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
-        return a1.unary_constraint[d_a1]+a2.unary_constraint[d_a2]
+        return 0
     else:
-        return None
+        return my_inf
 
 def meeting_scheduling_must_be_non_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
-        return None
+        return my_inf
     else:
         return 0
+
+def meeting_scheduling_unary_constraint_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
+    return a1.unary_constraint[d_a1]
+
 
 class Constraint():
     def __init__(self, ap,cost):
@@ -383,9 +389,9 @@ def plot_dictionaries(dicts, colors, labels, amount_variables, legend_title,name
     plt.close()  # Close the plot to avoid display
 
 
-central_bnb_problem_details_debug = True
+central_bnb_problem_details_debug = False
 
-central_bnb_debug = False
+central_bnb_debug = True
 debug_draw_graph = True
 debug_DFS_tree = True
 debug_DFS_draw_tree = False
