@@ -122,17 +122,17 @@ def get_data_for_cum_delta_from_sol(x_dcop,title):
       # Controls the rate of decay
 
 
-    if is_y_log:
-        alpha = 0.1
-        ys_cum_delta = [[math.copysign(1 - math.exp(-alpha * abs(num)), num) for num in sublist] for sublist
-                                  in
-                                  ys_cum_delta]
-        ys_sum_of_alternative = [[math.copysign(1 - math.exp(-alpha * abs(num)), num) for num in sublist] for sublist
-                                  in
-                                  ys_sum_of_alternative]
-        y_title = f"Exponential Decay Transform (alpha={alpha}) of {y_title}"
+    #if is_y_log:
+        #alpha = 0.1
+        #ys_cum_delta = [[math.copysign(1 - math.exp(-alpha * abs(num)), num) for num in sublist] for sublist
+         #                         in
+         #                         ys_cum_delta]
+        #ys_sum_of_alternative = [[math.copysign(1 - math.exp(-alpha * abs(num)), num) for num in sublist] for sublist
+        #                          in
+        #                          ys_sum_of_alternative]
+        #y_title = f"Exponential Decay Transform (alpha={alpha}) of {y_title}"
 
-    create_graph_ui( x=x,ys=ys_cum_delta,extra_infos=extra_infos,con_collections=con_collections, y_title=y_title,title = title)
+    create_graph_ui( x=x,ys=ys_cum_delta,extra_infos=extra_infos,con_collections=con_collections, y_title=y_title,title = title+"__")
     # Save the figure as a PDF file (optional)
     #print()
 

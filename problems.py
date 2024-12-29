@@ -119,55 +119,7 @@ class Neighbors():
         else:
             return self.a1.id_
 
-class UnboundedBuffer():
 
-    def __init__(self):
-        self.buffer = []
-
-    def insert(self, list_of_msgs):
-        for msg in list_of_msgs:
-            self.buffer.append(msg)
-
-    def extract(self):
-
-        ans = []
-        for msg in self.buffer:
-            if msg is None:
-                return None
-            else:
-                ans.append(msg)
-        self.buffer = []
-        return ans
-
-    def is_buffer_empty(self):
-
-        return len(self.buffer) == 0
-
-class Mailer():
-    def __init__(self,agents):
-        self.inbox = UnboundedBuffer()
-        self.agents_outbox = {}
-        for a in agents:
-            outbox = UnboundedBuffer()
-            self.agents_outbox[a.id_] = outbox
-            a.inbox = outbox
-            a.outbox = self.inbox
-
-    def place_messages_in_agents_inbox(self):
-        msgs_to_send = self.inbox.extract()
-        if len(msgs_to_send) == 0: return True
-        msgs_by_receiver_dict = self.create_msgs_by_receiver_dict(msgs_to_send)
-        for receiver,msgs_list in msgs_by_receiver_dict.items():
-            self.agents_outbox[receiver].insert(msgs_list)
-
-    def create_msgs_by_receiver_dict(self,msgs_to_send):
-        msgs_by_receiver_dict = {}
-        for msg in msgs_to_send:
-            receiver = msg.receiver
-            if receiver not in msgs_by_receiver_dict.keys():
-                msgs_by_receiver_dict[receiver] = []
-            msgs_by_receiver_dict[receiver].append(msg)
-        return msgs_by_receiver_dict
 
 class DCOP(ABC):
     def __init__(self,id_,A,D,dcop_name,algorithm):
