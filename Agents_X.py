@@ -31,10 +31,9 @@ class AgentX(ABC):
         return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
 
 
-    def execute_iteration(self,global_clock):
-        self.global_clock = global_clock
+    def execute_iteration(self):
+
         msgs = self.inbox.extract()
-        self.atomic_operations = 0
 
         if len(msgs)!=0:
             self.update_msgs_in_context(msgs)
@@ -49,7 +48,6 @@ class AgentX(ABC):
     def __str__(self):
         return "A_"+str(self.id_)
 
-    @abstractmethod
     def initialize(self):
         sender = self.id_
         information = self.variable
@@ -61,7 +59,7 @@ class AgentX(ABC):
 
             msg = Msg(sender,receiver,information,msg_type,bandwidth,NCLO = self.atomic_operations )
             msg_list.append(msg)
-        self.outbox.append(msg_list)
+        self.outbox.insert(msg_list)
 
 
 
@@ -90,8 +88,8 @@ class AgentX_Query(AgentX,ABC):
         AgentX.__init__(self, id_, variable, domain, neighbors_agents_id)
         self.query = query
 
-    @abstractmethod
-    def is_termination_condition_met(self): pass
+    def is_termination_condition_met(self): return False
+
 
 class AgentX_Query_BroadcastNaive(AgentX_Query):
     def __init__(self,id_,variable,domain,neighbors_agents_id,query):
@@ -100,9 +98,32 @@ class AgentX_Query_BroadcastNaive(AgentX_Query):
             if agent_in_query not in self.neighbors_agents_id:
                 self.neighbors_agents_id.append(agent_in_query)
 
+    def update_msgs_in_context(self,msgs): pass
 
+    def is_compute_in_this_iteration(self): pass
+
+    def compute(self): pass
+
+    def send_msgs(self): pass
+
+    def change_status_after_update_msgs_in_context(self, msgs): pass
+
+    def change_status_after_send_msgs(self):pass
 
 
 class AgentX_Broadcast(AgentX):
     def __init__(self,id_,variable,domain,neighbors_agents_id):
         AgentX.__init__(self,id_,variable,domain,neighbors_agents_id)
+
+
+    def update_msgs_in_context(self,msgs): pass
+
+    def is_compute_in_this_iteration(self): pass
+
+    def compute(self): pass
+
+    def send_msgs(self): pass
+
+    def change_status_after_update_msgs_in_context(self, msgs): pass
+
+    def change_status_after_send_msgs(self):pass

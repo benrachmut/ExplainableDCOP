@@ -226,13 +226,15 @@ class Mailer():
     def place_messages_in_agents_inbox(self):
         msgs_to_send = self.inbox.extract()
         max_nclo = max(msgs_to_send, key=lambda msg: msg.NCLO).NCLO
-
+        total_bandwith =0
+        for msg in msgs_to_send:
+            total_bandwith +=msg.bandwidth
         if len(msgs_to_send) == 0:
             return True
         msgs_by_receiver_dict = self.create_msgs_by_receiver_dict(msgs_to_send)
         for receiver,msgs_list in msgs_by_receiver_dict.items():
             self.agents_outbox[receiver].insert(msgs_list)
-        return max_nclo
+        return [max_nclo,total_bandwith]
 
     def create_msgs_by_receiver_dict(self,msgs_to_send):
         msgs_by_receiver_dict = {}

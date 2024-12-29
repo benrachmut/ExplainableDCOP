@@ -342,6 +342,7 @@ class Explanation():
         self.explanation_type = explanation_type
         self.global_clock = 0
         self.iteration = 0
+        self.total_bandwidth = 0
 
 
         if explanation_type == ExplanationType.Centralized:
@@ -363,16 +364,17 @@ class Explanation():
         self.agents_init()
         while not self.query_agent.is_termination_condition_met():
             self.iteration+=1
-            max_nclo = self.mailer.place_messages_in_agents_inbox()
-            if isinstance(max_nclo,bool) : break
-            self.global_clock += max_nclo
-            self.agents_perform_iteration(self.global_clock)
+            mailer_feedback = self.mailer.place_messages_in_agents_inbox()
+            if isinstance(mailer_feedback,bool) : break
+            self.global_clock += mailer_feedback[0]
+            self.total_bandwidth +=mailer_feedback[1]
+            self.agents_perform_iteration()
 
 
 
-    def agents_perform_iteration(self,global_clock):
+    def agents_perform_iteration(self):
         for a in self.x_agents:
-            a.execute_iteration(global_clock)
+            a.execute_iteration()
 
     def collect_constraints(self):
         ans = []
