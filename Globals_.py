@@ -180,11 +180,13 @@ def draw_dcop_graph(dcop):
 
 class Msg():
 
-    def __init__(self, sender, receiver, information,msg_type):
+    def __init__(self, sender, receiver, information,msg_type,bandwidth=0,NCLO = 0):
         self.sender = sender
         self.receiver = receiver
         self.information = information
         self.msg_type = msg_type
+        self.bandwidth = bandwidth
+        self.NCLO =NCLO
 
 class UnboundedBuffer():
 
@@ -211,6 +213,7 @@ class UnboundedBuffer():
         return len(self.buffer) == 0
 
 class Mailer():
+
     def __init__(self,agents):
         self.inbox = UnboundedBuffer()
         self.agents_outbox = {}
@@ -222,10 +225,14 @@ class Mailer():
 
     def place_messages_in_agents_inbox(self):
         msgs_to_send = self.inbox.extract()
-        if len(msgs_to_send) == 0: return True
+        max_nclo = max(msgs_to_send, key=lambda msg: msg.NCLO).NCLO
+
+        if len(msgs_to_send) == 0:
+            return True
         msgs_by_receiver_dict = self.create_msgs_by_receiver_dict(msgs_to_send)
         for receiver,msgs_list in msgs_by_receiver_dict.items():
             self.agents_outbox[receiver].insert(msgs_list)
+        return max_nclo
 
     def create_msgs_by_receiver_dict(self,msgs_to_send):
         msgs_by_receiver_dict = {}

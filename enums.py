@@ -2,7 +2,6 @@ from enum import Enum
 
 class ExplanationType(Enum):
     Centralized = 1
-
     BroadcastNaive = 2
 
 

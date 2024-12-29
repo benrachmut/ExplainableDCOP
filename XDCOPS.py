@@ -339,17 +339,20 @@ class ConstraintCollection():
 class Explanation():
     def __init__(self, query,explanation_type,dcop):
         self.query = query
+        self.explanation_type = explanation_type
+        self.global_clock = 0
+        self.iteration = 0
+
+
         if explanation_type == ExplanationType.Centralized:
-            self.constraints_collections = self.collect_constraints()
-            self.cum_delta_from_solution_dict,self.sum_of_alternative_cost_dict,self.infeasible_pa = self.get_cumulative_delta_from_solution_dict()
-            self.min_constraint_collection = min(self.constraints_collections,key=lambda x: x.alternative_unique_constraints_cost)
-            self.min_cum_delta_from_solution = self.cum_delta_from_solution_dict[self.min_constraint_collection]
-        if explanation_type == ExplanationType.BroadcastNaive:
+            self.get_centralized_explanation()
+
+        else:# explanation_type == ExplanationType.BroadcastNaive:
             self.query_agent,query_agent_id = self.create_query_x_agent(self.query.agent)
             self.x_agents = self.create_x_agents(dcop,query_agent_id) # all
             self.x_agents.append(self.query_agent)
             self.mailer = Mailer(self.x_agents)
-
+            self.execute_distributed()
     def agents_init(self):
         for a in self.x_agents:
             a.initialize()
@@ -358,13 +361,18 @@ class Explanation():
 
         self.global_clock = 0
         self.agents_init()
-        while not self.all_agents_complete():
-            self.global_clock = self.global_clock + 1
-            is_empty = self.mailer.place_messages_in_agents_inbox()
-            if is_empty:break
+        while not self.query_agent.is_termination_condition_met():
+            self.iteration+=1
+            max_nclo = self.mailer.place_messages_in_agents_inbox()
+            if isinstance(max_nclo,bool) : break
+            self.global_clock += max_nclo
             self.agents_perform_iteration(self.global_clock)
 
 
+
+    def agents_perform_iteration(self,global_clock):
+        for a in self.x_agents:
+            a.execute_iteration(global_clock)
 
     def collect_constraints(self):
         ans = []
@@ -406,7 +414,9 @@ class Explanation():
 
     def create_query_x_agent(self, agent):
         id_,variable,domain,neighbors_agents_id = self.get_info_for_x_agent(agent)
-        return AgentX_Query_BroadcastNaive(id_,variable,domain,neighbors_agents_id,self.query.variables_in_query),id_
+        if self.explanation_type == ExplanationType.BroadcastNaive:
+            ax = AgentX_Query_BroadcastNaive(id_,variable,domain,neighbors_agents_id,self.query)
+        return ax,id_
 
 
     def get_info_for_x_agent(self, agent):
@@ -421,8 +431,17 @@ class Explanation():
         for agent in dcop.agents:
             id_, variable, domain, neighbors_agents_id = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
-                ans.append( AgentX_Broadcast(id_, variable, domain, neighbors_agents_id))
+                if self.explanation_type == ExplanationType.BroadcastNaive:
+                    ax = AgentX_Broadcast(id_, variable, domain, neighbors_agents_id)
+
+                ans.append(ax)
         return ans
+
+    def get_centralized_explanation(self):
+        self.constraints_collections = self.collect_constraints()
+        self.cum_delta_from_solution_dict, self.sum_of_alternative_cost_dict, self.infeasible_pa = self.get_cumulative_delta_from_solution_dict()
+        self.min_constraint_collection = min(self.constraints_collections,key=lambda x: x.alternative_unique_constraints_cost)
+        self.min_cum_delta_from_solution = self.cum_delta_from_solution_dict[self.min_constraint_collection]
 
 
 class XDCOP:
