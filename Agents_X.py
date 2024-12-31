@@ -8,6 +8,7 @@ from Globals_ import *
 class MsgTypeX(Enum):
     solution_value = 1
     solution_request = 2
+    AgentXQTerminate = 3
 
 
 class AgentXStatues(Enum):
@@ -17,6 +18,8 @@ class AgentXStatues(Enum):
     request_solution_constraints = 4
     request_self_solution_and_alternatives = 5
     request_solution_values = 6
+    send_solution_value = 7
+
 
 class CostComparisonCounter:
     def __init__(self):
@@ -68,10 +71,11 @@ class AgentX(ABC):
         self.outbox = None
         self.local_clock = 0
         self.atomic_operations = 0
-        self.statues = None
+        self.statues = []
         self.solution_constraints = {}
         self.alternative_constraints = {}
 
+        self.who_asked_for_solution_value=[]
     def get_general_info_for_records(self):
         return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
 
@@ -82,18 +86,21 @@ class AgentX(ABC):
 
         if len(msgs)!=0:
             self.prev_status = copy.deepcopy(self.statues)
+            self.update_local_clock(msgs)
             self.update_msgs_in_context(msgs)
             self.change_status_after_update_msgs_in_context(msgs)
             self.print_after_statues_after_receive_msgs()
             if self.is_compute_in_this_iteration():
                 self.atomic_operations = self.compute()
-                self.print_after_compute()
-                if self.atomic_operations is None: raise Exception("compute must return NCLO count")
                 self.local_clock += self.atomic_operations
-                self.send_msgs()
-                self.prev_status = copy.deepcopy(self.statues)
-                self.change_status_after_send_msgs()
-                self.print_after_send_msgs()
+                self.print_after_compute()
+
+                if self.atomic_operations is None: raise Exception("compute must return NCLO count")
+
+            self.send_msgs()
+            self.prev_status = copy.deepcopy(self.statues)
+            self.change_status_after_send_msgs()
+            self.print_after_send_msgs()
 
             self.atomic_operations = 0
 
@@ -101,12 +108,23 @@ class AgentX(ABC):
         return "A_"+str(self.id_)
 
 
-
+    ########## UPDATE INFO FROM MESSAGE
     def update_solution_value_in_local_view(self,msg):
         if msg.msg_type == MsgTypeX.solution_value:
             sender = msg.sender
             info = msg.information
             self.local_view[sender] = info
+
+    def update_solution_value_request_data(self,msg):
+        self.who_asked_for_solution_value.append(msg.sender)
+
+    ######### send msgs
+    def send_solution_value(self,msgs_to_send):
+
+        if AgentXStatues.send_solution_value in self.statues:
+            for n_id in self.who_asked_for_solution_value:
+                msgs_to_send.append( Msg(sender = self.id_, receiver=n_id, information=self.variable,msg_type = MsgTypeX.solution_value,bandwidth=1,NCLO = self.local_clock))
+            self.who_asked_for_solution_value = []
 
     def local_view_has_nones(self):
         for v in self.local_view.values():
@@ -124,7 +142,10 @@ class AgentX(ABC):
             cost = n_obj.get_cost(my_id, my_value, n_id, n_value)
             total_cost += cost
             constraints.append(Constraint(my_id,my_value,n_id,n_value,cost))
-        return total_cost,constraints
+
+        self.solution_constraints[self.id_] = constraints
+        return total_cost
+
 
     def get_variables_in_alternative_partial_assignment(self):
         ans = []
@@ -160,7 +181,8 @@ class AgentX(ABC):
                 total_cost+=total_cost
                 constraints.append(Constraint(self.id_,my_val,n_id,n_val,cost))
             flag_other  =False
-        return total_cost, constraints
+        self.alternative_constraints[self.id_] = constraints
+        return total_cost
 
     @abstractmethod
     def initialize(self):
@@ -170,8 +192,15 @@ class AgentX(ABC):
     @abstractmethod
     def update_msgs_in_context(self,msgs): pass
 
-    @abstractmethod
-    def is_compute_in_this_iteration(self): pass
+    def is_compute_in_this_iteration(self):
+        if AgentXStatues.request_solution_constraints in self.statues:
+            return True
+        if AgentXStatues.request_self_solution_and_alternatives in self.statues:
+            return True
+        if AgentXStatues.send_solution_value in self.statues:
+            return True
+        else:
+            False
 
     @abstractmethod
     def compute(self): pass
@@ -186,31 +215,49 @@ class AgentX(ABC):
     def change_status_after_send_msgs(self):pass
 
 
-    def compute_request_solution_constraints(self):
-            total_cost,constraints_list = self.get_self_solution_constraints()
-            self.solution_constraints[self.id_] = constraints_list
-            NCLO_count = len(constraints_list)
-            return total_cost,NCLO_count*2
+    #def compute_request_solution_constraints(self):
+    #        total_cost,constraints_list = self.get_self_solution_constraints()
+    #        self.solution_constraints[self.id_] = constraints_list
+    #        NCLO_count = len(constraints_list)
+    #        return total_cost,NCLO_count*2
 
-    def compute_request_alternative_constraints(self):
-            total_cost,constraints_list = self.get_self_alternative_constraints()
-            self.alternative_constraints[self.id_] = constraints_list
-            NCLO_count = len(constraints_list)
-            return NCLO_count
+    #def compute_request_alternative_constraints(self):
+    #        total_cost,constraints_list = self.get_self_alternative_constraints()
+    #        self.alternative_constraints[self.id_] = constraints_list
+    #        NCLO_count = len(constraints_list)
+    #        return NCLO_count
 
 
 
     def print_after_statues_after_receive_msgs(self):
+        prev_status = self.get_statues_from_list(self.prev_status)
+        current_status = self.get_statues_from_list(self.statues)
         if distributed_explanation_debug:
-            print("A_"+str(self.id_),"statues was",self.statues.name,"and now is", self.statues.name)
+            print("A_"+str(self.id_),"statues was",prev_status,"and now is", current_status)
 
     def print_after_compute(self):
         if distributed_explanation_debug:
             print("A_" + str(self.id_), "compute took",  self.atomic_operations, "oporations, local time is:",self.local_clock)
 
     def print_after_send_msgs(self):
+        prev_status = self.get_statues_from_list(self.prev_status)
+        current_status = self.get_statues_from_list(self.statues)
         if distributed_explanation_debug:
-            print("A_" + str(self.id_), "statues was", self.statues.name, "and now is", self.statues.name+",local time is:",self.local_clock)
+            print("A_" + str(self.id_), "statues was", prev_status, "and now is",current_status+",local time is:",self.local_clock)
+
+    def get_statues_from_list(self, stat_list):
+        ans = ""
+        for i in stat_list:
+            if len(ans)==0:
+                ans += i.name
+            else:
+                ans+=(","+i.name)
+        return ans
+
+    def update_local_clock(self, msgs):
+        max_nclo = max(msgs,key= lambda x: x.NCLO).NCLO
+        if max_nclo> self.local_clock:
+            self.local_clock = max_nclo
 
 
 class AgentX_Query(AgentX,ABC):
@@ -220,9 +267,9 @@ class AgentX_Query(AgentX,ABC):
         self.alternative_partial_assignment= query.alternative_partial_assignments
         self.solution_cost = 0
         self.is_done = False
-        self.solution_constraints_for_explanations = []
         self.alternative_constraints_for_explanations = []
-        self.statues = AgentXStatues.wait_for_solution_value
+        self.alternative_constraints_for_explanations = []
+        self.statues.append(AgentXStatues.wait_for_solution_value)
 
     def is_termination_condition_met(self): return self.is_done
 
@@ -258,51 +305,92 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
     def update_msgs_in_context(self,msgs):
         for msg in msgs:
+            self.update_solution_value_request_data(msg)
             self.update_solution_value_in_local_view(msg)
 
     def change_status_after_update_msgs_in_context(self, msgs):
-        if self.statues == AgentXStatues.wait_for_solution_value and self.local_view_has_nones()==False and self.query_only_ask_self() == False:
-            self.statues = AgentXStatues.request_solution_constraints
-        if self.statues == AgentXStatues.wait_for_solution_value and self.local_view_has_nones() == False \
+        if AgentXStatues.wait_for_solution_value in self.statues and self.local_view_has_nones()==False and self.query_only_ask_self() == False:
+            self.statues.remove(AgentXStatues.wait_for_solution_value)
+            self.statues.append(AgentXStatues.request_solution_constraints)
+        if AgentXStatues.wait_for_solution_value in self.statues  and self.local_view_has_nones() == False \
                 and self.query_only_ask_self()  :
-            self.statues = AgentXStatues.request_self_solution_and_alternatives
+            self.statues.remove(AgentXStatues.wait_for_solution_value)
+            self.statues.append(AgentXStatues.request_self_solution_and_alternatives)
 
 
-    def is_compute_in_this_iteration(self):
-        if self.statues == AgentXStatues.request_solution_constraints:
-            return True
-        if self.statues == AgentXStatues.request_self_solution_and_alternatives:
-            return True
-        else:
-            False
 
+
+
+    def get_all_alternative_constraints_list(self):
+        constraints_alternative_list = []
+        for v in self.alternative_constraints.values():
+            constraints_alternative_list.extend(v)
+
+        counter = CostComparisonCounter()
+        sorted_constraints = sorted(constraints_alternative_list, key=cmp_to_key(counter.comparator))
+        sorted_counter = counter.count
+        return sorted_constraints,sorted_counter
+
+    def compose_alternative_constraints_for_explanations(self,sorted_constraints,total_cost_solution):
+        sum_of_alt_constraint = 0
+        counter_of_alt_constraint = 0
+
+        for constraint in sorted_constraints:
+            self.alternative_constraints_for_explanations.append(constraint)
+            sum_of_alt_constraint += constraint.cost
+            counter_of_alt_constraint += 2
+            if sum_of_alt_constraint >= total_cost_solution:
+                self.is_done = True
+                break
+        return sum_of_alt_constraint,counter_of_alt_constraint
+
+    def compute_request_self_solution_and_alternatives(self):
+        ####----------
+        total_cost_solution = self.get_self_solution_constraints()
+        NCLO_self_solution = len(self.solution_constraints[self.id_]) * 2  # * because of the sum
+        self.get_self_alternative_constraints()
+        NCLO_alternative_solution = len(self.alternative_constraints[self.id_])
+
+        ###----------
+        sorted_constraints, sorted_counter = self.get_all_alternative_constraints_list()
+        ###----------
+        sum_of_alt_constraint, counter_of_alt_constraint = self.compose_alternative_constraints_for_explanations(
+            sorted_constraints, total_cost_solution)
+
+        total_NCLO = NCLO_self_solution + NCLO_alternative_solution + sorted_counter + counter_of_alt_constraint
+
+        return total_NCLO
     def compute(self):
-        if self.statues == AgentXStatues.request_solution_constraints:
+        NCLO = 0
+        if AgentXStatues.request_solution_constraints in self.statues:
             if self.am_i_in_query():
-                return self.compute_request_solution_constraints()
-            return 0
-        if self.statues == AgentXStatues.request_self_solution_and_alternatives:
-            total_cost_solution,constraints_solution_list = self.get_self_solution_constraints()
-            total_cost_alternative,constraints_alternative_list = self.get_self_alternative_constraints()
-            counter = CostComparisonCounter()
-            sorted_constraints = sorted(constraints_alternative_list, key=cmp_to_key(counter.comparator),)
-            sorted_counter = counter.count
+                NCLO += self.compute_request_solution_constraints()
+            else:
+                pass
+        if AgentXStatues.request_self_solution_and_alternatives in self.statues:
+            NCLO += self.compute_request_self_solution_and_alternatives()
 
-            sum_of_alt_constraint_count = 0
-            get only relavent constraints (in alternative_constraints_for_explanations) until exceed solution and add to NCLO COUNT
 
-            alternative_constraints_for_explanations
-            return NCLO_self_solution+NCLO_alternative_solution+sorted_counter+sum_of_alt_constraint_count
+
+        return NCLO
 
     def send_msgs(self):
-        if self.statues == AgentXStatues.request_solution_constraints:
-            msgs = self.get_msgs_to_send_solution_request()
+        msgs_to_send = []
+        self.send_solution_value(msgs_to_send)
+        self. send_request_self_solution_and_alternatives(msgs_to_send)
+        if  len(msgs_to_send)!=0:
+            self.outbox.insert(msgs_to_send)
 
-        self.outbox.insert(msgs)
+        #if AgentXStatues.request_solution_constraints in self.statues:
+        #    msgs = self.get_msgs_to_send_solution_request()
+
+        #self.outbox.insert(msgs)
 
     def change_status_after_send_msgs(self):
-        if self.statues == AgentXStatues.request_solution_constraints:
-            self.statues = AgentXStatues.wait_for_solution_constraints
+        if AgentXStatues.request_solution_constraints in self.statues:
+            self.statues.remove(AgentXStatues.request_solution_constraints)
+
+            self.statues.append(AgentXStatues.wait_for_solution_constraints)
 
     def query_only_ask_self(self):
         first_cond= len(self.query.variables_in_query) == 1
@@ -312,11 +400,16 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
     def am_i_in_query(self):
         return self.id_ in self.query.variables_in_query
 
+    def send_request_self_solution_and_alternatives(self,msgs_to_send):
+        if AgentXStatues.request_self_solution_and_alternatives in self.statues:
+            msgs_to_send.append(Msg(sender=self.id_, receiver=None, information=None,msg_type =MsgTypeX.AgentXQTerminate,bandwidth=0,NCLO = self.local_clock))
+
+
 
 class AgentX_BroadcastCentral(AgentX):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict):
         AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict)
-        self.statues = AgentXStatues.idle
+        self.statues.append(AgentXStatues.idle)
 
     def initialize(self):
         pass  # do nothing, wait for solution request
@@ -324,28 +417,28 @@ class AgentX_BroadcastCentral(AgentX):
     def update_msgs_in_context(self, msgs):
         for msg in msgs:
             self.update_solution_value_in_local_view(msg)
-
+            self.update_solution_value_request_data(msg)
 
     def change_status_after_update_msgs_in_context(self, msgs):
-        if self.statues == AgentXStatues.wait_for_solution_value:
-            self.statues = AgentXStatues.idle
-        if (len(msgs)==1) and msgs[0].msg_type ==MsgTypeX.solution_request:
-            self.statues = AgentXStatues.request_solution_values
+        if msgs[0].msg_type == MsgTypeX.solution_value:
+            self.statues.append(AgentXStatues.send_solution_value)
+            if AgentXStatues.idle in self.statues:
+                self.statues.remove(AgentXStatues.idle)
 
 
+    def compute(self):
+        NCLO = 0
+        if AgentXStatues.send_solution_value in self.statues:
+            NCLO+= len(self.who_asked_for_solution_value)
+        return NCLO
 
-    def is_compute_in_this_iteration(self):
-        return False
-
-    def compute(self): pass
-
-    def send_msgs(self): pass
+    def send_msgs(self):
+        msgs_to_send = []
+        self.send_solution_value(msgs_to_send)
+        if len(msgs_to_send)!=0:
+            self.outbox.insert(msgs_to_send)
 
     def change_status_after_send_msgs(self):pass
-
-
-
-
 
 
 

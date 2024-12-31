@@ -215,6 +215,8 @@ class UnboundedBuffer():
 class Mailer():
 
     def __init__(self,agents):
+        self.mailer_clock = 0
+        self.total_bandwidth = 0
         self.inbox = UnboundedBuffer()
         self.agents_outbox = {}
         for a in agents:
@@ -227,16 +229,24 @@ class Mailer():
         msgs_to_send = self.inbox.extract()
 
         max_nclo = max(msgs_to_send, key=lambda msg: msg.NCLO).NCLO
-
-        total_bandwith =0
+        if max_nclo>self.mailer_clock:
+            self.mailer_clock = max_nclo
+        
+        current_bandwidth =0
         for msg in msgs_to_send:
-            total_bandwith +=msg.bandwidth
+            current_bandwidth +=msg.bandwidth
+        self.total_bandwidth = current_bandwidth
+
+        if self.is_there_termination_message(msgs_to_send):
+            return True
+        
         if len(msgs_to_send) == 0:
             return True
+
         msgs_by_receiver_dict = self.create_msgs_by_receiver_dict(msgs_to_send)
         for receiver,msgs_list in msgs_by_receiver_dict.items():
             self.agents_outbox[receiver].insert(msgs_list)
-        return [max_nclo,total_bandwith]
+
 
     def create_msgs_by_receiver_dict(self,msgs_to_send):
         msgs_by_receiver_dict = {}
@@ -246,6 +256,12 @@ class Mailer():
                 msgs_by_receiver_dict[receiver] = []
             msgs_by_receiver_dict[receiver].append(msg)
         return msgs_by_receiver_dict
+
+    def is_there_termination_message(self, msgs_to_send):
+        for msg in msgs_to_send:
+            if msg.receiver is None:
+                return True
+        return False
 
 
 def draw_dfs_tree(dfs_nodes,dcop_id):
@@ -448,6 +464,19 @@ def plot_dictionaries(dicts, colors, labels, amount_variables, legend_title,name
     plt.savefig(file_name, format='png', dpi=300)  # Use high resolution
     plt.close()  # Close the plot to avoid display
 
+
+
+def init_data_entry_explanation():
+    ans = {"dcop_id":None,
+           "dcop_type":None,
+           "num_variables":None,
+           "Explanation_Algorithm":None,
+           "iterations":None,
+           "NCLO":None,
+           "Bandwidth":None,
+           "Cost delta":None,
+           "Alternative # Constraint":None}
+    return ans
 
 central_bnb_problem_details_debug = False
 

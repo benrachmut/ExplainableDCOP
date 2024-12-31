@@ -6,8 +6,6 @@ from itertools import product
 from Agents_X import *
 from Globals_ import *
 
-
-
 class Query:
     def __init__(self,id_,dcop_id,agent,variables_in_query,solution_complete_assignment,alternative_values,solution_partial_assignment ):
         self.id_number = id_
@@ -340,9 +338,12 @@ class Explanation():
     def __init__(self, query,explanation_type,dcop):
         self.query = query
         self.explanation_type = explanation_type
-        self.global_clock = 0
         self.iteration = 0
-        self.total_bandwidth = 0
+        self.data_entry = init_data_entry_explanation()
+        self.data_entry["dcop_id"] =  dcop.dcop_id
+        self.data_entry["dcop_type"] = dcop.dcop_name
+        self.data_entry["num_variables"] = len(query.variables_in_query)
+        self.data_entry["Explanation_Algorithm"]= explanation_type.name
 
 
         if explanation_type == ExplanationType.Centralized:
@@ -360,15 +361,13 @@ class Explanation():
 
     def execute_distributed(self):
 
-        self.global_clock = 0
         self.agents_init()
         while not self.query_agent.is_termination_condition_met():
             self.iteration+=1
             mailer_feedback = self.mailer.place_messages_in_agents_inbox()
-            if isinstance(mailer_feedback,bool) : break
-            self.global_clock += mailer_feedback[0]
-            self.total_bandwidth +=mailer_feedback[1]
+            if mailer_feedback : break
             self.agents_perform_iteration()
+        self.collect_data()
 
 
 
@@ -448,6 +447,28 @@ class Explanation():
         self.cum_delta_from_solution_dict, self.sum_of_alternative_cost_dict, self.infeasible_pa = self.get_cumulative_delta_from_solution_dict()
         self.min_constraint_collection = min(self.constraints_collections,key=lambda x: x.alternative_unique_constraints_cost)
         self.min_cum_delta_from_solution = self.cum_delta_from_solution_dict[self.min_constraint_collection]
+
+    def collect_data(self):
+        self.data_entry["iterations"] = self.iteration
+        self.data_entry["NCLO"] = self.mailer.mailer_clock
+        self.data_entry["Bandwidth"] = self.mailer.total_bandwidth
+        self.data_entry["Alternative # Constraint"] = len(self.query_agent.alternative_constraints)
+        self.data_entry["Cost delta"] = self.get_alternative_cost_delta()
+        done with data entry need to go back and take care of larger amount of variables
+
+    def get_alternative_cost_delta(self):
+        alt_sum = 0
+        for constraint in self.query_agent.alternative_constraints_for_explanations:
+            alt_sum+=constraint.cost
+        constraint_sum  = 0
+        for k,constraints in self.query_agent.solution_constraints.items():
+            for constraint in constraints:
+                constraint_sum+=constraint.cost
+
+        ans = alt_sum-constraint_sum
+        if ans<0:
+            raise("invalid explanation: something is wrong with the algo")
+        return ans
 
 
 class XDCOP:
