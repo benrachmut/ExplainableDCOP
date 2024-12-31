@@ -68,7 +68,7 @@ class AgentX(ABC):
         self.outbox = None
         self.local_clock = 0
         self.atomic_operations = 0
-        self.statues = AgentXStatues.wait_for_solution_value
+        self.statues = None
         self.solution_constraints = {}
         self.alternative_constraints = {}
 
@@ -222,6 +222,7 @@ class AgentX_Query(AgentX,ABC):
         self.is_done = False
         self.solution_constraints_for_explanations = []
         self.alternative_constraints_for_explanations = []
+        self.statues = AgentXStatues.wait_for_solution_value
 
     def is_termination_condition_met(self): return self.is_done
 
@@ -315,7 +316,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 class AgentX_BroadcastCentral(AgentX):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict):
         AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict)
-
+        self.statues = AgentXStatues.idle
 
     def initialize(self):
         pass  # do nothing, wait for solution request
