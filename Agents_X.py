@@ -16,7 +16,7 @@ class AgentXStatues(Enum):
     idle = 3
     request_solution_constraints = 4
     request_self_solution_and_alternatives = 5
-
+    request_solution_values = 6
 
 class CostComparisonCounter:
     def __init__(self):
@@ -318,17 +318,7 @@ class AgentX_BroadcastCentral(AgentX):
 
 
     def initialize(self):
-        sender = self.id_
-        information = self.variable
-        msg_type= MsgTypeX.solution_value
-        msg_list = []
-        for n_id in self.neighbors_agents_id:
-            receiver = n_id
-            bandwidth = 1
-
-            msg = Msg(sender,receiver,information,msg_type,bandwidth,NCLO = self.atomic_operations )
-            msg_list.append(msg)
-        self.outbox.insert(msg_list)
+        pass  # do nothing, wait for solution request
 
     def update_msgs_in_context(self, msgs):
         for msg in msgs:
@@ -338,6 +328,8 @@ class AgentX_BroadcastCentral(AgentX):
     def change_status_after_update_msgs_in_context(self, msgs):
         if self.statues == AgentXStatues.wait_for_solution_value:
             self.statues = AgentXStatues.idle
+        if (len(msgs)==1) and msgs[0].msg_type ==MsgTypeX.solution_request:
+            self.statues = AgentXStatues.request_solution_values
 
 
 
