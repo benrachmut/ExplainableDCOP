@@ -52,13 +52,13 @@ class Neighbors():
         else:
             return False
 
-    def get_cost(self, first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable):
+    def get_cost(self, first_agent_id_input, first_agent_value, second_agent_id_input, second_agent_value):
         if isinstance(first_agent_id_input,int):
-            return self.get_cost_given_id_int(first_agent_id_input, first_agent_variable, second_agent_id_input, second_agent_variable)
+            return self.get_cost_given_id_int(first_agent_id_input, first_agent_value, second_agent_id_input, second_agent_value)
         if first_agent_id_input<second_agent_id_input:
-            ap =(first_agent_id_input,first_agent_variable,second_agent_id_input,second_agent_variable)
+            ap =(first_agent_id_input, first_agent_value, second_agent_id_input, second_agent_value)
         else:
-            ap =(second_agent_id_input, second_agent_variable, first_agent_id_input,first_agent_variable)
+            ap =(second_agent_id_input, second_agent_value, first_agent_id_input, first_agent_value)
         ans = self.cost_table[ap]
         return ans
 

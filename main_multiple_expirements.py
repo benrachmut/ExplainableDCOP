@@ -111,7 +111,7 @@ def create_xdcop():
 if __name__ == '__main__':
     run_what = RunWhat.xdcops
     dcop_type = DcopType.dense_random_uniform
-    explanation_type = ExplanationType.BroadcastNaive
+    explanation_type = ExplanationType.BroadcastCentral
     repetitions = 100
     is_center_solver = True
     A = 10

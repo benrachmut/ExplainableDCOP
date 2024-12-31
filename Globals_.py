@@ -225,7 +225,9 @@ class Mailer():
 
     def place_messages_in_agents_inbox(self):
         msgs_to_send = self.inbox.extract()
+
         max_nclo = max(msgs_to_send, key=lambda msg: msg.NCLO).NCLO
+
         total_bandwith =0
         for msg in msgs_to_send:
             total_bandwith +=msg.bandwidth
@@ -455,3 +457,4 @@ debug_DFS_tree = True
 debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
 debug_BNB = False
+distributed_explanation_debug = True

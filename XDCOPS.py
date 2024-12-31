@@ -415,9 +415,12 @@ class Explanation():
         return cum_delta_from_solution_dict,sum_of_alternative_cost_dict,infeasible_pa
 
     def create_query_x_agent(self, agent):
-        id_,variable,domain,neighbors_agents_id = self.get_info_for_x_agent(agent)
-        if self.explanation_type == ExplanationType.BroadcastNaive:
-            ax = AgentX_Query_BroadcastNaive(id_,variable,domain,neighbors_agents_id,self.query)
+        id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
+        if self.explanation_type == ExplanationType.BroadcastCentral:
+            ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
+        if self.explanation_type == ExplanationType.BroadcastDistributed:
+            ax = AgentX_Query_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
+
         return ax,id_
 
 
@@ -426,15 +429,16 @@ class Explanation():
         variable = copy.deepcopy(agent.variable)
         domain = copy.deepcopy(agent.domain)
         neighbors_agents_id = copy.deepcopy(agent.neighbors_agents_id)
-        return id_,variable,domain,neighbors_agents_id
+        neighbors_obj_dict = agent.neighbors_obj_dict
+        return id_,variable,domain,neighbors_agents_id,neighbors_obj_dict
 
     def create_x_agents(self, dcop, query_agent_id):
         ans = []
         for agent in dcop.agents:
-            id_, variable, domain, neighbors_agents_id = self.get_info_for_x_agent(agent)
+            id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
-                if self.explanation_type == ExplanationType.BroadcastNaive:
-                    ax = AgentX_Broadcast(id_, variable, domain, neighbors_agents_id)
+                if self.explanation_type == ExplanationType.BroadcastCentral:
+                    ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
 
                 ans.append(ax)
         return ans
