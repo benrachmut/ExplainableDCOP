@@ -351,7 +351,6 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         if AgentXStatues.wait_for_solution_constraints in self.statues and self.solution_constraints_has_none() == False:
             self.statues.remove(AgentXStatues.wait_for_solution_constraints)
             self.statues.append(AgentXStatues.request_alternative_constraints)
-            stop here, need to compute: create local alternative, and then a mechanism that sends requests until get a valid blah blah
 
 
     def get_all_alternative_constraints_list(self):
@@ -408,10 +407,18 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                 pass
         return NCLO
 
+    def compute_request_alternative_constraints(self):
+        self.get_self_alternative_constraints()
+
+
+        # stop here, need to compute: create local alternative, and then a mechanism that sends requests until get a valid blah blah
+
+
     def compute(self):
         NCLO = 0
         NCLO += self.compute_request_solution_constraints()
         NCLO += self.compute_request_self_solution_and_alternatives()
+        NCLO += self.compute_request_alternative_constraints()
         return NCLO
 
     def send_msgs(self):
