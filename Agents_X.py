@@ -1,24 +1,29 @@
 import copy
 from abc import ABC, abstractmethod
+from collections import Set
 from functools import cmp_to_key
 
 from Globals_ import *
 
 
 class MsgTypeX(Enum):
-    solution_value = 1
+    solution_value_request = 1
     solution_request = 2
     AgentXQTerminate = 3
+    solution_constraint_request = 4
+    solution_value_information = 5
 
 
 class AgentXStatues(Enum):
     wait_for_solution_value = 1
     wait_for_solution_constraints = 2
-    idle = 3
+    #idle = 3
     request_solution_constraints = 4
     request_self_solution_and_alternatives = 5
     request_solution_values = 6
     send_solution_value = 7
+    wait_for_solution_value_then_send_solution_constraints = 8
+    send_solution_constraints_to_a_q = 9
 
 
 class CostComparisonCounter:
@@ -50,7 +55,7 @@ class Constraint:
 
 
     def __repr__(self):
-        return self.__str__()
+        return "[<A_"+str(self.first_id)+"="+str(self.first_value)+",A_"+str(self.second_id)+"="+str(self.second_value)+">,cost=",str(self.cost)+"]"
 
 
 
@@ -101,7 +106,6 @@ class AgentX(ABC):
             self.prev_status = copy.deepcopy(self.statues)
             self.change_status_after_send_msgs()
             self.print_after_send_msgs()
-
             self.atomic_operations = 0
 
     def __str__(self):
@@ -110,20 +114,20 @@ class AgentX(ABC):
 
     ########## UPDATE INFO FROM MESSAGE
     def update_solution_value_in_local_view(self,msg):
-        if msg.msg_type == MsgTypeX.solution_value:
+        if msg.msg_type == MsgTypeX.solution_value_information:
             sender = msg.sender
             info = msg.information
             self.local_view[sender] = info
 
     def update_solution_value_request_data(self,msg):
-        self.who_asked_for_solution_value.append(msg.sender)
+        if msg.msg_type == MsgTypeX.solution_value_request:
+            self.who_asked_for_solution_value.append(msg.sender)
 
     ######### send msgs
-    def send_solution_value(self,msgs_to_send):
-
+    def send_solution_value_information(self, msgs_to_send):
         if AgentXStatues.send_solution_value in self.statues:
             for n_id in self.who_asked_for_solution_value:
-                msgs_to_send.append( Msg(sender = self.id_, receiver=n_id, information=self.variable,msg_type = MsgTypeX.solution_value,bandwidth=1,NCLO = self.local_clock))
+                msgs_to_send.append(Msg(sender = self.id_, receiver=n_id, information=self.variable, msg_type = MsgTypeX.solution_value_information, bandwidth=1, NCLO = self.local_clock))
             self.who_asked_for_solution_value = []
 
     def local_view_has_nones(self):
@@ -146,7 +150,6 @@ class AgentX(ABC):
         self.solution_constraints[self.id_] = constraints
         return total_cost
 
-
     def get_variables_in_alternative_partial_assignment(self):
         ans = []
         for dict_ in self.alternative_partial_assignment:
@@ -158,6 +161,7 @@ class AgentX(ABC):
             current_key = list(dict_.keys())[0]
             if current_key == input_id:
                 return list(dict_.values())[0]
+
     def get_self_alternative_constraints(self):
         constraints = []
         total_cost = 0
@@ -199,6 +203,8 @@ class AgentX(ABC):
             return True
         if AgentXStatues.send_solution_value in self.statues:
             return True
+        if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
+            return True
         else:
             False
 
@@ -214,12 +220,17 @@ class AgentX(ABC):
     @abstractmethod
     def change_status_after_send_msgs(self):pass
 
+    def send_solution_value_request(self,msgs):
+        if AgentXStatues.request_solution_values in self.statues:
+            sender = self.id_
+            # information = self.variable
+            msg_type = MsgTypeX.solution_value_request
+            for n_id in self.neighbors_agents_id:
+                receiver = n_id
+                bandwidth = 1
+                msg = Msg(sender, receiver, None, msg_type, bandwidth, NCLO=self.atomic_operations)
+                msgs.append(msg)
 
-    #def compute_request_solution_constraints(self):
-    #        total_cost,constraints_list = self.get_self_solution_constraints()
-    #        self.solution_constraints[self.id_] = constraints_list
-    #        NCLO_count = len(constraints_list)
-    #        return total_cost,NCLO_count*2
 
     #def compute_request_alternative_constraints(self):
     #        total_cost,constraints_list = self.get_self_alternative_constraints()
@@ -269,7 +280,7 @@ class AgentX_Query(AgentX,ABC):
         self.is_done = False
         self.alternative_constraints_for_explanations = []
         self.alternative_constraints_for_explanations = []
-        self.statues.append(AgentXStatues.wait_for_solution_value)
+        #self.statues.append(AgentXStatues.wait_for_solution_value)
 
     def is_termination_condition_met(self): return self.is_done
 
@@ -286,21 +297,23 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query):
         AgentX_Query.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query)
         for agent_in_query in self.query.variables_in_query:
-            if agent_in_query not in self.neighbors_agents_id:
+            if agent_in_query not in self.neighbors_agents_id and agent_in_query!=self.id_:
                 self.neighbors_agents_id.append(agent_in_query)
 
-    def initialize(self):
-        sender = self.id_
-        information = self.variable
-        msg_type= MsgTypeX.solution_value
-        msg_list = []
-        for n_id in self.neighbors_agents_id:
-            receiver = n_id
-            bandwidth = 1
 
-            msg = Msg(sender,receiver,information,msg_type,bandwidth,NCLO = self.atomic_operations )
-            msg_list.append(msg)
-        self.outbox.insert(msg_list)
+
+
+    def initialize(self):
+        self.statues.append(AgentXStatues.request_solution_values)
+        msgs = []
+        self.send_solution_value_request(msgs)
+        self.outbox.insert(msgs)
+
+        self.statues.remove(AgentXStatues.request_solution_values)
+        self.statues.append(AgentXStatues.wait_for_solution_value)
+
+
+
 
 
     def update_msgs_in_context(self,msgs):
@@ -308,14 +321,19 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             self.update_solution_value_request_data(msg)
             self.update_solution_value_in_local_view(msg)
 
+
+
     def change_status_after_update_msgs_in_context(self, msgs):
         if AgentXStatues.wait_for_solution_value in self.statues and self.local_view_has_nones()==False and self.query_only_ask_self() == False:
             self.statues.remove(AgentXStatues.wait_for_solution_value)
             self.statues.append(AgentXStatues.request_solution_constraints)
-        if AgentXStatues.wait_for_solution_value in self.statues  and self.local_view_has_nones() == False \
+        if AgentXStatues.wait_for_solution_value in self.statues and self.local_view_has_nones() == False \
                 and self.query_only_ask_self()  :
             self.statues.remove(AgentXStatues.wait_for_solution_value)
             self.statues.append(AgentXStatues.request_self_solution_and_alternatives)
+        if len(self.who_asked_for_solution_value)!=0:
+            self.statues.append(AgentXStatues.send_solution_value)
+
 
 
 
@@ -364,33 +382,31 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         NCLO = 0
         if AgentXStatues.request_solution_constraints in self.statues:
             if self.am_i_in_query():
-                NCLO += self.compute_request_solution_constraints()
+                total_cost = self.get_self_solution_constraints()
+                NCLO += len(self.solution_constraints[self.id_])
             else:
                 pass
         if AgentXStatues.request_self_solution_and_alternatives in self.statues:
             NCLO += self.compute_request_self_solution_and_alternatives()
 
-
-
         return NCLO
 
     def send_msgs(self):
         msgs_to_send = []
-        self.send_solution_value(msgs_to_send)
+        self.send_solution_value_information(msgs_to_send)
+        self.send_solution_constraint_request(msgs_to_send)
         self. send_request_self_solution_and_alternatives(msgs_to_send)
         if  len(msgs_to_send)!=0:
             self.outbox.insert(msgs_to_send)
 
-        #if AgentXStatues.request_solution_constraints in self.statues:
-        #    msgs = self.get_msgs_to_send_solution_request()
 
-        #self.outbox.insert(msgs)
 
     def change_status_after_send_msgs(self):
         if AgentXStatues.request_solution_constraints in self.statues:
             self.statues.remove(AgentXStatues.request_solution_constraints)
-
             self.statues.append(AgentXStatues.wait_for_solution_constraints)
+        if AgentXStatues.send_solution_value in self.statues:
+            self.statues.remove(AgentXStatues.send_solution_value)
 
     def query_only_ask_self(self):
         first_cond= len(self.query.variables_in_query) == 1
@@ -404,13 +420,17 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         if AgentXStatues.request_self_solution_and_alternatives in self.statues:
             msgs_to_send.append(Msg(sender=self.id_, receiver=None, information=None,msg_type =MsgTypeX.AgentXQTerminate,bandwidth=0,NCLO = self.local_clock))
 
-
+    def send_solution_constraint_request(self, msgs_to_send):
+        if AgentXStatues.request_solution_constraints in self.statues:
+            for n_id in self.query.variables_in_query:
+                if n_id!=self.id_:
+                    msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,msg_type=MsgTypeX.solution_constraint_request,bandwidth=0,NCLO = self.local_clock))
 
 class AgentX_BroadcastCentral(AgentX):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict):
         AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict)
-        self.statues.append(AgentXStatues.idle)
-
+        #self.statues.append(AgentXStatues.idle)
+        self.a_q = None
     def initialize(self):
         pass  # do nothing, wait for solution request
 
@@ -420,25 +440,47 @@ class AgentX_BroadcastCentral(AgentX):
             self.update_solution_value_request_data(msg)
 
     def change_status_after_update_msgs_in_context(self, msgs):
-        if msgs[0].msg_type == MsgTypeX.solution_value:
+        if len(self.who_asked_for_solution_value)!=0:
             self.statues.append(AgentXStatues.send_solution_value)
-            if AgentXStatues.idle in self.statues:
-                self.statues.remove(AgentXStatues.idle)
 
+            #if AgentXStatues.idle in self.statues:
+            #    self.statues.remove(AgentXStatues.idle)
+
+        if msgs[0].msg_type == MsgTypeX.solution_constraint_request:
+            self.a_q=msgs[0].sender
+            #if AgentXStatues.idle in self.statues:
+            #    self.statues.remove(AgentXStatues.idle)
+            self.statues.append(AgentXStatues.request_solution_values)
+
+        if AgentXStatues.wait_for_solution_value_then_send_solution_constraints in self.statues and self.local_view_has_nones() == False:
+            self.statues.remove(AgentXStatues.wait_for_solution_value_then_send_solution_constraints)
+            self.statues.append(AgentXStatues.send_solution_constraints_to_a_q)
 
     def compute(self):
         NCLO = 0
         if AgentXStatues.send_solution_value in self.statues:
             NCLO+= len(self.who_asked_for_solution_value)
+        if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
+            total_cost_solution = self.get_self_solution_constraints()
+            #stop here, need to send it to aq
+            NCLO+=len(self.solution_constraints[self.id_])
         return NCLO
 
     def send_msgs(self):
         msgs_to_send = []
-        self.send_solution_value(msgs_to_send)
+        self.send_solution_value_information(msgs_to_send)
+        self.send_solution_value_request(msgs_to_send)
+        self.send_solution_constraints(msgs_to_send) TODO
         if len(msgs_to_send)!=0:
             self.outbox.insert(msgs_to_send)
 
-    def change_status_after_send_msgs(self):pass
+    def change_status_after_send_msgs(self):
+        if AgentXStatues.send_solution_value in self.statues:
+            self.statues.remove(AgentXStatues.send_solution_value)
+            #self.statues.append(AgentXStatues.idle)
+        if AgentXStatues.request_solution_values in self.statues:
+            self.statues.remove(AgentXStatues.request_solution_values)
+            self.statues.append(AgentXStatues.wait_for_solution_value_then_send_solution_constraints)
 
 
 

@@ -454,7 +454,6 @@ class Explanation():
         self.data_entry["Bandwidth"] = self.mailer.total_bandwidth
         self.data_entry["Alternative # Constraint"] = len(self.query_agent.alternative_constraints)
         self.data_entry["Cost delta"] = self.get_alternative_cost_delta()
-        done with data entry need to go back and take care of larger amount of variables
 
     def get_alternative_cost_delta(self):
         alt_sum = 0
