@@ -4,6 +4,9 @@ from enum import Enum
 
 
 
+class QueryType(Enum):
+    educated = 1
+    rnd = 2
 
 
 class ExplanationType(Enum):

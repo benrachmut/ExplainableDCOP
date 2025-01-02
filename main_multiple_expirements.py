@@ -10,7 +10,11 @@ from Functions import *
 
 
 def get_name_of_exp(A,property="complete"):
-    return str(dcop_type.name) + "_" + property + "_agents" + str(A)
+    if dcop_type!=DcopType.meeting_scheduling:
+        return str(dcop_type.name) + "_" + property + "_agents" + str(A)
+    else:
+        return str(dcop_type.name) + "_" + property + "_meetings_" + str(meetings)+"_per_agents_"+str(meetings_per_agent)
+
 
 def get_pickle_name(A,property="complete"):
     return get_name_of_exp(A,property)+".pkl"
@@ -85,6 +89,31 @@ def get_dcops(A, property= "complete"):
         return pickle.load(file)
 
 
+def create_x_standard_dcop(dcop, seed_query, num_variables, num_values,with_connectivity_constraint):
+    query = QueryGenerator(dcop, seed_query, num_variables, num_values, with_connectivity_constraint,query_type).get_query()
+    query.query_type = query_type
+
+    return XDCOP(dcop, query,explanation_type)
+
+def create_x_MeetingSchedualing_dcop(dcop, seed_query, num_meeting, num_alternative_slot,with_connectivity_constraint):
+    qg = QueryGeneratorScheduling(dcop, seed_query, num_meeting, num_alternative_slot, with_connectivity_constraint,query_type)
+    query =qg.get_query()
+    query.query_type = query_type
+    return XDCOP(dcop, query,explanation_type)
+
+def create_meeting_x_dcops():
+    for num_meeting in num_meetings:
+        for num_alternative_slot in num_alternative_slots:
+            #data_prep = PrepData(num_variables, num_values)
+            #print(data_prep)
+            x_dcops = []
+            for dcop in dcops:
+                print(dcop.dcop_id)
+                dcop.create_agent_dict()
+                for seed_ in seeds_xdcop:
+                    xdcop = create_x_MeetingSchedualing_dcop(dcop, seed_+1, num_meeting, num_alternative_slot,with_connectivity_constraint)
+                    x_dcops.append(xdcop)
+            return xdcop
 def create_xdcop():
     for num_variables in nums_variables:
         for num_values in nums_values:
@@ -95,10 +124,14 @@ def create_xdcop():
                 print(dcop.dcop_id)
                 dcop.create_agent_dict()
                 for seed_ in seeds_xdcop:
-                    query_generator = QueryGenerator(dcop, (seed_ + 1), num_variables, num_values,
-                                                     with_connectivity_constraint)
-                    query = query_generator.get_query()
-                    x_dcops.append(XDCOP(dcop, query,explanation_type))
+                    xdcop = create_x_standard_dcop(dcop, (seed_ + 1), num_variables, num_values,with_connectivity_constraint)
+                    x_dcops.append(xdcop)
+            return xdcop
+
+                    #query_generator = QueryGenerator(dcop, (seed_ + 1), num_variables, num_values,
+                                                     #with_connectivity_constraint)
+                    #query = query_generator.get_query()
+                    #x_dcops.append(XDCOP(dcop, query,explanation_type))
 
 
             #data_prep.execute_data(x_dcops)
@@ -110,23 +143,38 @@ def create_xdcop():
 
 if __name__ == '__main__':
     run_what = RunWhat.xdcops
+
+
     dcop_type = DcopType.dense_random_uniform
-    explanation_type = ExplanationType.BroadcastCentral
-    repetitions = 100
+    repetitions = 1
     is_center_solver = True
     A = 10
+
+    meetings = 4
+    meetings_per_agent = 2
+    time_slots_D = 15
+
+
+
+    explanation_type = ExplanationType.BroadcastCentral
+    query_type = QueryType.educated
     with_connectivity_constraint = True
     seeds_xdcop = [1]  # range(0, 2)
-    nums_variables = [3,4,5]#[1, 5, 9]  # range(2, A)
-    nums_values = [1]#[1,2,3,4,5]#[1,5,9]  # range(1, max_domain-1)
+    nums_variables = [3, 4, 5]  # [1, 5, 9]  # range(2, A)
+    nums_values = [1]  # [1,2,3,4,5]#[1,5,9]  # range(1, max_domain-1)
+
+    num_meetings = [2,3]
+    num_alternative_slots = [1]
 
     if run_what == RunWhat.dcops :
         create_dcops()
     if run_what == RunWhat.xdcops :
         dcops = get_dcops(A)
         # max_domain = len(dcops[0].agents[0].domain)
-        create_xdcop()
-
+        if dcop_type == DcopType.meeting_scheduling:
+            x_dcops = create_meeting_x_dcops()
+        else:
+            x_dcops = create_xdcop()
 
     #if run_what == RunWhat.handle_data:
     #    xdcops_data = read_pickle_files(get_name_of_exp(A,property="complete"))

@@ -409,7 +409,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
     def compute_request_alternative_constraints(self):
         self.get_self_alternative_constraints()
-
+        raise Exception("stop here")
 
         # stop here, need to compute: create local alternative, and then a mechanism that sends requests until get a valid blah blah
 

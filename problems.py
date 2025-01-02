@@ -197,6 +197,7 @@ class DCOP(ABC):
 
 
     def execute_center(self):
+
         if central_bnb_problem_details_debug:
             for a in self.agents:
                 print("variable:",a,"domain:",a.domain)

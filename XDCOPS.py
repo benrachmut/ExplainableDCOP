@@ -4,6 +4,7 @@ from collections import defaultdict
 from itertools import product
 
 from Agents_X import *
+from Algorithm_BnB_Central import Bnb_central
 from Globals_ import *
 
 class Query:
@@ -38,6 +39,18 @@ class Query:
         return ans
     def __str__(self):
         return self.id_
+
+class AgentForEducatedQuery():
+    def __init__(self,id_,domain_list,neighbors_obj,neighbors_obj_dict,neighbors_agents_id,unary_constraint):
+        self.variable = None
+        self.id_ = id_
+        self.domain = domain_list
+
+        self.neighbors_obj = neighbors_obj
+        self.neighbors_obj_dict = neighbors_obj_dict  # id, obj
+        self.neighbors_agents_id = neighbors_agents_id
+
+        self.unary_constraint = unary_constraint
 
 
 class QueryMeetingScheduling(Query):
@@ -82,12 +95,13 @@ class QueryMeetingScheduling(Query):
                 ans[meeting_agent.id_]=meeting_agent
         return ans
 class QueryGenerator:
-    def __init__(self, dcop, seed, num_variables, num_values, with_connectivity_constraint):
+    def __init__(self, dcop, seed, num_variables, num_values, with_connectivity_constraint,query_type):
         self.id_ = seed
         self.seed_ = (1+seed)*17+(1+dcop.dcop_id)*18
         self.rnd = random.Random(self.seed_ )
         self.rnd.randint(1,100)
         self.dcop = dcop
+        self.query_type = query_type
 
         self.complete_assignment = self.dcop.get_complete_assignment()
 
@@ -144,21 +158,49 @@ class QueryGenerator:
 
     def get_alternative_values(self):
         alternative_values = defaultdict(list)
-        for agent_id, agent in self.variables_dict.items():
-            solution_value = self.complete_assignment[agent_id]
-            agent_domain = copy.deepcopy(agent.domain)
-            agent_domain.remove(solution_value)
-            selected_alternatives = self.rnd.sample(agent_domain, self.num_values)
-            alternative_values[agent_id] = selected_alternatives
+        if self.query_type == QueryType.rnd:
+            for agent_id, agent in self.variables_dict.items():
+                solution_value = self.complete_assignment[agent_id]
+                agent_domain = copy.deepcopy(agent.domain)
+                agent_domain.remove(solution_value)
+                selected_alternatives = self.rnd.sample(agent_domain, self.num_values)
+                alternative_values[agent_id] = selected_alternatives
+        else:
+            agents_for_educated = self.create_agents_for_educated()
+            bnb = Bnb_central(agents_for_educated)
+            dcop_solution = bnb.UB
+            dict_ = dcop_solution[0]
+            for a_id,val in dict_.items():
+                if a_id in self.variables_dict.keys():
+                    alternative_values[a_id] = [val]
         return alternative_values
 
 
+    def create_agents_for_educated(self):
+        agents_for_educated = []
+        for agent in self.dcop.agents:
+            id_ = copy.deepcopy(agent.id_)
+            solution_value = self.complete_assignment[id_]
+            if id_ in self.variables_dict.keys():
+                domain_list = copy.deepcopy(agent.domain)
+                domain_list.remove(solution_value)
+            else:
+                domain_list = [solution_value]
+
+            neighbors_obj = copy.deepcopy(agent.neighbors_obj)
+            neighbors_obj_dict = copy.deepcopy(agent.neighbors_obj_dict)
+            neighbors_agents_id = copy.deepcopy(agent.neighbors_agents_id)
+            a = AgentForEducatedQuery(id_, domain_list, neighbors_obj, neighbors_obj_dict, neighbors_agents_id,
+                                          None)
+            agents_for_educated.append(a)
+
+        return agents_for_educated
 
 
 
 class QueryGeneratorScheduling(QueryGenerator):
-    def __init__(self, dcop, seed, num_meetings, num_alternative_slots, with_connectivity_constraint):
-        QueryGenerator.__init__(self, dcop, seed, num_meetings, num_alternative_slots, with_connectivity_constraint)
+    def __init__(self, dcop, seed, num_meetings, num_alternative_slots, with_connectivity_constraint,query_type):
+        QueryGenerator.__init__(self, dcop, seed, num_meetings, num_alternative_slots, with_connectivity_constraint,query_type)
 
 
     def get_query(self):
@@ -179,6 +221,7 @@ class QueryGeneratorScheduling(QueryGenerator):
                                                  solution_complete_assignment=self.complete_assignment,
                                                  alternative_values=self.alternative_values,
                                                  solution_partial_assignment=self.solution_partial_assignment)
+
     def get_solution_partial_assignment(self):
         if special_generator_for_MeetingScheduling:
             ans = {}
@@ -190,19 +233,29 @@ class QueryGeneratorScheduling(QueryGenerator):
 
 
     def get_alternative_values(self):
+        alternative_values = defaultdict(list)
         if special_generator_for_MeetingScheduling:
-            alternative_values = defaultdict(list)
-            for meeting_id, meeting_agents in self.variables_dict.items():
-                solution_value = self.complete_assignment[meeting_id]
-                agent_domain = copy.deepcopy(meeting_agents[0].domain)
-                agent_domain.remove(solution_value)
-                selected_alternatives = self.rnd.sample(agent_domain, self.num_values)
-                alternative_values[meeting_id] = selected_alternatives
+            if self.query_type == QueryType.rnd:
+                for meeting_id, meeting_agents in self.variables_dict.items():
+                    solution_value = self.complete_assignment[meeting_id]
+                    agent_domain = copy.deepcopy(meeting_agents[0].domain)
+                    agent_domain.remove(solution_value)
+                    selected_alternatives = self.rnd.sample(agent_domain, self.num_values)
+                    alternative_values[meeting_id] = selected_alternatives
+            else:
+                agents_for_educated =  self.create_agents_for_educated()
+                bnb = Bnb_central(agents_for_educated)
+                dcop_solution = bnb.UB
+                for meeting_id, meeting_agents in self.variables_dict.items():
+                    agent_id = meeting_agents[0].id_
+                    dict_ = dcop_solution[0]
+                    for solution_id,time_slot in dict_.items():
+                        if agent_id == solution_id:
+                            alternative_values[meeting_id] = [time_slot]
+                            break
             return alternative_values
         else:
             return QueryGenerator.get_alternative_values(self)
-
-
 
     def get_variables(self):
         if special_generator_for_MeetingScheduling:
@@ -255,7 +308,28 @@ class QueryGeneratorScheduling(QueryGenerator):
         for k in meeting_id_neighbors_dict.keys():ans.append(k)
         return ans
 
+    def create_agents_for_educated(self):
+        agents_for_educated = []
+        for meeting_id, meeting_agents in self.dcop.agents_assigned_to_meetings_dict.items():
+            solution_value = self.complete_assignment[meeting_id]
 
+            for meeting_agent in meeting_agents:
+                id_ = copy.deepcopy(meeting_agent.id_)
+                if meeting_id in self.variables_dict.keys():
+                    domain_list = copy.deepcopy(meeting_agent.domain)
+                    domain_list.remove(solution_value)
+                else:
+                    domain_list = [solution_value]
+
+                neighbors_obj = copy.deepcopy(meeting_agent.neighbors_obj)
+                neighbors_obj_dict = copy.deepcopy(meeting_agent.neighbors_obj_dict)
+                neighbors_agents_id = copy.deepcopy(meeting_agent.neighbors_agents_id)
+                unary_constraint = copy.deepcopy(meeting_agent.unary_constraint)
+                a = AgentForEducatedQuery(id_, domain_list, neighbors_obj, neighbors_obj_dict, neighbors_agents_id,
+                                          unary_constraint)
+                agents_for_educated.append(a)
+
+        return agents_for_educated
 class ConstraintCollection():
     def __init__ (self,solution_partial_assignment,alternative_partial_assignment,complete_assignment,agent_dict):
         self.solution_partial_assignment = solution_partial_assignment
@@ -344,7 +418,8 @@ class Explanation():
         self.data_entry["dcop_type"] = dcop.dcop_name
         self.data_entry["num_variables"] = len(query.variables_in_query)
         self.data_entry["Explanation_Algorithm"]= explanation_type.name
-
+        self.data_entry["Query_Generator_Type"]= query.query_type.name
+        print()
 
         if explanation_type == ExplanationType.Centralized:
             self.get_centralized_explanation()

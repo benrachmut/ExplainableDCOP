@@ -38,10 +38,10 @@ def get_dcop_and_solve():
 
 def create_x_standard_dcop():
     query = QueryGenerator(dcop, seed_query, num_variables, num_values, with_connectivity_constraint).get_query()
+
     return XDCOP(dcop, query)
 
 def create_x_MeetingSchedualing_dcop():
-
     qg = QueryGeneratorScheduling(dcop, seed_query, num_meetings, num_alternative_slots, with_connectivity_constraint)
     query =qg.get_query()
     return XDCOP(dcop, query)
