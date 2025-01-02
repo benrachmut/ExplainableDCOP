@@ -419,7 +419,6 @@ class Explanation():
         self.data_entry["num_variables"] = len(query.variables_in_query)
         self.data_entry["Explanation_Algorithm"]= explanation_type.name
         self.data_entry["Query_Generator_Type"]= query.query_type.name
-        print()
 
         if explanation_type == ExplanationType.Centralized:
             self.get_centralized_explanation()
