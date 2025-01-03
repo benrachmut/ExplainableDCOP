@@ -18,9 +18,9 @@ import graphviz
 
 # for x dcop
 
-meetings = 2#7
+meetings = 6
 meetings_per_agent=2#10
-time_slots_D=8#8
+time_slots_D=8
 
 
 
