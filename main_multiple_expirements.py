@@ -13,7 +13,7 @@ def get_name_of_exp(A,property="complete"):
     if dcop_type!=DcopType.meeting_scheduling:
         return str(dcop_type.name) + "_" + property + "_agents" + str(A)
     else:
-        return str(dcop_type.name) + "_" + property + "_meetings_" + str(meetings)+"_per_agents_"+str(meetings_per_agent)
+        return str(dcop_type.name) + "_" + property + "_meetings_" + str(meetings)+"_per_agents_"+str(meetings_per_agent)+"_agents_"+str(A)
 
 
 def get_pickle_name(A,property="complete"):
@@ -65,22 +65,21 @@ def read_pickle_files(folder_name):
 
 
 def create_dcops():
-    for A in amount_agents:
-        dcops_complete = []
-        for i in range(repetitions):
-            print("start", dcop_type, "number:", i)
+    dcops_complete = []
+    for i in range(repetitions):
+        print("start", dcop_type, "number:", i)
 
-            dcop = get_DCOP(i, algorithm, dcop_type, A)
-            # draw_dcop(dcop)
-            if is_center_solver:
-                dcop.execute_center()
-            else:
-                dcop.execute_distributed()
-            dcops_complete.append(dcop)
-            # Open a file to save the pickle
-            pickle_name = get_pickle_name(A, "complete")
-            with open(pickle_name, "wb") as file:
-                pickle.dump(dcops_complete, file)
+        dcop = get_DCOP(i, algorithm, dcop_type, A)
+        # draw_dcop(dcop)
+        if is_center_solver:
+            dcop.execute_center()
+        else:
+            dcop.execute_distributed()
+        dcops_complete.append(dcop)
+        # Open a file to save the pickle
+        pickle_name = get_pickle_name(A, "complete")
+        with open(pickle_name, "wb") as file:
+            pickle.dump(dcops_complete, file)
 
 
 def get_dcops(A, property= "complete"):
@@ -93,13 +92,13 @@ def create_x_standard_dcop(dcop, seed_query, num_variables, num_values,with_conn
     query = QueryGenerator(dcop, seed_query, num_variables, num_values, with_connectivity_constraint,query_type).get_query()
     query.query_type = query_type
 
-    return XDCOP(dcop, query,explanation_type)
+    return XDCOP(dcop, query)
 
 def create_x_MeetingSchedualing_dcop(dcop, seed_query, num_meeting, num_alternative_slot,with_connectivity_constraint):
     qg = QueryGeneratorScheduling(dcop, seed_query, num_meeting, num_alternative_slot, with_connectivity_constraint,query_type)
     query =qg.get_query()
     query.query_type = query_type
-    return XDCOP(dcop, query,explanation_type)
+    return XDCOP(dcop, query)
 
 def create_meeting_x_dcops():
     for num_meeting in num_meetings:
@@ -145,7 +144,7 @@ if __name__ == '__main__':
     run_what = RunWhat.dcops
 
 
-    dcop_type = DcopType.dense_random_uniform
+    dcop_type = DcopType.meeting_scheduling
     repetitions = 100
     is_center_solver = True
     A = 20
@@ -153,8 +152,6 @@ if __name__ == '__main__':
     meetings = 15
     meetings_per_agent = 2
     time_slots_D = 10
-
-
 
     explanation_type = ExplanationType.BroadcastCentral
     query_type = QueryType.educated

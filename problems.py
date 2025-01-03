@@ -240,6 +240,8 @@ class DCOP(ABC):
     def create_neighbors(self):
         pass
 
+    @abstractmethod
+    def create_summary(self): pass
 
     def all_agents_complete(self):
         for a in self.agents:
@@ -287,6 +289,9 @@ class DCOP_RandomUniform(DCOP):
         self.p1 = p1
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 
+    def create_summary(self):
+        return "A_"+str(self.A)+"_"+self.dcop_name+"_p1_"+str(self.p1)
+
     def create_neighbors(self):
         for i in range(self.A):
             a1 = self.agents[i]
@@ -300,6 +305,9 @@ class DCOP_GraphColoring(DCOP):
 
     def __init__(self, id_,A,D,dcop_name,algorithm):
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
+
+    def create_summary(self):
+        return "A_"+str(self.A)+"_"+self.dcop_name+"_p1_"+str(graph_coloring_p1)
 
     def create_neighbors(self):
         for i in range(self.A):
@@ -317,9 +325,11 @@ class DCOP_GraphColoring(DCOP):
 class DCOP_MeetingSchedualing(DCOP):
     def __init__(self,id_, A, meetings,meetings_per_agent,time_slots_D, dcop_name, algorithm):
         DCOP.__init__(self, id_, A*meetings_per_agent, time_slots_D, dcop_name, algorithm)
-
-        if A*meetings_per_agent<meetings*2  :
-            raise ValueError("A*meetings_per_agent<meetings*2")
+        self.users_amount = A
+        self.meetings = meetings
+        self.meetings_per_agent = meetings_per_agent
+        #if A*meetings_per_agent<meetings*2  :
+            #raise ValueError("A*meetings_per_agent<meetings*2")
         if meetings_per_agent>meetings:
             raise ValueError("meetings_per_agent>meetings")
 
@@ -349,6 +359,11 @@ class DCOP_MeetingSchedualing(DCOP):
         #self.connect_unary_to_self(unary_constraints)
 
         #sparse_random_uniform_cost_function()
+
+
+
+    def create_summary(self):
+        return "A_"+str(self.users_amount)+"_"+self.dcop_name+"_meetings_"+str(self.meetings)+"_per_agent_"+str(meetings_per_agent)
 
     def get_same_time_slot_agents(self):
         same_time_slot_agents = {}

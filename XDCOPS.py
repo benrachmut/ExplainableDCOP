@@ -94,6 +94,7 @@ class QueryMeetingScheduling(Query):
             for meeting_agent in meeting_agents:
                 ans[meeting_agent.id_]=meeting_agent
         return ans
+
 class QueryGenerator:
     def __init__(self, dcop, seed, num_variables, num_values, with_connectivity_constraint,query_type):
         self.id_ = seed
@@ -165,7 +166,7 @@ class QueryGenerator:
                 agent_domain.remove(solution_value)
                 selected_alternatives = self.rnd.sample(agent_domain, self.num_values)
                 alternative_values[agent_id] = selected_alternatives
-        else:
+        if self.query_type == QueryType.educated:
             agents_for_educated = self.create_agents_for_educated()
             bnb = Bnb_central(agents_for_educated)
             dcop_solution = bnb.UB
@@ -242,7 +243,8 @@ class QueryGeneratorScheduling(QueryGenerator):
                     agent_domain.remove(solution_value)
                     selected_alternatives = self.rnd.sample(agent_domain, self.num_values)
                     alternative_values[meeting_id] = selected_alternatives
-            else:
+
+            if self.query_type == QueryType.educated:
                 agents_for_educated =  self.create_agents_for_educated()
                 bnb = Bnb_central(agents_for_educated)
                 dcop_solution = bnb.UB
@@ -409,7 +411,7 @@ class ConstraintCollection():
 
 
 class Explanation():
-    def __init__(self, query,explanation_type,dcop):
+    def __init__(self, dcop,query,explanation_type ):
         self.query = query
         self.explanation_type = explanation_type
         self.iteration = 0
@@ -541,10 +543,10 @@ class Explanation():
 
 
 class XDCOP:
-    def __init__(self,dcop,query,explanation_type):
+    def __init__(self,dcop,query):
         self.dcop = dcop
         self.query = query
-        self.explanation = Explanation(query,explanation_type,dcop)
+        #self.explanation = Explanation(query,explanation_type,dcop)
 
 
 

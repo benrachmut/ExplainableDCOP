@@ -18,17 +18,19 @@ import graphviz
 
 # for x dcop
 
+meetings = 5
+meetings_per_agent=2
+time_slots_D=5
 
 
 
 # for DCOPS
 algorithm = Algorithm.branch_and_bound
-amount_agents = [8]
 is_complete = None
 incomplete_iterations = 1000
 my_inf = 99999
 special_generator_for_MeetingScheduling = True
-
+with_connectivity_constraint = True
 #### DCOPS_INPUT ####
 #*******************************************#
 # dcop_type = DcopType.sparse_random_uniform
@@ -101,9 +103,12 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 #*******************************************#
 # dcop_type = DcopType.meeting_scheduling
 #*******************************************#
-meetings = 5
-meetings_per_agent=2
-time_slots_D=5
+
+
+meeting_schedul_min_cost = 10
+meeting_schedul_mu_mult_cost = 10
+meeting_schedul_std =  10
+meeting_schedul_max_cost = 100
 
 def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
