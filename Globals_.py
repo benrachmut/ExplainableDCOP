@@ -18,9 +18,9 @@ import graphviz
 
 # for x dcop
 
-meetings = 5
-meetings_per_agent=2
-time_slots_D=5
+meetings = 2#7
+meetings_per_agent=2#10
+time_slots_D=8#8
 
 
 
@@ -89,15 +89,15 @@ def scale_free_network_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 # dcop_type = DcopType.graph_coloring
 #*******************************************#
 
-graph_coloring_p1 = 0.5
-graph_coloring_constant_cost = 10
+graph_coloring_p1 = 0.1
+graph_coloring_constant_cost = 100
 graph_coloring_D = 3
 
 def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
         return graph_coloring_constant_cost
     else:
-        return 0
+        return 10
 
 
 #*******************************************#

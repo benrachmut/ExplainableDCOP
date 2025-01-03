@@ -77,7 +77,7 @@ def create_xdcop(nums_variables,nums_values):
 
 def create_num_variables():
     if dcop_type == DcopType.meeting_scheduling:
-        ans = range(1, A * meetings_per_agent + 1)
+        ans = range(1, meetings + 1)
     else:
         ans = range(1, A + 1)
 
@@ -86,9 +86,18 @@ def create_num_variables():
 
 if __name__ == '__main__':
     #####--------------------------------
-    A = 5
-    dcop_type = DcopType.dense_random_uniform
-    repetitions = 5
+
+
+    dcop_type = DcopType.meeting_scheduling
+
+    if dcop_type == DcopType.sparse_random_uniform or dcop_type == DcopType.dense_random_uniform:
+        A = 10
+    if dcop_type == DcopType.graph_coloring:
+        A = 20
+    if dcop_type == DcopType.meeting_scheduling:
+        A = 8
+
+    repetitions = 100
 
     dcops = create_dcops()
     #####--------------------------------

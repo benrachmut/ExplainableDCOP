@@ -363,7 +363,7 @@ class DCOP_MeetingSchedualing(DCOP):
 
 
     def create_summary(self):
-        return "A_"+str(self.users_amount)+"_"+self.dcop_name+"_meetings_"+str(self.meetings)+"_per_agent_"+str(meetings_per_agent)
+        return "A_"+str(self.users_amount)+"_"+self.dcop_name+"_meetings_"+str(self.meetings)+"_per_agent_"+str(meetings_per_agent)+"_time_slots_"+str(time_slots_D)
 
     def get_same_time_slot_agents(self):
         same_time_slot_agents = {}
