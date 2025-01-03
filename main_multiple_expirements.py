@@ -142,17 +142,17 @@ def create_xdcop():
 
 
 if __name__ == '__main__':
-    run_what = RunWhat.xdcops
+    run_what = RunWhat.dcops
 
 
     dcop_type = DcopType.dense_random_uniform
-    repetitions = 1
+    repetitions = 100
     is_center_solver = True
-    A = 10
+    A = 20
 
-    meetings = 4
+    meetings = 15
     meetings_per_agent = 2
-    time_slots_D = 15
+    time_slots_D = 10
 
 
 
