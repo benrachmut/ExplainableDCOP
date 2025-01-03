@@ -160,7 +160,7 @@ if __name__ == '__main__':
     query_type = QueryType.educated
     with_connectivity_constraint = True
     seeds_xdcop = [1]  # range(0, 2)
-    nums_variables = [3, 4, 5]  # [1, 5, 9]  # range(2, A)
+    nums_variables = [8]  # [1, 5, 9]  # range(2, A)
     nums_values = [1]  # [1,2,3,4,5]#[1,5,9]  # range(1, max_domain-1)
 
     num_meetings = [2,3]

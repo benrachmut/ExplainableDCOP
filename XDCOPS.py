@@ -530,15 +530,11 @@ class Explanation():
         self.data_entry["Cost delta"] = self.get_alternative_cost_delta()
 
     def get_alternative_cost_delta(self):
-        alt_sum = 0
-        for constraint in self.query_agent.alternative_constraints_for_explanations:
-            alt_sum+=constraint.cost
-        constraint_sum  = 0
-        for k,constraints in self.query_agent.solution_constraints.items():
-            for constraint in constraints:
-                constraint_sum+=constraint.cost
+        alt_sum = self.query_agent.alternative_cost
 
-        ans = alt_sum-constraint_sum
+        solution_sum  = self.query_agent.solution_cost
+
+        ans = alt_sum-solution_sum
         if ans<0:
             raise("invalid explanation: something is wrong with the algo")
         return ans

@@ -215,6 +215,8 @@ class AgentX(ABC):
             return True
         if AgentXStatues.send_alternative_constraints_to_a_q in self.statues:
             return True
+        if AgentXStatues.check_if_explanation_is_complete in self.statues:
+            return True
         else:
             False
 
@@ -289,9 +291,12 @@ class AgentX_Query(AgentX,ABC):
         self.query = query
         self.alternative_partial_assignment= query.alternative_partial_assignments[0]
         self.solution_cost = 0
+        self.alternative_cost = 0
+
         self.is_done = False
+
         self.alternative_constraints_for_explanations = []
-        self.alternative_constraints_for_explanations = []
+        self.alternative_constraints_inbox = []
         #self.statues.append(AgentXStatues.wait_for_solution_value)
         for v_q in self.query.variables_in_query:
             self.solution_constraints[v_q] = None
@@ -336,7 +341,13 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         if msg.msg_type == MsgTypeX.alternative_constraints_information:
             sender = msg.sender
             info = msg.information
-            self.alternative_constraints[sender] = info
+            self.alternative_constraints[sender] = copy.deepcopy(info)
+            self.alternative_constraints_inbox.extend(copy.deepcopy(info))
+            temp_list = []
+            for const in self.alternative_constraints_inbox:
+                if const not in temp_list:
+                    temp_list.append(const)
+            self.alternative_constraints_inbox = temp_list
 
     def update_msgs_in_context(self,msgs):
         for msg in msgs:
@@ -362,7 +373,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         if AgentXStatues.wait_for_alternative_constraints in self.statues:
             self.statues.remove(AgentXStatues.wait_for_alternative_constraints)
             self.statues.append(AgentXStatues.check_if_explanation_is_complete)
-            raise Exception("stop here")
+
 
 
     def get_all_alternative_constraints_list(self):
@@ -424,12 +435,32 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
         if AgentXStatues.request_alternative_constraints in self.statues:
             NCLO += self.calc_sum_of_solution_cost()
-
             self.get_self_alternative_constraints()
+            self.alternative_constraints_inbox.extend(copy.deepcopy(self.alternative_constraints[self.id_]))
             NCLO +=len(self.alternative_constraints[self.id_])
+
         return NCLO
 
         # stop here, need to compute: create local alternative, and then a mechanism that sends requests until get a valid blah blah
+
+    def compute_check_if_explanation_is_complete(self):
+        NCLO = 0
+        if AgentXStatues.check_if_explanation_is_complete in self.statues:
+            counter = CostComparisonCounter()
+            self.alternative_constraints_inbox = sorted(self.alternative_constraints_inbox, key=cmp_to_key(counter.comparator))
+            NCLO=+counter.count
+            while len(self.alternative_constraints_inbox)!=0:
+                NCLO = +1
+                const = self.alternative_constraints_inbox.pop(0)
+                self.alternative_cost+=const.cost
+                if self.alternative_cost<=self.solution_cost:
+                    self.alternative_constraints_for_explanations.append(const)
+                else:
+                    self.is_done=True
+                    break
+        return NCLO
+
+
 
     def calc_sum_of_solution_cost(self):
         NCLO = 0
@@ -438,7 +469,6 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             for const in const_list_of_id:
                 if const not in const_list:
                     const_list.append(const)
-                self.solution_cost+=const.cost
 
 
         for const in const_list:
@@ -451,13 +481,14 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         NCLO += self.compute_request_solution_constraints()
         NCLO += self.compute_request_self_solution_and_alternatives()
         NCLO += self.compute_request_alternative_constraints()
+        NCLO += self.compute_check_if_explanation_is_complete()
         return NCLO
 
     def send_msgs(self):
         msgs_to_send = []
         self.send_solution_value_information(msgs_to_send)
         self.send_solution_constraint_request(msgs_to_send)
-        self.send_request_self_solution_and_alternatives(msgs_to_send)
+        self.send_termination_message(msgs_to_send)
         self.send_alternative_constraint_request(msgs_to_send)
         if  len(msgs_to_send)!=0:
             self.outbox.insert(msgs_to_send)
@@ -481,8 +512,8 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
     def am_i_in_query(self):
         return self.id_ in self.query.variables_in_query
 
-    def send_request_self_solution_and_alternatives(self,msgs_to_send):
-        if AgentXStatues.request_self_solution_and_alternatives in self.statues:
+    def send_termination_message(self, msgs_to_send):
+        if self.is_done:
             msgs_to_send.append(Msg(sender=self.id_, receiver=None, information=None,msg_type =MsgTypeX.AgentXQTerminate,bandwidth=0,NCLO = self.local_clock))
 
     def send_solution_constraint_request(self, msgs_to_send):
@@ -627,8 +658,11 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
         NCLO = 0
 
         if AgentXStatues.request_alternative_constraints in self.statues:
-            print("need to sort and add it to local time")
+            print("need to sort and add it to local time + check if need to send at all or what I have in inbox is enough")
         return 0
+    def compute_check_if_explanation_is_complete(self):
+        if AgentXStatues.check_if_explanation_is_complete in self.statues:
+            print("dont need to sort, use the dictionary and get max out of the entries")
 
 class AgentX_BroadcastDistributed(AgentX_BroadcastCentral):
     def __init__(self,id_,variable,domain,neighbors_agents_id):
