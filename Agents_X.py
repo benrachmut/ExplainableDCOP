@@ -4,6 +4,7 @@ from collections import Set
 from functools import cmp_to_key
 
 from Globals_ import *
+from Queries import *
 
 
 class MsgTypeX(Enum):
@@ -93,6 +94,8 @@ class AgentX(ABC):
         self.alternative_constraints = {}
 
         self.who_asked_for_solution_value=[]
+        self.a_q = None
+
     def get_general_info_for_records(self):
         return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
 
@@ -188,8 +191,9 @@ class AgentX(ABC):
                 n_val = self.local_view[n_id]
             if flag_other or flag_all:
                 cost = n_obj.get_cost(self.id_, my_val,n_id,n_val)
-                total_cost+=total_cost
-                constraints.append(Constraint(self.id_,my_val,n_id,n_val,cost))
+                if cost>0:
+                    total_cost+=total_cost
+                    constraints.append(Constraint(self.id_,my_val,n_id,n_val,cost))
             flag_other  =False
         self.alternative_constraints[self.id_] = constraints
         return total_cost
@@ -289,6 +293,9 @@ class AgentX_Query(AgentX,ABC):
     def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,query):
         AgentX.__init__(self, id_, variable, domain, neighbors_agents_id,neighbors_obj_dict)
         self.query = query
+        #if isinstance(query,QueryMeetingScheduling):
+        #    self.alternative_partial_assignment= query.alternative_partial_assignments[0]
+        #else:
         self.alternative_partial_assignment= query.alternative_partial_assignments[0]
         self.solution_cost = 0
         self.alternative_cost = 0
@@ -311,6 +318,12 @@ class AgentX_Query(AgentX,ABC):
                 msgs.append(
                     Msg(sender=self.id_, receiver=n_id, information=None, msg_type=MsgTypeX.solution_request, bandwidth=1,NCLO=self.local_clock))
         return msgs
+
+    def get_alternative_cost(self):
+        ans = 0
+        for const in self.alternative_constraints_for_explanations:
+            ans+=const.cost
+        return ans
 
 class AgentX_Query_BroadcastCentral(AgentX_Query):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query):
@@ -404,6 +417,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
             ####----------
             total_cost_solution = self.get_self_solution_constraints()
+            self.solution_cost = total_cost_solution
             NCLO_self_solution = len(self.solution_constraints[self.id_]) * 2  # * because of the sum
             self.get_self_alternative_constraints()
             NCLO_alternative_solution = len(self.alternative_constraints[self.id_])
@@ -453,9 +467,9 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                 NCLO = +1
                 const = self.alternative_constraints_inbox.pop(0)
                 self.alternative_cost+=const.cost
-                if self.alternative_cost<=self.solution_cost:
-                    self.alternative_constraints_for_explanations.append(const)
-                else:
+                self.alternative_constraints_for_explanations.append(const)
+
+                if self.alternative_cost>=self.solution_cost:
                     self.is_done=True
                     break
         return NCLO
@@ -539,7 +553,6 @@ class AgentX_BroadcastCentral(AgentX):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict):
         AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict)
         #self.statues.append(AgentXStatues.idle)
-        self.a_q = None
     def initialize(self):
         pass  # do nothing, wait for solution request
 

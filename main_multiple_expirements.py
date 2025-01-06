@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from Globals_ import *
 from XDCOPS import *
 from problems import *
-from Functions import *
 
 
 

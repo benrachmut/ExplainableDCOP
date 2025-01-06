@@ -38,7 +38,7 @@ class Agent(ABC):
         for d in self.domain:
             mu = meeting_schedul_min_cost + meeting_schedul_mu_mult_cost * abs(d - pref_domain)
             std = meeting_schedul_std
-            cost = round(random.gauss(mu, std))
+            cost = round(rnd_pref_time.gauss(mu, std))
             if cost<meeting_schedul_min_cost:
                 cost = meeting_schedul_min_cost
             if cost>meeting_schedul_max_cost:

@@ -321,6 +321,78 @@ class DCOP_GraphColoring(DCOP):
 
 
 
+class DCOP_MeetingSchedualingV2(DCOP):
+    def __init__(self,id_, A, meetings,meetings_per_agent,time_slots_D, dcop_name, algorithm):
+        DCOP.__init__(self, id_, meetings, time_slots_D, dcop_name, algorithm)
+        self.user_amount = A
+        self.meetings = meetings
+        self.meetings_per_agent = meetings_per_agent
+        # if A*meetings_per_agent<meetings*2  :
+        # raise ValueError("A*meetings_per_agent<meetings*2")
+        if meetings_per_agent > meetings:
+            raise ValueError("meetings_per_agent>meetings")
+
+        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
+        self.rnd_meeting_per_agent = random.Random((id_ + 412) * 17)
+        self.agents_perfs = {}
+        for a in range(A):
+            self.agents_perfs[a] = self.create_rnd_pref(a)
+
+        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
+        self.rnd_meeting_per_agent = random.Random((id_+412)*17)
+
+        for _ in range(5):
+            self.rnd_meeting_per_agent.random()
+            self.rnd_agents_per_meet.random()
+
+        #----------
+        self.meetings_per_agent_dict = self.divide_agents_to_groups(meetings_per_agent)
+        #----------
+        self.agents_assigned_to_meetings_dict = self.get_agents_assigned_to_meetings_dict(meetings)
+        self.agent_id_meetings_ids_dict = self.get_agent_id_meetings_ids_dict()
+        self.check_problem_correctness()
+        self.create_neighbors2()
+        self.connect_agents_to_neighbors()
+
+    def divide_agents_to_groups(self, k):
+        # Shuffle the agents list
+        shuffled_agents = list(range(self.user_amount))
+        self.rnd_meeting_per_agent.shuffle(shuffled_agents)
+
+        # Divide the shuffled list into groups of size k
+        groups = [shuffled_agents[i:i + k] for i in range(0, len(shuffled_agents), k)]
+
+        stopped here!!!
+        agents_dict = {}  # Dictionary to store the result
+        agents_index = 0  # Running integer for meeting indices
+        for group in groups:
+            agents_dict[agents_index] = group
+            agents_index += 1
+        return agents_dict
+
+    def create_rnd_pref(self,a):
+        ans = {}
+        rnd_pref_time = random.Random((a+23)*17+(self.dcop_id)*97)
+        for _ in range(5): rnd_pref_time.randint(1,5)
+        pref_domain = rnd_pref_time.choice(self.D)
+        self.unary_constraint = {}
+        for d in self.D:
+            mu = meeting_schedul_min_cost + meeting_schedul_mu_mult_cost * abs(d - pref_domain)
+            std = meeting_schedul_std
+            cost = round(rnd_pref_time.gauss(mu, std))
+            if cost<meeting_schedul_min_cost:
+                cost = meeting_schedul_min_cost
+            if cost>meeting_schedul_max_cost:
+                cost = meeting_schedul_max_cost
+
+            ans[d] = cost
+        return ans
+
+
+    def create_summary(self):
+        return "A_" + str(self.users_amount) + "_" + self.dcop_name + "_meetings_" + str(
+            self.meetings) + "_per_agent_" + str(meetings_per_agent) + "_time_slots_" + str(time_slots_D)
+
 
 class DCOP_MeetingSchedualing(DCOP):
     def __init__(self,id_, A, meetings,meetings_per_agent,time_slots_D, dcop_name, algorithm):
@@ -339,6 +411,10 @@ class DCOP_MeetingSchedualing(DCOP):
         for a in self.agents:
             a.create_unary_costs(self.dcop_id)
 
+
+
+        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
+        self.rnd_meeting_per_agent = random.Random((id_+412)*17)
 
         for _ in range(5):
             self.rnd_meeting_per_agent.random()
@@ -360,7 +436,20 @@ class DCOP_MeetingSchedualing(DCOP):
 
         #sparse_random_uniform_cost_function()
 
+    def divide_agents_to_groups(self, k):
+        # Shuffle the agents list
+        shuffled_agents = self.agents[:]
+        self.rnd_meeting_per_agent.shuffle(shuffled_agents)
 
+        # Divide the shuffled list into groups of size k
+        groups = [shuffled_agents[i:i + k] for i in range(0, len(shuffled_agents), k)]
+
+        agents_dict = {}  # Dictionary to store the result
+        agents_index = 0  # Running integer for meeting indices
+        for group in groups:
+            agents_dict[agents_index] = group
+            agents_index += 1
+        return agents_dict
 
     def create_summary(self):
         return "A_"+str(self.users_amount)+"_"+self.dcop_name+"_meetings_"+str(self.meetings)+"_per_agent_"+str(meetings_per_agent)+"_time_slots_"+str(time_slots_D)
@@ -391,10 +480,14 @@ class DCOP_MeetingSchedualing(DCOP):
             meeting_ids = []
             for agent in meeting_agents:
                 meeting_ids.append(self.get_meeting_id_for_meet_agent(agent))
-            if not all(x == meeting_ids[0] for x in meeting_ids):
-                raise Exception("all meetings id should be the same")
-
-            ans[meeting_ids[0]] = time_slot
+            #if not all(x == meeting_ids[0] for x in meeting_ids):
+                #raise Exception("all meetings id should be the same")
+            diff_meetings = []
+            for meeting_id_slots in meeting_ids:
+                if meeting_id_slots not in diff_meetings:
+                    diff_meetings.append(diff_meetings)
+            for m in diff_meetings:
+                ans[m] = time_slot
             #get_meeting_index_given_meeting_agents()
         return ans
 

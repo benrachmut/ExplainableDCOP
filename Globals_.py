@@ -220,6 +220,7 @@ class UnboundedBuffer():
 class Mailer():
 
     def __init__(self,agents):
+        self.total_msgs = 0
         self.mailer_clock = 0
         self.total_bandwidth = 0
         self.inbox = UnboundedBuffer()
@@ -232,7 +233,6 @@ class Mailer():
 
     def place_messages_in_agents_inbox(self):
         msgs_to_send = self.inbox.extract()
-
         max_nclo = max(msgs_to_send, key=lambda msg: msg.NCLO).NCLO
         if max_nclo>self.mailer_clock:
             self.mailer_clock = max_nclo
@@ -240,9 +240,10 @@ class Mailer():
         current_bandwidth =0
         for msg in msgs_to_send:
             current_bandwidth +=msg.bandwidth
-        self.total_bandwidth = current_bandwidth
-
+        self.total_bandwidth += current_bandwidth
+        self.total_msgs += len(msgs_to_send)
         if self.is_there_termination_message(msgs_to_send):
+            self.total_msgs-=1
             return True
         
         if len(msgs_to_send) == 0:
