@@ -12,7 +12,7 @@ def get_name_of_exp(A,property="complete"):
     if dcop_type!=DcopType.meeting_scheduling:
         return str(dcop_type.name) + "_" + property + "_agents" + str(A)
     else:
-        return str(dcop_type.name) + "_" + property + "_meetings_" + str(meetings)+"_per_agents_"+str(meetings_per_agent)+"_agents_"+str(A)
+        return str(dcop_type.name) + "_" + property + "_meetings_" + str(meetings) +"_per_agents_" + str(meetings_per_user) + "_agents_" + str(A)
 
 
 def get_pickle_name(A,property="complete"):
@@ -26,8 +26,8 @@ def get_DCOP(i,algorithm,dcop_type,A = 50):
     if dcop_type == DcopType.graph_coloring:
         return DCOP_GraphColoring(i, A,graph_coloring_D, "Graph Coloring", algorithm)
     if dcop_type == DcopType.meeting_scheduling:
-        return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_agent,
-                                        time_slots_D=time_slots_D, dcop_name="Meeting Schedualing",
+        return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_user,
+                                       time_slots_D=time_slots_D, dcop_name="Meeting Schedualing",
                                        algorithm = algorithm)
 
 def read_pickle_files(folder_name):

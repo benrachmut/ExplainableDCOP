@@ -18,10 +18,10 @@ import graphviz
 
 # for x dcop
 
-meetings = 15
-meetings_per_agent=2#10
-time_slots_D=8
-
+meetings = 5#10
+meetings_per_user=2
+time_slots_D=3#8
+min_users_per_meeting = 2
 
 
 # for DCOPS
@@ -115,6 +115,16 @@ def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_
         return 0
     else:
         return my_inf
+
+
+def meeting_scheduling_v2_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
+    if d_a1==d_a2:
+        return my_inf
+    else:
+        cost_of_a1_for_d1 = a1.perf_per_time_slot[d_a1]
+        cost_of_a2_for_d2 = a2.perf_per_time_slot[d_a2]
+
+        return cost_of_a1_for_d1+cost_of_a2_for_d2
 
 def meeting_scheduling_must_be_non_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:

@@ -1,3 +1,4 @@
+import copy
 import random
 import threading
 from operator import truediv
@@ -322,49 +323,87 @@ class DCOP_GraphColoring(DCOP):
 
 
 class DCOP_MeetingSchedualingV2(DCOP):
-    def __init__(self,id_, A, meetings,meetings_per_agent,time_slots_D, dcop_name, algorithm):
+    def __init__(self,id_, A, dcop_name, algorithm):
         DCOP.__init__(self, id_, meetings, time_slots_D, dcop_name, algorithm)
         self.users_amount = A
         self.meetings = meetings
-        self.meetings_per_agent = meetings_per_agent
+        self.meetings_per_user_amount = meetings_per_user
+        self.min_users_per_meeting = min_users_per_meeting
         self.check_input()
 
 
-        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
-        self.rnd_meeting_per_agent = random.Random((id_ + 412) * 17)
+        self.rnd_users_per_meet_distribution = random.Random((id_ + 782) * 17)
+        #self.rnd_meeting_per_agent = random.Random((id_ + 412) * 17)
         for _ in range(5):
-            self.rnd_meeting_per_agent.random()
-            self.rnd_agents_per_meet.random()
+            #self.rnd_meeting_per_agent.random()
+            self.rnd_users_per_meet_distribution.random()
 
-        self.agents_perfs = {}
-        for a in range(A):
-            self.agents_perfs[a] = self.create_rnd_pref(a)
+        self.users_perfs_dict = {}
+        self.user_allocation_left = {}
+        for user in range(self.users_amount ):
+            self.users_perfs_dict[user] = self.create_rnd_pref(user)
+            self.user_allocation_left[user] = meetings_per_user
         #----------
-        self.meetings_per_agent_dict = self.get_meeting_per_agent_dict()
-        stopped here in the method above need to distribute agents to meetings. make sure that there are at least 2 per meeting. then randomly
-        print()
+        self.meetings_per_user_dict = {}
+        self.get_meeting_per_agent_dict()
         #----------
-        #self.agents_assigned_to_meetings_dict = self.get_agents_assigned_to_meetings_dict(meetings)
-        #self.agent_id_meetings_ids_dict = self.get_agent_id_meetings_ids_dict()
-        #self.check_problem_correctness()
-        #self.create_neighbors2()
-        #self.connect_agents_to_neighbors()
+        self.meeting_perf_per_time_slot_dict = {}
+        self.get_meeting_perf_per_time_slot_dict()
+        self.update_perf_per_time_slot_attribute_for_meetings()
+        #----------
+        self.user_meetings_dict = {}
+        self.get_user_meetings_dict()
+        #----------
+        self.neighbors_tuples = []
+        self.get_neighbors_tuples()
+
+        self.create_neighbors2()
+        self.connect_agents_to_neighbors()
+
+    def update_perf_per_time_slot_attribute_for_meetings(self):
+        for meeting_id, meeting_obj in self.agents_dict.items():
+            perf_per_time_slot = self.meeting_perf_per_time_slot_dict[meeting_id]
+            meeting_obj.perf_per_time_slot = perf_per_time_slot
+    def get_all_pref_of_users_per_time_slot_dict(self,users_list):
+        ans = {}
+        for time_slot in range(time_slots_D):
+            ans[time_slot] = []
+        for user in users_list:
+            user_pref = self.users_perfs_dict[user]
+            for time_slot, pref in user_pref.items():
+                ans[time_slot].append(pref)
+        return ans
+    def get_meeting_perf_per_time_slot_dict(self):
+        for meeting_id,users_list in self.meetings_per_user_dict.items():
+            total_per_time_slot = self.get_all_pref_of_users_per_time_slot_dict(users_list)
+            sum_per_time_slot = {}
+            for time_slot, prefs_list in total_per_time_slot.items():
+                sum_per_time_slot[time_slot] = sum(prefs_list)
+            self.meeting_perf_per_time_slot_dict[meeting_id] = sum_per_time_slot
+    def create_copy_and_remove_meetings_that_user_is_there(self,user):
+        temp_dict = copy.deepcopy(self.meetings_per_user_dict)
+        for m_id, list_of_users in self.meetings_per_user_dict.items():
+            if user in list_of_users:
+                del temp_dict[m_id]
+        return temp_dict
+    def get_meeting_per_agent_dict(self):
+        self.meetings_per_user_dict = {}
+
+        for m_id in self.agents_dict.keys(): self.meetings_per_user_dict[m_id] = []
+        self.allocate_min_amount_of_users_to_meetings()
+        self.finish_allocation()
 
 
-    def divide_agents_to_groups(self):
-        # Shuffle the agents list
-        shuffled_agents = list(range(self.users_amount))
-        self.rnd_meeting_per_agent.shuffle(shuffled_agents)
 
-        # Divide the shuffled list into groups of size k
-        groups = [shuffled_agents[i:i + self.meetings_per_agent] for i in range(0, len(shuffled_agents), self.meetings_per_agent)]
 
-        agents_dict = {}  # Dictionary to store the result
-        agents_index = 0  # Running integer for meeting indices
-        for group in groups:
-            agents_dict[agents_index] = group
-            agents_index += 1
-        return agents_dict
+
+
+    def meetings_per_agent_dict_have_required_min_per_meet(self):
+        for users_in_meet in self.meetings_per_user_dict.values():
+            if len(users_in_meet) < self.min_users_per_meeting:
+                return False
+        return True
+
 
     def create_rnd_pref(self,a):
         ans = {}
@@ -387,23 +426,87 @@ class DCOP_MeetingSchedualingV2(DCOP):
 
     def create_summary(self):
         return "A_" + str(self.users_amount) + "_" + self.dcop_name + "_meetings_" + str(
-            self.meetings) + "_per_agent_" + str(meetings_per_agent) + "_time_slots_" + str(time_slots_D)
+            self.meetings) + "_per_agent_" + str(meetings_per_user) + "_time_slots_" + str(time_slots_D)
 
     def create_neighbors(self):
         pass
 
     def create_neighbors2(self):
-        pass
-        #self.create_inequality_neighbors()
-        #self.create_equality_neighbors()
-        #self.create_unary_constraints()
+        for meeting_id_1, meeting_id_2 in self.neighbors_tuples:
+            meet_obj_1 = self.agents_dict[meeting_id_1]
+            meet_obj_2 = self.agents_dict[meeting_id_2]
+            n = Neighbors(meet_obj_1, meet_obj_2, meeting_scheduling_v2_cost_function, self.dcop_id)
+            self.neighbors.append(n)
 
     def check_input(self):
-        agents_attending_meetings = self.users_amount * self.meetings_per_agent
-        if agents_attending_meetings > 2 * self.meetings:
+        agents_attending_meetings = self.users_amount * self.meetings_per_user_amount
+        if agents_attending_meetings < self.min_users_per_meeting * self.meetings:
             raise ValueError("need min amount of agents in a meeting to be 2")
-        if self.meetings_per_agent > self.meetings:
+        if self.meetings_per_user_amount > self.meetings:
             raise ValueError("meetings_per_agent>meetings")
+
+    def allocate_min_amount_of_users_to_meetings(self):
+
+        while not self.meetings_per_agent_dict_have_required_min_per_meet():
+            for user in range(self.users_amount):
+                if self.meetings_per_agent_dict_have_required_min_per_meet():
+                    break
+                temp_dict = self.create_copy_and_remove_meetings_that_user_is_there(user)
+                min_length = min(len(v) for v in temp_dict.values())
+                keys_with_shortest_length = [k for k, v in temp_dict.items() if len(v) == min_length]
+                m_id = self.rnd_users_per_meet_distribution.choice(keys_with_shortest_length)
+                self.meetings_per_user_dict[m_id].append(user)
+                self.user_allocation_left[user] = self.user_allocation_left[user] - 1
+
+        for user_id, meetings_allocated_left in self.user_allocation_left.items():
+            if meetings_allocated_left<0:
+                raise Exception("dont have enought users attending meetings to allocate")
+
+    def clear_user_allocation_left(self):
+        users_that_are_done = []
+        for user_id, meetings_allocated_left in self.user_allocation_left.items():
+            if meetings_allocated_left == 0:
+                users_that_are_done.append(user_id)
+        for user_id in users_that_are_done:
+            del self.user_allocation_left[user_id]
+
+    def get_meetings_that_user_is_not_allocated_to(self,user_id):
+        ans = []
+        for m_id, users_allocated in self.meetings_per_user_dict.items():
+            if user_id in users_allocated:
+                ans.append(m_id)
+        return ans
+
+
+    def finish_allocation(self):
+        self.clear_user_allocation_left()
+
+        for user_id, meetings_allocated_left in self.user_allocation_left.items():
+            meetings_that_user_is_not_allocated_to = self.get_meetings_that_user_is_not_allocated_to(user_id)
+            possible_meetings_to_allocate = copy.deepcopy(list(self.meetings_per_user_dict.keys()))
+            possible_meetings_to_allocate = [item for item in possible_meetings_to_allocate if item not in meetings_that_user_is_not_allocated_to]
+            random_selection = self.rnd_users_per_meet_distribution.sample(possible_meetings_to_allocate, meetings_allocated_left)
+            for meeting_id in random_selection:
+                self.meetings_per_user_dict[meeting_id].append(user_id)
+
+    def get_user_meetings_dict(self):
+
+        for meeting_id, users_list in self.meetings_per_user_dict.items():
+            for user_id in users_list:
+                if user_id not in self.user_meetings_dict.keys():
+                    self.user_meetings_dict[user_id] = []
+                self.user_meetings_dict[user_id].append(meeting_id)
+
+    def get_neighbors_tuples(self):
+        self.neighbors_tuples = []
+        for user_id, meetings_of_users_list in self.user_meetings_dict.items():
+            meetings_of_users_list = sorted(meetings_of_users_list)
+            for i in range(len(meetings_of_users_list)):
+                for j in range(i + 1, len(meetings_of_users_list)):
+                    tup = (meetings_of_users_list[i], meetings_of_users_list[j])
+                    if tup not in self.neighbors_tuples:
+                        self.neighbors_tuples.append(tup)
+
 
 
 class DCOP_MeetingSchedualing(DCOP):
@@ -464,7 +567,7 @@ class DCOP_MeetingSchedualing(DCOP):
         return agents_dict
 
     def create_summary(self):
-        return "A_"+str(self.users_amount)+"_"+self.dcop_name+"_meetings_"+str(self.meetings)+"_per_agent_"+str(meetings_per_agent)+"_time_slots_"+str(time_slots_D)
+        return "A_" + str(self.users_amount) +"_" + self.dcop_name +"_meetings_" + str(self.meetings) +"_per_agent_" + str(meetings_per_user) + "_time_slots_" + str(time_slots_D)
 
     def get_same_time_slot_agents(self):
         same_time_slot_agents = {}

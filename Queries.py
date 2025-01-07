@@ -206,7 +206,7 @@ class QueryGeneratorScheduling(QueryGenerator):
 
     def get_query(self):
         if special_generator_for_MeetingScheduling:
-            meetings_per_agent_dict = self.dcop.meetings_per_agent_dict
+            meetings_per_agent_dict = self.dcop.meetings_per_user_dict
             agents_assigned_to_meetings_dict = self.dcop.agents_assigned_to_meetings_dict
 
             return QueryMeetingScheduling( id_=self.id_,dcop_id=self.dcop.dcop_id,agent=self.agent,
