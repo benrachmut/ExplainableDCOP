@@ -324,45 +324,41 @@ class DCOP_GraphColoring(DCOP):
 class DCOP_MeetingSchedualingV2(DCOP):
     def __init__(self,id_, A, meetings,meetings_per_agent,time_slots_D, dcop_name, algorithm):
         DCOP.__init__(self, id_, meetings, time_slots_D, dcop_name, algorithm)
-        self.user_amount = A
+        self.users_amount = A
         self.meetings = meetings
         self.meetings_per_agent = meetings_per_agent
-        # if A*meetings_per_agent<meetings*2  :
-        # raise ValueError("A*meetings_per_agent<meetings*2")
-        if meetings_per_agent > meetings:
-            raise ValueError("meetings_per_agent>meetings")
+        self.check_input()
+
 
         self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
         self.rnd_meeting_per_agent = random.Random((id_ + 412) * 17)
-        self.agents_perfs = {}
-        for a in range(A):
-            self.agents_perfs[a] = self.create_rnd_pref(a)
-
-        self.rnd_agents_per_meet = random.Random((id_ + 782) * 17)
-        self.rnd_meeting_per_agent = random.Random((id_+412)*17)
-
         for _ in range(5):
             self.rnd_meeting_per_agent.random()
             self.rnd_agents_per_meet.random()
 
+        self.agents_perfs = {}
+        for a in range(A):
+            self.agents_perfs[a] = self.create_rnd_pref(a)
         #----------
-        self.meetings_per_agent_dict = self.divide_agents_to_groups(meetings_per_agent)
+        self.meetings_per_agent_dict = self.get_meeting_per_agent_dict()
+        stopped here in the method above need to distribute agents to meetings. make sure that there are at least 2 per meeting. then randomly
+        print()
         #----------
-        self.agents_assigned_to_meetings_dict = self.get_agents_assigned_to_meetings_dict(meetings)
-        self.agent_id_meetings_ids_dict = self.get_agent_id_meetings_ids_dict()
-        self.check_problem_correctness()
-        self.create_neighbors2()
-        self.connect_agents_to_neighbors()
+        #self.agents_assigned_to_meetings_dict = self.get_agents_assigned_to_meetings_dict(meetings)
+        #self.agent_id_meetings_ids_dict = self.get_agent_id_meetings_ids_dict()
+        #self.check_problem_correctness()
+        #self.create_neighbors2()
+        #self.connect_agents_to_neighbors()
 
-    def divide_agents_to_groups(self, k):
+
+    def divide_agents_to_groups(self):
         # Shuffle the agents list
-        shuffled_agents = list(range(self.user_amount))
+        shuffled_agents = list(range(self.users_amount))
         self.rnd_meeting_per_agent.shuffle(shuffled_agents)
 
         # Divide the shuffled list into groups of size k
-        groups = [shuffled_agents[i:i + k] for i in range(0, len(shuffled_agents), k)]
+        groups = [shuffled_agents[i:i + self.meetings_per_agent] for i in range(0, len(shuffled_agents), self.meetings_per_agent)]
 
-        stopped here!!!
         agents_dict = {}  # Dictionary to store the result
         agents_index = 0  # Running integer for meeting indices
         for group in groups:
@@ -374,9 +370,10 @@ class DCOP_MeetingSchedualingV2(DCOP):
         ans = {}
         rnd_pref_time = random.Random((a+23)*17+(self.dcop_id)*97)
         for _ in range(5): rnd_pref_time.randint(1,5)
-        pref_domain = rnd_pref_time.choice(self.D)
-        self.unary_constraint = {}
-        for d in self.D:
+        domain = []
+        for d in range(self.D): domain.append(d)
+        pref_domain = rnd_pref_time.choice(domain)
+        for d in domain:
             mu = meeting_schedul_min_cost + meeting_schedul_mu_mult_cost * abs(d - pref_domain)
             std = meeting_schedul_std
             cost = round(rnd_pref_time.gauss(mu, std))
@@ -388,10 +385,25 @@ class DCOP_MeetingSchedualingV2(DCOP):
             ans[d] = cost
         return ans
 
-
     def create_summary(self):
         return "A_" + str(self.users_amount) + "_" + self.dcop_name + "_meetings_" + str(
             self.meetings) + "_per_agent_" + str(meetings_per_agent) + "_time_slots_" + str(time_slots_D)
+
+    def create_neighbors(self):
+        pass
+
+    def create_neighbors2(self):
+        pass
+        #self.create_inequality_neighbors()
+        #self.create_equality_neighbors()
+        #self.create_unary_constraints()
+
+    def check_input(self):
+        agents_attending_meetings = self.users_amount * self.meetings_per_agent
+        if agents_attending_meetings > 2 * self.meetings:
+            raise ValueError("need min amount of agents in a meeting to be 2")
+        if self.meetings_per_agent > self.meetings:
+            raise ValueError("meetings_per_agent>meetings")
 
 
 class DCOP_MeetingSchedualing(DCOP):

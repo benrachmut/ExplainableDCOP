@@ -13,11 +13,14 @@ def get_DCOP(i,algorithm,dcop_type,A):
         return DCOP_RandomUniform(i, A, dense_D, "Dense Uniform", algorithm,dense_p1)
     if dcop_type == DcopType.graph_coloring:
         return DCOP_GraphColoring(i, A,graph_coloring_D, "Graph Coloring", algorithm)
-    if dcop_type == DcopType.meeting_scheduling:
+    if dcop_type == DcopType.meeting_scheduling :
         return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_agent,
                                         time_slots_D=time_slots_D, dcop_name="Meeting Scheduling",
                                        algorithm = algorithm)
-
+    if  dcop_type == DcopType.meeting_scheduling_v2:
+        return DCOP_MeetingSchedualingV2(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_agent,
+                                       time_slots_D=time_slots_D, dcop_name="Meeting Scheduling",
+                                       algorithm=algorithm)
 
 def create_dcops():
     dcops_complete = []
@@ -88,15 +91,14 @@ if __name__ == '__main__':
     #####--------------------------------
 
 
-    dcop_type = DcopType.meeting_scheduling
+    dcop_type = DcopType.meeting_scheduling_v2
 
     if dcop_type == DcopType.sparse_random_uniform or dcop_type == DcopType.dense_random_uniform:
         A = 10
     if dcop_type == DcopType.graph_coloring:
         A = 20
-    if dcop_type == DcopType.meeting_scheduling:
-        A = 8
-
+    if dcop_type == DcopType.meeting_scheduling or dcop_type == DcopType.meeting_scheduling_v2:
+        A = 10
     repetitions = 100
 
     dcops = create_dcops()

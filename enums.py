@@ -20,6 +20,7 @@ class DcopType(Enum):
     dense_random_uniform = 2
     graph_coloring = 3
     meeting_scheduling  = 4
+    meeting_scheduling_v2  = 5
 
 class RunWhat(Enum):
     dcops = 1
