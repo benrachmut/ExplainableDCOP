@@ -124,7 +124,7 @@ class Explanation():
         self.data_entry["NCLO"] = self.mailer.mailer_clock
         self.data_entry["Total Messages"] =self.mailer.total_msgs
         self.data_entry["Bandwidth"] = self.mailer.total_bandwidth
-        self.data_entry["Alternative # Constraint"] = len(self.query_agent.alternative_constraints)
+        self.data_entry["Alternative # Constraint"] = len(self.query_agent.alternative_constraints_for_explanations)
         self.data_entry["Cost delta"] = self.get_alternative_cost_delta()
         self.data_entry["Delta Cost per Constraint"] = self.data_entry["Cost delta"]/self.data_entry["Alternative # Constraint"]
 

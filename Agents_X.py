@@ -418,7 +418,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             ####----------
             total_cost_solution = self.get_self_solution_constraints()
             self.solution_cost = total_cost_solution
-            NCLO_self_solution = len(self.solution_constraints[self.id_]) * 2  # * because of the sum
+            NCLO_self_solution = len(self.solution_constraints[self.id_])#* 2  # * because of the sum
             self.get_self_alternative_constraints()
             NCLO_alternative_solution = len(self.alternative_constraints[self.id_])
 

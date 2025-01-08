@@ -42,7 +42,7 @@ def get_data_for_graph():
 
 if __name__ == '__main__':
     #pickle_name = "xdcops_A_10_Dense Uniform_p1_0.7.pkl"
-    exp_name = "xdcops_Meeting Scheduling_meetings_5_users_8_per_agent_2_time_slots_5"
+    exp_name = "xdcops_Meeting Scheduling_meetings_10_users_35_per_agent_2_time_slots_8"
     #pickle_name = "xdcops_A_10_Sparse Uniform_p1_0.2.pkl"
 
 

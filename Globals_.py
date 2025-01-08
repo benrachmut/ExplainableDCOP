@@ -20,7 +20,7 @@ import graphviz
 
 user_amount = 8#10 #20 #30 #40
 meetings_per_user=2
-time_slots_D=5#8
+time_slots_D=20
 min_users_per_meeting = 2
 
 
@@ -107,7 +107,7 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 
 meeting_schedul_min_cost = 10
 meeting_schedul_mu_mult_cost = 10
-meeting_schedul_std =  10
+meeting_schedul_std =  3
 meeting_schedul_max_cost = 100
 
 def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
