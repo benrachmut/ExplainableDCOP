@@ -156,6 +156,7 @@ class AgentX(ABC):
             if v is None:
                 return True
         return False
+
     def get_self_solution_constraints(self):
         constraints = []
         total_cost = 0
@@ -325,6 +326,14 @@ class AgentX_Query(AgentX,ABC):
             ans+=const.cost
         return ans
 
+    def initialize(self):
+        self.statues.append(AgentXStatues.request_solution_values)
+        msgs = []
+        self.send_solution_value_request(msgs)
+        self.outbox.insert(msgs)
+
+        self.statues.remove(AgentXStatues.request_solution_values)
+        self.statues.append(AgentXStatues.wait_for_solution_value)
 class AgentX_Query_BroadcastCentral(AgentX_Query):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query):
         AgentX_Query.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query)
@@ -335,14 +344,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
 
 
-    def initialize(self):
-        self.statues.append(AgentXStatues.request_solution_values)
-        msgs = []
-        self.send_solution_value_request(msgs)
-        self.outbox.insert(msgs)
 
-        self.statues.remove(AgentXStatues.request_solution_values)
-        self.statues.append(AgentXStatues.wait_for_solution_value)
 
     def update_solution_constraints(self,msg):
         if msg.msg_type == MsgTypeX.solution_constraints_information:
@@ -418,7 +420,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             ####----------
             total_cost_solution = self.get_self_solution_constraints()
             self.solution_cost = total_cost_solution
-            NCLO_self_solution = len(self.solution_constraints[self.id_])#* 2  # * because of the sum
+            NCLO_self_solution = len(self.solution_constraints[self.id_])  # * because of the sum
             self.get_self_alternative_constraints()
             NCLO_alternative_solution = len(self.alternative_constraints[self.id_])
 
