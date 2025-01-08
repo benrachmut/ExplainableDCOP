@@ -18,9 +18,9 @@ import graphviz
 
 # for x dcop
 
-meetings = 5#10
+user_amount = 8#10 #20 #30 #40
 meetings_per_user=2
-time_slots_D=3#8
+time_slots_D=5#8
 min_users_per_meeting = 2
 
 
@@ -506,4 +506,4 @@ debug_DFS_tree = True
 debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
 debug_BNB = False
-distributed_explanation_debug = True
+distributed_explanation_debug = False

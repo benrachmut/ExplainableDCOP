@@ -291,7 +291,7 @@ class DCOP_RandomUniform(DCOP):
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 
     def create_summary(self):
-        return "A_"+str(self.A)+"_"+self.dcop_name+"_p1_"+str(self.p1)
+        return self.dcop_name+"_A_"+str(self.A)+"_p1_"+str(self.p1)
 
     def create_neighbors(self):
         for i in range(self.A):
@@ -308,7 +308,7 @@ class DCOP_GraphColoring(DCOP):
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 
     def create_summary(self):
-        return "A_"+str(self.A)+"_"+self.dcop_name+"_p1_"+str(graph_coloring_p1)
+        return self.dcop_name+"_A_"+str(self.A)+"_p1_"+str(graph_coloring_p1)
 
     def create_neighbors(self):
         for i in range(self.A):
@@ -324,9 +324,9 @@ class DCOP_GraphColoring(DCOP):
 
 class DCOP_MeetingSchedualingV2(DCOP):
     def __init__(self,id_, A, dcop_name, algorithm):
-        DCOP.__init__(self, id_, meetings, time_slots_D, dcop_name, algorithm)
-        self.users_amount = A
-        self.meetings = meetings
+        DCOP.__init__(self, id_, A, time_slots_D, dcop_name, algorithm)
+        self.users_amount = user_amount
+        self.meetings = A
         self.meetings_per_user_amount = meetings_per_user
         self.min_users_per_meeting = min_users_per_meeting
         self.check_input()
@@ -342,7 +342,7 @@ class DCOP_MeetingSchedualingV2(DCOP):
         self.user_allocation_left = {}
         for user in range(self.users_amount ):
             self.users_perfs_dict[user] = self.create_rnd_pref(user)
-            self.user_allocation_left[user] = meetings_per_user
+            self.user_allocation_left[user] = self.meetings_per_user_amount
         #----------
         self.meetings_per_user_dict = {}
         self.get_meeting_per_agent_dict()
@@ -425,8 +425,8 @@ class DCOP_MeetingSchedualingV2(DCOP):
         return ans
 
     def create_summary(self):
-        return "A_" + str(self.users_amount) + "_" + self.dcop_name + "_meetings_" + str(
-            self.meetings) + "_per_agent_" + str(meetings_per_user) + "_time_slots_" + str(time_slots_D)
+        return  self.dcop_name +"_meetings_" + str(self.meetings) +  "_users_" + str(
+            self.users_amount) + "_per_agent_" + str(meetings_per_user) + "_time_slots_" + str(time_slots_D)
 
     def create_neighbors(self):
         pass
