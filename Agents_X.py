@@ -128,7 +128,7 @@ class AgentX(ABC):
 
 
     ########## UPDATE INFO FROM MESSAGE
-    def update_solution_value_in_local_view(self,msg):
+    def update_solution_value_infrormation_in_local_view(self, msg):
         if msg.msg_type == MsgTypeX.solution_value_information:
             sender = msg.sender
             info = msg.information
@@ -367,7 +367,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
     def update_msgs_in_context(self,msgs):
         for msg in msgs:
             self.update_solution_value_request_data(msg)
-            self.update_solution_value_in_local_view(msg)
+            self.update_solution_value_infrormation_in_local_view(msg)
             self.update_solution_constraints(msg)
             self.update_alternative_constraints(msg)
 
@@ -565,7 +565,7 @@ class AgentX_BroadcastCentral(AgentX):
 
     def update_msgs_in_context(self, msgs):
         for msg in msgs:
-            self.update_solution_value_in_local_view(msg)
+            self.update_solution_value_infrormation_in_local_view(msg)
             self.update_solution_value_request_data(msg)
             self.update_alternative_partial_assignment(msg)
 
@@ -593,7 +593,6 @@ class AgentX_BroadcastCentral(AgentX):
     def compute_send_solution_constraints_to_a_q(self):
         if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
             total_cost_solution = self.get_self_solution_constraints()
-            #stop here, need to send it to aq
             return len(self.solution_constraints[self.id_])
         return 0
 
@@ -651,47 +650,53 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query):
         AgentX_Query_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query)
         self.solution_total_cost = 0
-
+        self.solution_total_cost_per_q_n = {}
     def get_n_ids_to_send(self):
         if AgentXStatues.request_alternative_constraints in self.statues:
-            print("if want to do heuristics, select which group of agents to send alternative constraint request")
+            raise Exception("if want to do heuristics, select which group of agents to send alternative constraint request")
 
     def update_solution_constraints(self, msg):
         if msg.msg_type == MsgTypeX.solution_constraints_information:
             sender = msg.sender
             info = msg.information
-            self.solution_constraints[sender] = info
-            print("need to get the constraint cost out of the messsage")
+            self.solution_constraints[sender] = info[0]
+            self.solution_total_cost_per_q_n[sender] = info[1]
+            raise Exception("DONE! stopped here. need to see what is next.need to get the constraint cost out of the messsage")
 
 
-    def compute_request_solution_constraints(self):
-        NCLO = 0
-        if AgentXStatues.request_solution_constraints in self.statues:
-            print("need to add to solution total cost")
-        return 0
+
     def compute_request_alternative_constraints(self):
         NCLO = 0
 
         if AgentXStatues.request_alternative_constraints in self.statues:
-            print("need to sort and add it to local time + check if need to send at all or what I have in inbox is enough")
+            raise Exception("need to sort and add it to local time + check if need to send at all or what I have in inbox is enough")
         return 0
     def compute_check_if_explanation_is_complete(self):
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
-            print("dont need to sort, use the dictionary and get max out of the entries")
+            raise Exception("dont need to sort, use the dictionary and get max out of the entries")
+        return 0
 
 class AgentX_BroadcastDistributed(AgentX_BroadcastCentral):
-    def __init__(self,id_,variable,domain,neighbors_agents_id):
-        AgentX_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id)
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict):
+        AgentX_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict)
+        self.total_local_cost_solution = 0
 
     def compute_send_solution_constraints_to_a_q(self):
-        print("need to calculate the sum as well and send it")
+        if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
+            self.total_cost_solution = self.get_self_solution_constraints()
+            return len(self.solution_constraints[self.id_])
+        return 0
     def send_solution_constraints(self,msgs_to_send):
-        print("need to also send the sum of costs ")
+        if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
+            bandwidth = len(self.solution_constraints[self.id_])
+            msg = Msg(sender=self.id_, receiver=self.a_q, information=(self.solution_constraints[self.id_],self.total_local_cost_solution),
+                      msg_type=MsgTypeX.solution_constraints_information, bandwidth=bandwidth+1, NCLO=self.local_clock)
+            msgs_to_send.append(msg)
 
 
 
     def compute_send_alternative_constraints_to_a_q(self):
         if AgentXStatues.send_alternative_constraints_to_a_q in self.statues:
             self.get_self_alternative_constraints()
-            print("need to sort it")
+            raise Exception("need to sort it")
         return 0

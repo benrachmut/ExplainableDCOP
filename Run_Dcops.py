@@ -1,7 +1,8 @@
 import pickle
 
+import Algorithm_BnB
 from XDCOPS import QueryGenerator, XDCOP, QueryGeneratorScheduling
-from enums import DcopType
+from enums import *
 from Globals_ import *
 from problems import *
 
@@ -22,17 +23,20 @@ def get_DCOP(i,algorithm,dcop_type,A):
                                        algorithm=algorithm)
 
 def create_dcops():
-    dcops_complete = []
+    dcops_complete = {}
     for i in range(repetitions):
 
-        dcop = get_DCOP(i, algorithm, dcop_type, A)
+        dcop = get_DCOP(i, algo, dcop_type, A)
         print("start:",i, dcop.create_summary())
-
-        dcop.execute_center()
-        dcops_complete.append(dcop)
+        if algo == Algorithm.bnb:
+            dcop.execute_center()
+        else:
+            dcop.execute_distributed()
+        dcops_complete[i] = dcop
 
         with open( dcop.create_summary()+".pkl", "wb") as file:
             pickle.dump(dcops_complete, file)
+
     return dcops_complete
 
 
@@ -54,28 +58,6 @@ def create_x_MeetingSchedualing_dcop(dcop, seed_query, num_meeting, num_alternat
 
 
 
-def create_xdcop(nums_variables,nums_values):
-    ans = {}
-    #for query_type in list(QueryType):
-    query_type = QueryType.educated
-    for num_variables in nums_variables:
-        for num_values in nums_values:
-            ans[num_variables] = []
-
-            for dcop in dcops:
-                print("dcop id:",dcop.dcop_id,num_variables)
-                dcop.create_agent_dict()
-                for seed_ in seeds_xdcop:
-                    if dcop_type == DcopType.meeting_scheduling:
-                        xdcop = create_x_MeetingSchedualing_dcop(dcop, seed_ + 1, num_variables, num_values,
-                                                                 with_connectivity_constraint, query_type)
-                    else:
-                        xdcop = create_x_standard_dcop(dcop, (seed_ + 1), num_variables, num_values,with_connectivity_constraint,query_type)
-                    ans[num_variables].append(xdcop)
-
-    return ans
-
-
 
 
 def create_num_variables():
@@ -90,26 +72,17 @@ def create_num_variables():
 if __name__ == '__main__':
     #####--------------------------------
 
+    dcop_type = DcopType.dense_random_uniform
 
-    dcop_type = DcopType.meeting_scheduling_v2
-
-    if dcop_type == DcopType.sparse_random_uniform or dcop_type == DcopType.dense_random_uniform:
-        A = 10
-    if dcop_type == DcopType.graph_coloring:
-        A = 20
-    if dcop_type == DcopType.meeting_scheduling or dcop_type == DcopType.meeting_scheduling_v2:
-        A = 5#10
+    A = 50#10
     repetitions = 100
 
+    algo = Algorithm.mgm
     dcops = create_dcops()
-    #####--------------------------------
-    seeds_xdcop=[1]
-    nums_variables = ans = range(1, A + 1)
-    nums_values = [1]
 
-    xdcops = create_xdcop(nums_variables,nums_values)
-    with open("xdcops_"+dcops[0].create_summary() + ".pkl", "wb") as file:
-        pickle.dump(xdcops, file)
+
+    #####--------------------------------
+
 
     #query_type = QueryType.educated
     #with_connectivity_constraint = True

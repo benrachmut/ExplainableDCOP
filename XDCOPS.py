@@ -109,6 +109,8 @@ class Explanation():
             if id_ != query_agent_id:
                 if self.explanation_type == ExplanationType.BroadcastCentral:
                     ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
+                if self.explanation_type == ExplanationType.BroadcastDistributed:
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
 
                 ans.append(ax)
         return ans

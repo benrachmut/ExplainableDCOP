@@ -36,15 +36,15 @@ class Agent(ABC):
         pref_domain = rnd_pref_time.choice(self.domain)
         self.unary_constraint = {}
         for d in self.domain:
-            mu = meeting_schedul_min_cost + meeting_schedul_mu_mult_cost * abs(d - pref_domain)
-            std = meeting_schedul_std
-            cost = round(rnd_pref_time.gauss(mu, std))
-            if cost<meeting_schedul_min_cost:
-                cost = meeting_schedul_min_cost
-            if cost>meeting_schedul_max_cost:
-                cost = meeting_schedul_max_cost
+            mu =  meeting_schedul_mu_mult_cost * abs(d - pref_domain)
+            #std = meeting_schedul_std
+            #cost = round(rnd_pref_time.gauss(mu, std))
+            #if cost<meeting_schedul_min_cost:
+            #    cost = meeting_schedul_min_cost
+            #if cost>meeting_schedul_max_cost:
+            #    cost = meeting_schedul_max_cost
 
-            self.unary_constraint[d] = cost
+            self.unary_constraint[d] = mu
 
 
 
@@ -167,5 +167,3 @@ class IncompleteAlgorithm(Completeness,ABC):
 class DSA_C(IncompleteAlgorithm):
     pass
 
-class MGM(IncompleteAlgorithm):
-    pass

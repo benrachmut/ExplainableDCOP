@@ -19,7 +19,7 @@ class DcopType(Enum):
     sparse_random_uniform = 1
     dense_random_uniform = 2
     graph_coloring = 3
-    meeting_scheduling  = 4
+    #meeting_scheduling  = 4
     meeting_scheduling_v2  = 5
 
 class RunWhat(Enum):
@@ -28,5 +28,5 @@ class RunWhat(Enum):
     handle_data = 3
 
 class Algorithm(Enum):
-    branch_and_bound = 1
-    dsa_c = 2
+    bnb = 1
+    mgm = 2

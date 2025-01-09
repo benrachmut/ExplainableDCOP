@@ -1,5 +1,42 @@
 import copy
+from abc import ABC
+
+from Agents import Agent
 from Globals_ import *
+
+
+class Bnb_Central_Agent(Agent,ABC):
+
+    def __init__(self, id_, D):
+        Agent.__init__(self,id_,D)
+
+
+
+    def initialize(self):
+       pass
+
+    def send_msgs(self):
+        pass
+
+
+
+    def update_msgs_in_context(self, msgs):
+        pass
+
+
+
+    def change_status_after_update_msgs_in_context(self, msgs):
+        pass
+
+    def is_compute_in_this_iteration(self):
+        pass
+
+    def compute(self):
+        pass
+
+    def change_status_after_send_msgs(self):
+       pass
+
 
 
 

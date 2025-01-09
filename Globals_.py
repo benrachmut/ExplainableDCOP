@@ -25,7 +25,7 @@ min_users_per_meeting = 2
 
 
 # for DCOPS
-algorithm = Algorithm.branch_and_bound
+#algorithm = Algorithm.bnb
 is_complete = None
 incomplete_iterations = 1000
 my_inf = 99999
@@ -105,10 +105,8 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 #*******************************************#
 
 
-meeting_schedul_min_cost = 10
 meeting_schedul_mu_mult_cost = 10
 meeting_schedul_std =  3
-meeting_schedul_max_cost = 100
 
 def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
@@ -506,4 +504,4 @@ debug_DFS_tree = True
 debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
 debug_BNB = False
-distributed_explanation_debug = False
+distributed_explanation_debug = True

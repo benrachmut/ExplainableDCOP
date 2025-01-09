@@ -6,9 +6,10 @@ from itertools import combinations
 
 from matplotlib.pyplot import connect
 
-from Algorithm_BnB import BranchAndBound
+#from Algorithm_BnB import BranchAndBound
 from Agents import *
-from Algorithm_BnB_Central import Bnb_central
+from Algorithm_BnB_Central import Bnb_central, Bnb_Central_Agent
+from Algorithm_MGM import MGM
 from Globals_ import *
 
 from enums import *
@@ -214,7 +215,6 @@ class DCOP(ABC):
 
 
     def execute_distributed(self):
-        self.draw_global_things()
 
         self.global_clock = 0
         self.agents_init()
@@ -225,8 +225,6 @@ class DCOP(ABC):
                 print("DCOP:",str(self.dcop_id),"global clock:",str(self.global_clock), "is over because there are no messages in system ")
                 break
             self.agents_perform_iteration(self.global_clock)
-            #self.draw_global_things()
-        #self.collect_records()
 
     def __str__(self):
         return self.dcop_name+",id_"+str(self.dcop_id)+",A_"+str(self.A)+",D_"+str(self.D)
@@ -251,7 +249,7 @@ class DCOP(ABC):
         return True
 
     def inform_root(self):
-        if self.algorithm == Algorithm.branch_and_bound:
+        if self.algorithm == Algorithm.bnb:
             root_agent = self.most_dense_agent()
             for a in self.agents:
                 if root_agent.id_ ==a.id_:
@@ -281,8 +279,12 @@ class DCOP(ABC):
         return ans
 
     def create_agent(self,i):
-        if self.algorithm == Algorithm.branch_and_bound:
-            self.agents.append(BranchAndBound(i + 1, self.D))
+
+        if self.algorithm == Algorithm.bnb:
+            a = Bnb_Central_Agent(i + 1, self.D)
+        if self.algorithm == Algorithm.mgm:
+            a = MGM(i + 1, self.D,self.dcop_id)
+        self.agents.append(a)
 
 
 class DCOP_RandomUniform(DCOP):
@@ -413,15 +415,16 @@ class DCOP_MeetingSchedualingV2(DCOP):
         for d in range(self.D): domain.append(d)
         pref_domain = rnd_pref_time.choice(domain)
         for d in domain:
-            mu = meeting_schedul_min_cost + meeting_schedul_mu_mult_cost * abs(d - pref_domain)
-            std = meeting_schedul_std
-            cost = round(rnd_pref_time.gauss(mu, std))
-            if cost<meeting_schedul_min_cost:
-                cost = meeting_schedul_min_cost
-            if cost>meeting_schedul_max_cost:
-                cost = meeting_schedul_max_cost
+            mu = abs(d - pref_domain)
 
-            ans[d] = cost
+            #std = meeting_schedul_std
+            #cost = round(rnd_pref_time.gauss(mu, std))
+            #if cost<meeting_schedul_min_cost:
+            #    cost = meeting_schedul_min_cost
+            #if cost>meeting_schedul_max_cost:
+            #    cost = meeting_schedul_max_cost
+
+            ans[d] = mu
         return ans
 
     def create_summary(self):

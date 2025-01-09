@@ -54,7 +54,7 @@ if __name__ == '__main__':
     with open("xdcops_pickles/"+exp_name+".pkl", "rb") as file:
         x_dcops_dict = pickle.load(file)
 
-    explanation_type = ExplanationType.BroadcastCentral
+    explanation_type = ExplanationType.BroadcastDistributed
     ans = get_data_for_graph()
 
     #line_type_dict = {"educated":'--',"rnd":"solid"}
