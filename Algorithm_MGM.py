@@ -161,6 +161,9 @@ class MGM(Agent,ABC):
 
     def is_algorithm_complete(self):
         """Checks if the algorithm has completed (i.e., if no positive local reduction is left)."""
+        if len(self.neighbors_obj) == 0:
+            return True
+
         if self.lr is None:
             return False
         else:

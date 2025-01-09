@@ -22,8 +22,8 @@ def get_DCOP(i,algorithm,dcop_type,A = 50):
     if dcop_type == DcopType.graph_coloring:
         return DCOP_GraphColoring(i, A,graph_coloring_D, "Graph Coloring", algorithm)
     if dcop_type == DcopType.meeting_scheduling:
-        return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_user,
-                                       time_slots_D=time_slots_D, dcop_name="Meeting Schedualing",
+        return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=MS_meetings_per_user,
+                                       time_slots_D=MS_time_slots_D, dcop_name="Meeting Schedualing",
                                        algorithm = algorithm)
 
 

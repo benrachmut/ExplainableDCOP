@@ -18,10 +18,12 @@ import graphviz
 
 # for x dcop
 
-user_amount = 8#10 #20 #30 #40
-meetings_per_user=2
-time_slots_D=20
-min_users_per_meeting = 2
+#10 #20 #30 #40
+
+
+MS_meetings_per_user=2
+MS_time_slots_D=8
+MS_min_users_per_meeting = 2
 
 
 # for DCOPS
@@ -105,9 +107,8 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 #*******************************************#
 
 
-meeting_schedul_mu_mult_cost = 10
-meeting_schedul_std =  3
-
+MS_mult_cost_factor = 10
+MS_p1 = 0.7
 def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
         return 0

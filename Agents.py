@@ -36,7 +36,7 @@ class Agent(ABC):
         pref_domain = rnd_pref_time.choice(self.domain)
         self.unary_constraint = {}
         for d in self.domain:
-            mu =  meeting_schedul_mu_mult_cost * abs(d - pref_domain)
+            mu = MS_mult_cost_factor * abs(d - pref_domain)
             #std = meeting_schedul_std
             #cost = round(rnd_pref_time.gauss(mu, std))
             #if cost<meeting_schedul_min_cost:

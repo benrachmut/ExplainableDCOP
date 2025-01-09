@@ -14,30 +14,33 @@ def get_DCOP(i,algorithm,dcop_type,A):
         return DCOP_RandomUniform(i, A, dense_D, "Dense Uniform", algorithm,dense_p1)
     if dcop_type == DcopType.graph_coloring:
         return DCOP_GraphColoring(i, A,graph_coloring_D, "Graph Coloring", algorithm)
-    #if dcop_type == DcopType.meeting_scheduling :
-    #    return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_user,
-    #                                   time_slots_D=time_slots_D, dcop_name="Meeting Scheduling",
-    #                                   algorithm = algorithm)
+
     if  dcop_type == DcopType.meeting_scheduling_v2:
         return DCOP_MeetingSchedualingV2(id_=i, A=A, dcop_name="Meeting Scheduling",
                                        algorithm=algorithm)
 
+    #if dcop_type == DcopType.meeting_scheduling :
+    #    return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_user,
+    #                                   time_slots_D=time_slots_D, dcop_name="Meeting Scheduling",
+    #                                   algorithm = algorithm)
+
+
 def create_dcops():
-    dcops_complete = {}
-    for i in range(repetitions):
-
-        dcop = get_DCOP(i, algo, dcop_type, A)
-        print("start:",i, dcop.create_summary())
-        if algo == Algorithm.bnb:
-            dcop.execute_center()
-        else:
-            dcop.execute_distributed()
-        dcops_complete[i] = dcop
-
-        with open( dcop.create_summary()+".pkl", "wb") as file:
-            pickle.dump(dcops_complete, file)
-
-    return dcops_complete
+    ans = {}
+    for A in agents_amounts:
+        ans[A] = {}
+        for algo in algos:
+            ans[A][algo.name] = []
+            if not (algo == Algorithm.bnb and A>10):
+                for i in range(repetitions):
+                    dcop = get_DCOP(i, algo, dcop_type, A)
+                    print("start:",i, dcop.create_summary())
+                    if algo == Algorithm.bnb:
+                        dcop.execute_center()
+                    else:
+                        dcop.execute_distributed()
+            ans[A][algo.name].append(dcop)
+    return ans
 
 
 
@@ -60,25 +63,19 @@ def create_x_MeetingSchedualing_dcop(dcop, seed_query, num_meeting, num_alternat
 
 
 
-def create_num_variables():
-    #if dcop_type == DcopType.meeting_scheduling:
-    #    ans = range(1, meetings + 1)
-    #else:
-    ans = range(1, A + 1)
-
-    return ans
-
-
 if __name__ == '__main__':
     #####--------------------------------
 
-    dcop_type = DcopType.dense_random_uniform
+    dcop_type = DcopType.meeting_scheduling_v2
 
-    A = 50#10
     repetitions = 100
-
-    algo = Algorithm.mgm
+    agents_amounts = [5,10,15,20,25,30,35,40,45,50]
+    algos = [Algorithm.mgm,Algorithm.bnb]
     dcops = create_dcops()
+
+
+    with open( dcop_type.name+".pkl", "wb") as file:
+        pickle.dump(dcops, file)
 
 
     #####--------------------------------

@@ -1,4 +1,5 @@
 import copy
+import math
 import random
 import threading
 from operator import truediv
@@ -138,6 +139,8 @@ class DCOP(ABC):
         self.rnd_cost= random.Random((id_+7)*177)
         self.create_neighbors()
         self.connect_agents_to_neighbors()
+
+
         self.mailer = Mailer(self.agents)
         self.global_clock = 0
         self.inform_root()
@@ -235,6 +238,7 @@ class DCOP(ABC):
         for a in self.agents:
             a.initialize()
 
+
     @abstractmethod
     def create_neighbors(self):
         pass
@@ -292,6 +296,8 @@ class DCOP_RandomUniform(DCOP):
         self.p1 = p1
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
 
+
+
     def create_summary(self):
         return self.dcop_name+"_A_"+str(self.A)+"_p1_"+str(self.p1)
 
@@ -303,6 +309,7 @@ class DCOP_RandomUniform(DCOP):
                 rnd_number = self.rnd_neighbors.random()
                 if rnd_number<self.p1:
                     self.neighbors.append(Neighbors(a1, a2, sparse_random_uniform_cost_function, self.dcop_id))
+
 
 class DCOP_GraphColoring(DCOP):
 
@@ -322,15 +329,17 @@ class DCOP_GraphColoring(DCOP):
                     self.neighbors.append(Neighbors(a1, a2, graph_coloring_cost_function, self.dcop_id))
 
 
-
-
 class DCOP_MeetingSchedualingV2(DCOP):
     def __init__(self,id_, A, dcop_name, algorithm):
-        DCOP.__init__(self, id_, A, time_slots_D, dcop_name, algorithm)
-        self.users_amount = user_amount
+        DCOP.__init__(self, id_, A, MS_time_slots_D, dcop_name, algorithm)
+
+        self.meetings_per_user_amount = MS_meetings_per_user
         self.meetings = A
-        self.meetings_per_user_amount = meetings_per_user
-        self.min_users_per_meeting = min_users_per_meeting
+        self.p1 = MS_p1
+
+        self.users_amount = self.calc_user_amount()
+        self.meetings_per_user_amount = MS_meetings_per_user
+        self.min_users_per_meeting = MS_min_users_per_meeting
         self.check_input()
 
 
@@ -368,7 +377,7 @@ class DCOP_MeetingSchedualingV2(DCOP):
             meeting_obj.perf_per_time_slot = perf_per_time_slot
     def get_all_pref_of_users_per_time_slot_dict(self,users_list):
         ans = {}
-        for time_slot in range(time_slots_D):
+        for time_slot in range(MS_time_slots_D):
             ans[time_slot] = []
         for user in users_list:
             user_pref = self.users_perfs_dict[user]
@@ -428,8 +437,8 @@ class DCOP_MeetingSchedualingV2(DCOP):
         return ans
 
     def create_summary(self):
-        return  self.dcop_name +"_meetings_" + str(self.meetings) +  "_users_" + str(
-            self.users_amount) + "_per_agent_" + str(meetings_per_user) + "_time_slots_" + str(time_slots_D)
+        return self.dcop_name +"_meetings_" + str(self.meetings) +  "_users_" + str(
+            self.users_amount) + "_per_agent_" + str(MS_meetings_per_user) + "_time_slots_" + str(MS_time_slots_D)
 
     def create_neighbors(self):
         pass
@@ -438,8 +447,11 @@ class DCOP_MeetingSchedualingV2(DCOP):
         for meeting_id_1, meeting_id_2 in self.neighbors_tuples:
             meet_obj_1 = self.agents_dict[meeting_id_1]
             meet_obj_2 = self.agents_dict[meeting_id_2]
-            n = Neighbors(meet_obj_1, meet_obj_2, meeting_scheduling_v2_cost_function, self.dcop_id)
-            self.neighbors.append(n)
+
+            self.neighbors.append(Neighbors(meet_obj_1, meet_obj_2, meeting_scheduling_v2_cost_function, self.dcop_id))
+
+            #n = Neighbors(meet_obj_1, meet_obj_2, meeting_scheduling_v2_cost_function, self.dcop_id)
+            #self.neighbors.append(n)
 
     def check_input(self):
         agents_attending_meetings = self.users_amount * self.meetings_per_user_amount
@@ -510,6 +522,11 @@ class DCOP_MeetingSchedualingV2(DCOP):
                     if tup not in self.neighbors_tuples:
                         self.neighbors_tuples.append(tup)
 
+    def calc_user_amount(self):
+        m = self.meetings_per_user_amount
+        n = self.meetings
+        d = self.p1
+        return int(math.ceil((d*n*(n-1))/(m*(m-1))))
 
 
 class DCOP_MeetingSchedualing(DCOP):
@@ -570,7 +587,7 @@ class DCOP_MeetingSchedualing(DCOP):
         return agents_dict
 
     def create_summary(self):
-        return "A_" + str(self.users_amount) +"_" + self.dcop_name +"_meetings_" + str(self.meetings) +"_per_agent_" + str(meetings_per_user) + "_time_slots_" + str(time_slots_D)
+        return "A_" + str(self.users_amount) +"_" + self.dcop_name +"_meetings_" + str(self.meetings) +"_per_agent_" + str(MS_meetings_per_user) + "_time_slots_" + str(MS_time_slots_D)
 
     def get_same_time_slot_agents(self):
         same_time_slot_agents = {}
