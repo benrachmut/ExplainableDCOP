@@ -30,33 +30,23 @@ def create_dcops():
     for A in agents_amounts:
         ans[A] = {}
         for algo in algos:
-            ans[A][algo.name] = []
+            ans[A][algo.name] = {}
             if not (algo == Algorithm.bnb and A>10):
                 for i in range(repetitions):
+
                     dcop = get_DCOP(i, algo, dcop_type, A)
                     print("start:",i, dcop.create_summary())
                     if algo == Algorithm.bnb:
                         dcop.execute_center()
                     else:
                         dcop.execute_distributed()
-            ans[A][algo.name].append(dcop)
+
+                    ans[A][algo.name][i] = (dcop)
     return ans
 
 
 
 
-
-def create_x_standard_dcop(dcop, seed_query, num_variables, num_values,with_connectivity_constraint,query_type):
-    query = QueryGenerator(dcop, seed_query, num_variables, num_values, with_connectivity_constraint,query_type).get_query()
-    query.query_type = query_type
-
-    return XDCOP(dcop, query)
-
-def create_x_MeetingSchedualing_dcop(dcop, seed_query, num_meeting, num_alternative_slot,with_connectivity_constraint,query_type):
-    qg = QueryGeneratorScheduling(dcop, seed_query, num_meeting, num_alternative_slot, with_connectivity_constraint,query_type)
-    query =qg.get_query()
-    query.query_type = query_type
-    return XDCOP(dcop, query)
 
 
 
@@ -69,12 +59,12 @@ if __name__ == '__main__':
     dcop_type = DcopType.meeting_scheduling_v2
 
     repetitions = 100
-    agents_amounts = [5,10,15,20,25,30,35,40,45,50]
+    agents_amounts = [5]#[5,10,15,20,25,30,35,40,45,50]
     algos = [Algorithm.mgm,Algorithm.bnb]
     dcops = create_dcops()
 
 
-    with open( dcop_type.name+".pkl", "wb") as file:
+    with open( "dcops_"+dcop_type.name+".pkl", "wb") as file:
         pickle.dump(dcops, file)
 
 
