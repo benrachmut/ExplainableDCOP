@@ -16,11 +16,11 @@ class ExplanationType(Enum):
 
 
 class DcopType(Enum):
-    sparse_random_uniform = 1
-    dense_random_uniform = 2
-    graph_coloring = 3
-    #meeting_scheduling  = 4
-    meeting_scheduling_v2  = 5
+    #sparse_random_uniform = 1
+    #dense_random_uniform = 2
+    random_uniform = 1
+    graph_coloring = 2
+    meeting_scheduling_v2  = 3
 
 class RunWhat(Enum):
     dcops = 1

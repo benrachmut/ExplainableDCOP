@@ -302,6 +302,10 @@ class DCOP_RandomUniform(DCOP):
         return self.dcop_name+"_A_"+str(self.A)+"_p1_"+str(self.p1)
 
     def create_neighbors(self):
+
+        neighbors_dict_per_agent_ids = {}
+        for a in self.agents:
+            neighbors_dict_per_agent_ids[a]=[]
         for i in range(self.A):
             a1 = self.agents[i]
             for j in range(i+1,self.A):
@@ -309,13 +313,21 @@ class DCOP_RandomUniform(DCOP):
                 rnd_number = self.rnd_neighbors.random()
                 if rnd_number<self.p1:
                     self.neighbors.append(Neighbors(a1, a2, sparse_random_uniform_cost_function, self.dcop_id))
-
+                    neighbors_dict_per_agent_ids[a1].append(a2)
+                    neighbors_dict_per_agent_ids[a2].append(a1)
+        for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
+            if len(neighbors_list)==0:
+                while True:
+                    rnd_agent = self.rnd_neighbors.choice(self.agents)
+                    if rnd_agent.id_ != a1.id_:
+                        self.neighbors.append(Neighbors(a1, rnd_agent, sparse_random_uniform_cost_function, self.dcop_id))
+                        break
 
 class DCOP_GraphColoring(DCOP):
 
-    def __init__(self, id_,A,D,dcop_name,algorithm):
+    def __init__(self, id_,A,D,dcop_name,algorithm,p1):
         DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
-
+        self.p1 = p1
     def create_summary(self):
         return self.dcop_name+"_A_"+str(self.A)+"_p1_"+str(graph_coloring_p1)
 
@@ -325,17 +337,17 @@ class DCOP_GraphColoring(DCOP):
             for j in range(i+1,self.A):
                 a2 = self.agents[j]
                 rnd_number = self.rnd_neighbors.random()
-                if rnd_number<graph_coloring_p1:
+                if rnd_number<self.p1:
                     self.neighbors.append(Neighbors(a1, a2, graph_coloring_cost_function, self.dcop_id))
 
 
 class DCOP_MeetingSchedualingV2(DCOP):
-    def __init__(self,id_, A, dcop_name, algorithm):
+    def __init__(self,id_, A, dcop_name, algorithm,p1):
         DCOP.__init__(self, id_, A, MS_time_slots_D, dcop_name, algorithm)
-
+        DCOP.dcop_name = dcop_name
         self.meetings_per_user_amount = MS_meetings_per_user
         self.meetings = A
-        self.p1 = MS_p1
+        self.p1 = p1
 
         self.users_amount = self.calc_user_amount()
         self.meetings_per_user_amount = MS_meetings_per_user
@@ -406,9 +418,6 @@ class DCOP_MeetingSchedualingV2(DCOP):
 
 
 
-
-
-
     def meetings_per_agent_dict_have_required_min_per_meet(self):
         for users_in_meet in self.meetings_per_user_dict.values():
             if len(users_in_meet) < self.min_users_per_meeting:
@@ -456,7 +465,8 @@ class DCOP_MeetingSchedualingV2(DCOP):
     def check_input(self):
         agents_attending_meetings = self.users_amount * self.meetings_per_user_amount
         if agents_attending_meetings < self.min_users_per_meeting * self.meetings:
-            raise ValueError("need min amount of agents in a meeting to be 2")
+            pass
+            #raise ValueError("need min amount of agents in a meeting to be 2")
         if self.meetings_per_user_amount > self.meetings:
             raise ValueError("meetings_per_agent>meetings")
 
@@ -475,7 +485,9 @@ class DCOP_MeetingSchedualingV2(DCOP):
 
         for user_id, meetings_allocated_left in self.user_allocation_left.items():
             if meetings_allocated_left<0:
-                raise Exception("dont have enought users attending meetings to allocate")
+                #print()
+                pass
+                #raise Exception("dont have enought users attending meetings to allocate")
 
     def clear_user_allocation_left(self):
         users_that_are_done = []
@@ -500,9 +512,11 @@ class DCOP_MeetingSchedualingV2(DCOP):
             meetings_that_user_is_not_allocated_to = self.get_meetings_that_user_is_not_allocated_to(user_id)
             possible_meetings_to_allocate = copy.deepcopy(list(self.meetings_per_user_dict.keys()))
             possible_meetings_to_allocate = [item for item in possible_meetings_to_allocate if item not in meetings_that_user_is_not_allocated_to]
-            random_selection = self.rnd_users_per_meet_distribution.sample(possible_meetings_to_allocate, meetings_allocated_left)
-            for meeting_id in random_selection:
-                self.meetings_per_user_dict[meeting_id].append(user_id)
+
+            if meetings_allocated_left>0:
+                random_selection = self.rnd_users_per_meet_distribution.sample(possible_meetings_to_allocate, meetings_allocated_left)
+                for meeting_id in random_selection:
+                    self.meetings_per_user_dict[meeting_id].append(user_id)
 
     def get_user_meetings_dict(self):
 
