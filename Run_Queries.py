@@ -42,21 +42,21 @@ def get_x_dcops_dict(dcops_for_different_configs):
     for density, dict_1 in dcops_for_different_configs.items():
         print("################ density",density)
         ans[density] = {}
+
         for agents_amount, dict_2 in dict_1.items():
             print("------ agents_amount", agents_amount)
 
             ans[density][agents_amount] = {}
-
             for query_type in query_types_list:
                 print("**** query_type", query_type)
 
                 ans[density][agents_amount][query_type] = {}
 
-                if agents_amount<=10:
+                if agents_amount <= 10:
 
-                    amount_of_variables_list = range(min_vars, min(max_vars_below_eq_10, agents_amount)+1)
+                    amount_of_variables_list = range(min_vars, min(max_vars_below_eq_10, agents_amount) + 1)
                 else:
-                    amount_of_variables_list = [1,5]#,10]
+                    amount_of_variables_list = vars_above_10_list
 
                 for amount_of_vars in amount_of_variables_list:
                     print("%% amount_of_vars", amount_of_vars)
@@ -73,7 +73,8 @@ def get_x_dcops_dict(dcops_for_different_configs):
                             query = query_generator.get_query(algo, dcop_id)
                             ans[density][agents_amount][query_type][amount_of_vars][dcop_id] = XDCOP(dcop,query)
 
-
+                with open("xdcops_ " + file_name + ".pkl", "wb") as file:
+                    pickle.dump(ans, file)
 def create_xdcop():
 
     dcops_for_different_configs = get_dcops_for_different_configs()
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     seeds_xdcop = [1]
     min_vars = 1
     max_vars_below_eq_10 = 5
-    max_vars_above_10 = 5
+    vars_above_10_list = [1,5]
 
     query_types_list = list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
     xdcops = create_xdcop()
@@ -116,5 +117,4 @@ if __name__ == '__main__':
 
     with open("xdcops_ " +file_name + ".pkl", "wb") as file:
         pickle.dump(xdcops, file)
-
 
