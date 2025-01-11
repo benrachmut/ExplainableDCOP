@@ -1,9 +1,8 @@
 import pickle
-import statistics
 
 from matplotlib import pyplot as plt
 
-from XDCOPS import Explanation
+from B_xdcop_files.XDCOPS import Explanation
 from enums import ExplanationType
 
 def get_explanation_summary_data(x_dcops_list):

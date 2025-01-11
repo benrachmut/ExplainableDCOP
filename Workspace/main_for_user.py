@@ -1,14 +1,8 @@
-import math
 import pickle
-import tkinter as tk
 
-from Globals_ import *
-from tkinter import ttk, messagebox
-
-from XDCOPS import *
+from B_xdcop_files.XDCOPS import *
 # Example choices for DCOP type and Algorithm
-from enums import DcopType, Algorithm
-from problems import *
+from A_dcop_files.problems import *
 import plotly.graph_objects as go
 
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from Agents import Agent
+from A_dcop_files.Agents import Agent
 from enum import Enum
 from Globals_ import Msg, copy_dict
 import random

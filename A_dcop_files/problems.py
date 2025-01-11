@@ -1,22 +1,15 @@
 import copy
 import math
-import random
-import threading
-from operator import truediv
 from itertools import combinations
 
-from matplotlib.pyplot import connect
-
 #from Algorithm_BnB import BranchAndBound
-from Agents import *
-from Algorithm_BnB_Central import Bnb_central, Bnb_Central_Agent
-from Algorithm_MGM import MGM
+from A_dcop_files.Agents import *
+from A_dcop_files.Algorithm_BnB_Central import Bnb_central, Bnb_Central_Agent
+from A_dcop_files.Algorithm_MGM import MGM
 from Globals_ import *
 
 from enums import *
 from abc import ABC, abstractmethod
-from collections import defaultdict
-
 
 
 class Neighbors():
@@ -433,7 +426,7 @@ class DCOP_MeetingSchedualingV2(DCOP):
         for d in range(self.D): domain.append(d)
         pref_domain = rnd_pref_time.choice(domain)
         for d in domain:
-            mu = abs(d - pref_domain)
+            mu = MS_mult_cost_factor*abs(d - pref_domain)
 
             #std = meeting_schedul_std
             #cost = round(rnd_pref_time.gauss(mu, std))

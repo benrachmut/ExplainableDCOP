@@ -6,7 +6,8 @@ from enum import Enum
 
 class QueryType(Enum):
     educated = 1
-    rnd = 2
+    semi_educated = 2
+    rnd = 3
 
 
 class ExplanationType(Enum):

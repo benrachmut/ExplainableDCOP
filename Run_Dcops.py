@@ -1,10 +1,6 @@
 import pickle
 
-import Algorithm_BnB
-from XDCOPS import QueryGenerator, XDCOP, QueryGeneratorScheduling
-from enums import *
-from Globals_ import *
-from problems import *
+from A_dcop_files.problems import *
 
 
 def get_density_type_str(p1):
@@ -23,7 +19,7 @@ def get_DCOP(i,algorithm,dcop_type,A,p1):
 
 
     if dcop_type == DcopType.random_uniform:
-        return DCOP_RandomUniform(i, A, sparse_D,density_type_str+"_Sparse Uniform", algorithm,p1)
+        return DCOP_RandomUniform(i, A, sparse_D,density_type_str+"_Random Uniform", algorithm,p1)
 
     if dcop_type == DcopType.graph_coloring:
         return DCOP_GraphColoring(i, A,graph_coloring_D, density_type_str+"_Graph Coloring", algorithm)
@@ -71,9 +67,9 @@ if __name__ == '__main__':
     #####--------------------------------
 
     dcop_type = DcopType.meeting_scheduling_v2
-    p1s = [0.2,0.5,0.7]
+    p1s = [0.7,0.5,0.2]
     repetitions = 100
-    agents_amounts = [5,10,15,20,25,30,35,40,45,50]
+    agents_amounts = [5,15,20]#[5,15,20,25,30,35,40,45,50] #+[10]
     algos = [Algorithm.mgm,Algorithm.bnb]
     dcops = create_dcops()
 
@@ -81,14 +77,3 @@ if __name__ == '__main__':
     with open( "dcops_"+dcop_type.name+".pkl", "wb") as file:
         pickle.dump(dcops, file)
 
-
-    #####--------------------------------
-
-
-    #query_type = QueryType.educated
-    #with_connectivity_constraint = True
-    #seeds_xdcop = [1]  # range(0, 2)
-    #nums_variables = [8]  # [1, 5, 9]  # range(2, A)
-    #nums_values = [1]  # [1,2,3,4,5]#[1,5,9]  # range(1, max_domain-1)
-    #num_meetings = [2, 3]
-    #num_alternative_slots = [1]

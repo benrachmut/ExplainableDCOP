@@ -1,10 +1,7 @@
-import copy
 from abc import ABC, abstractmethod
-from collections import Set
 from functools import cmp_to_key
 
-from Globals_ import *
-from Queries import *
+from B_xdcop_files.Queries import *
 
 
 class MsgTypeX(Enum):

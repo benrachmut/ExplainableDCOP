@@ -1,7 +1,7 @@
 import copy
 from abc import ABC
 
-from Agents import Agent
+from A_dcop_files.Agents import Agent
 from Globals_ import *
 
 

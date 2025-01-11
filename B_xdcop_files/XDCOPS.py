@@ -1,5 +1,5 @@
-
-from Agents_X import *
+from B_xdcop_files.Agents_X import *
+from B_xdcop_files.Queries import *
 from Globals_ import *
 
 

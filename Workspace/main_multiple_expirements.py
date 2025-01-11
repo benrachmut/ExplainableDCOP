@@ -1,10 +1,7 @@
 import pickle
 
-import matplotlib.pyplot as plt
-
-from Globals_ import *
-from XDCOPS import *
-from problems import *
+from B_xdcop_files.XDCOPS import *
+from A_dcop_files.problems import *
 
 
 
