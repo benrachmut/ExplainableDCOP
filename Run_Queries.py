@@ -14,10 +14,10 @@ def create_x_standard_dcop(dcop, seed_query, num_variables, num_values,with_conn
 def get_dcops_for_different_configs():
     ans = {}
     for density, dict_1 in dcops.items():
-        print("density",density)
+        #print("density",density)
         ans[density] = {}
         for agent_size, dict_2 in dict_1.items():
-            print("agent_size",agent_size)
+            #print("agent_size",agent_size)
             ans[density][agent_size] = {}
             algos_list = list(dict_2.keys())
             algos_to_remove = []
@@ -40,13 +40,27 @@ def get_dcops_for_different_configs():
 def get_x_dcops_dict(dcops_for_different_configs):
     ans = {}
     for density, dict_1 in dcops_for_different_configs.items():
+        print("################ density",density)
         ans[density] = {}
         for agents_amount, dict_2 in dict_1.items():
+            print("------ agents_amount", agents_amount)
+
             ans[density][agents_amount] = {}
+
             for query_type in query_types_list:
+                print("**** query_type", query_type)
+
                 ans[density][agents_amount][query_type] = {}
-                amount_of_variables_list = range(min_vars, min(max_vars, agents_amount))
+
+                if agents_amount<=10:
+
+                    amount_of_variables_list = range(min_vars, min(max_vars_below_eq_10, agents_amount)+1)
+                else:
+                    amount_of_variables_list = [1,5,10]
+
                 for amount_of_vars in amount_of_variables_list:
+                    print("%% amount_of_vars", amount_of_vars)
+
                     ans[density][agents_amount][query_type][amount_of_vars] = {}
                     for dcop_id, dcops_dict in dict_2.items():
 
@@ -92,9 +106,11 @@ if __name__ == '__main__':
     with open(directory+".pkl", "rb") as file:
         dcops = pickle.load(file)
     seeds_xdcop = [1]
-    min_vars = 2
-    max_vars = 10
-    query_types_list = [QueryType.rnd]#[QueryType.educated,QueryType.rnd]
+    min_vars = 1
+    max_vars_below_eq_10 = 5
+    max_vars_above_10 = 5
+
+    query_types_list = list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
     xdcops = create_xdcop()
 
 

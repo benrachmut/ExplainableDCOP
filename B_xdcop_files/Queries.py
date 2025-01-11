@@ -215,15 +215,17 @@ class QueryGenerator:
         if self.query_type == QueryType.educated or self.query_type == QueryType.semi_educated:
             possible_alternatives_dict = self.get_possible_alternatives_dict(self.complete_assignments_dict)
 
-            agents_for_educated = self.create_agents_for_educated(possible_alternatives_dict)
-            bnb = Bnb_central(agents_for_educated)
-            dcop_solution = bnb.UB
-            dict_ = dcop_solution[0]
-            alternative_values = {}
-            for a_id,val in dict_.items():
-                if a_id in self.variables_dict.keys():
-                    alternative_values[a_id] = [val]
-            ans[algo] = alternative_values
+            agents_for_educated_dict = self.create_agents_for_educated(possible_alternatives_dict)
+            for algo, agents_for_educated in agents_for_educated_dict.items():
+                bnb = Bnb_central(agents_for_educated)
+
+                dcop_solution = bnb.UB
+                dict_ = dcop_solution[0]
+                alternative_values = {}
+                for a_id,val in dict_.items():
+                    if a_id in self.variables_dict.keys():
+                        alternative_values[a_id] = [val]
+                ans[algo] = alternative_values
         return ans
 
     def get_agent_domain(self,domain_list,algo,solution_value,possible_alternatives_dict,id_):
@@ -232,7 +234,7 @@ class QueryGenerator:
                 domain_list.remove(solution_value)
             if self.query_type == QueryType.semi_educated:
                 domain_list = copy.deepcopy( possible_alternatives_dict[id_])
-                print()
+
         else:
             if self.query_type == QueryType.educated:
                 domain_list = copy.deepcopy([solution_value])
