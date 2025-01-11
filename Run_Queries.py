@@ -56,7 +56,7 @@ def get_x_dcops_dict(dcops_for_different_configs):
 
                     amount_of_variables_list = range(min_vars, min(max_vars_below_eq_10, agents_amount)+1)
                 else:
-                    amount_of_variables_list = [1,5,10]
+                    amount_of_variables_list = [1,5]#,10]
 
                 for amount_of_vars in amount_of_variables_list:
                     print("%% amount_of_vars", amount_of_vars)
