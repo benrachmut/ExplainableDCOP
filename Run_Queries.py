@@ -50,7 +50,7 @@ def get_x_dcops_dict(dcops_for_different_configs):
             for query_type in query_types_list:
                 print("**** query_type", query_type)
 
-                ans[density][agents_amount][query_type] = {}
+                ans[density][agents_amount][query_type.name] = {}
 
                 if agents_amount <= 10:
 
@@ -61,20 +61,18 @@ def get_x_dcops_dict(dcops_for_different_configs):
                 for amount_of_vars in amount_of_variables_list:
                     print("%% amount_of_vars", amount_of_vars)
 
-                    ans[density][agents_amount][query_type][amount_of_vars] = {}
+                    ans[density][agents_amount][query_type.name][amount_of_vars] = {}
                     for dcop_id, dcops_dict in dict_2.items():
 
                         query_generator = QueryGenerator(dcops_dict, amount_of_vars, query_type)
                         #                      query_type).get_query()
 
                         for algo,dcop in dcops_dict.items():
-                            if algo not in ans[density][agents_amount][query_type][amount_of_vars]:
-                                ans[density][agents_amount][query_type][amount_of_vars][algo] = {}
+                            if algo not in ans[density][agents_amount][query_type.name][amount_of_vars]:
+                                ans[density][agents_amount][query_type.name][amount_of_vars] = {}
                             query = query_generator.get_query(algo, dcop_id)
-                            ans[density][agents_amount][query_type][amount_of_vars][dcop_id] = XDCOP(dcop,query)
-
-                with open("xdcops_ " + file_name + ".pkl", "wb") as file:
-                    pickle.dump(ans, file)
+                            ans[density][agents_amount][query_type.name][amount_of_vars][algo] = XDCOP(dcop,query)
+    return ans
 def create_xdcop():
 
     dcops_for_different_configs = get_dcops_for_different_configs()
