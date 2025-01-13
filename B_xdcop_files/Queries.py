@@ -121,6 +121,7 @@ class QueryGenerator:
         self.solution_partial_assignment_dict = self.get_solution_partial_assignment_dict()
         self.alternative_values = self.get_alternative_values()
 
+
     def get_query(self,algo,dcop_id):
         return Query( id_=self.id_,dcop_id=dcop_id,agent=self.a_q_dict[algo], variables_in_query=self.variables_dict[algo], solution_complete_assignment=self.complete_assignments_dict[algo],
             alternative_values = self.alternative_values[algo], solution_partial_assignment=self.solution_partial_assignment_dict[algo])
@@ -223,7 +224,7 @@ class QueryGenerator:
                 dict_ = dcop_solution[0]
                 alternative_values = {}
                 for a_id,val in dict_.items():
-                    if a_id in self.variables_dict.keys():
+                    if a_id in self.variables_dict[algo].keys():
                         alternative_values[a_id] = [val]
                 ans[algo] = alternative_values
         return ans
@@ -254,8 +255,8 @@ class QueryGenerator:
                 solution_value = self.complete_assignments_dict[algo][id_]
                 full_domain_list = copy.deepcopy(agent.domain)
                 domain_list = self.get_agent_domain(full_domain_list,algo,solution_value,possible_alternatives_dict,id_)
-                neighbors_obj = copy.deepcopy(agent.neighbors_obj)
-                neighbors_obj_dict = copy.deepcopy(agent.neighbors_obj_dict)
+                neighbors_obj = agent.neighbors_obj
+                neighbors_obj_dict = agent.neighbors_obj_dict
                 neighbors_agents_id = copy.deepcopy(agent.neighbors_agents_id)
                 a = AgentForEducatedQuery(id_, domain_list, neighbors_obj, neighbors_obj_dict, neighbors_agents_id,
                                               None)

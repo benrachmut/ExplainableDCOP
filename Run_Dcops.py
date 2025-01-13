@@ -1,8 +1,9 @@
 import pickle
 
 from A_dcop_files.problems import *
-from B_xdcop_files.Queries import QueryGenerator
+from B_xdcop_files.Queries import QueryGenerator, Query
 from B_xdcop_files.XDCOPS import XDCOP
+from enums import QueryType
 
 
 def get_density_type_str(p1):
@@ -178,7 +179,7 @@ if __name__ == '__main__':
     max_vars_below_eq_10 = 5
     vars_above_10_list = [1,5]
 
-    query_types_list = list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
+    query_types_list =[QueryType.rnd]# list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
     xdcops = create_xdcop()
 
     with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+".pkl", "wb") as file:

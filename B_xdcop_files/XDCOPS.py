@@ -25,6 +25,7 @@ class Explanation():
             self.x_agents.append(self.query_agent)
             self.mailer = Mailer(self.x_agents)
             self.execute_distributed()
+
     def agents_init(self):
         for a in self.x_agents:
             a.initialize()
