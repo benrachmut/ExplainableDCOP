@@ -6,6 +6,13 @@ from B_xdcop_files.XDCOPS import XDCOP
 from enums import QueryType
 
 
+
+
+class ScaleType(Enum):
+    dcop_scale = 1
+    query_scale = 2
+
+
 def get_density_type_str(p1):
     if p1<0.5:
         return "sparse"
@@ -109,11 +116,11 @@ def get_x_dcops_dict(dcops_for_different_configs):
 
                 ans[density][agents_amount][query_type.name] = {}
 
-                if agents_amount <= 10:
+                if scale_type == ScaleType.query_scale:
 
-                    amount_of_variables_list = range(min_vars, min(max_vars_below_eq_10, agents_amount) + 1)
+                    amount_of_variables_list = range(1, 10+ 1)
                 else:
-                    amount_of_variables_list = vars_above_10_list
+                    amount_of_variables_list = vars_DCOP_scale
 
                 for amount_of_vars in amount_of_variables_list:
                     print("%% amount_of_vars", amount_of_vars)
@@ -161,12 +168,9 @@ def create_xdcop():
 
 
 
-
-
-
 if __name__ == '__main__':
     #####--------------------------------
-
+    scale_type = ScaleType.query_scale
     dcop_type = DcopType.meeting_scheduling_v2
     p1s = [0.7]#,0.5,0.2]
     repetitions = 3
@@ -177,12 +181,12 @@ if __name__ == '__main__':
     seeds_xdcop = [1]
     min_vars = 1
     max_vars_below_eq_10 = 5
-    vars_above_10_list = [1,5]
+    vars_DCOP_scale = [1, 5]
 
     query_types_list =[QueryType.rnd]# list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
     xdcops = create_xdcop()
 
-    with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+".pkl", "wb") as file:
+    with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+"_"+scale_type.name+".pkl", "wb") as file:
         pickle.dump(xdcops, file)
 
 
