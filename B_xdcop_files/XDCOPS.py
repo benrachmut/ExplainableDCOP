@@ -16,15 +16,15 @@ class Explanation():
         #self.data_entry["Explanation_Algorithm"]= explanation_type.name
         #self.data_entry["Query_Generator_Type"]= query.query_type.name
 
-        if explanation_type == ExplanationType.Centralized:
-            self.get_centralized_explanation()
+        #if explanation_type == ExplanationType.Centralized:
+        #    self.get_centralized_explanation()
 
-        else:# explanation_type == ExplanationType.BroadcastNaive:
-            self.query_agent,query_agent_id = self.create_query_x_agent(self.query.agent)
-            self.x_agents = self.create_x_agents(dcop,query_agent_id) # all
-            self.x_agents.append(self.query_agent)
-            self.mailer = Mailer(self.x_agents)
-            self.execute_distributed()
+        #else:# explanation_type == ExplanationType.BroadcastNaive:
+        self.query_agent,query_agent_id = self.create_query_x_agent(self.query.agent)
+        self.x_agents = self.create_x_agents(dcop,query_agent_id) # all
+        self.x_agents.append(self.query_agent)
+        self.mailer = Mailer(self.x_agents)
+        self.execute_distributed()
 
     def agents_init(self):
         for a in self.x_agents:
@@ -89,12 +89,21 @@ class Explanation():
         id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
         if self.explanation_type == ExplanationType.CEDAR_opt2:
             ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
+        if self.explanation_type == ExplanationType.CEDAR_opt2_no_sort:
+            ax = AgentX_Query_BroadcastCentral_NoSort(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
         if self.explanation_type == ExplanationType.CEDAR_opt3A:
             ax = AgentX_Query_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
-        if self.explanation_type == ExplanationType.CEDAR_opt3B:
+        if self.explanation_type == ExplanationType.CEDAR_opt3B_not_optimal:
             ax = AgentX_Query_BroadcastDistributedV2(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
                                                    self.query)
 
+        if self.explanation_type == ExplanationType.CEDAR_variant_max:
+            ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_max(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                                     self.query)
+        if self.explanation_type == ExplanationType.CEDAR_variant_mean:
+            ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(id_, variable, domain,
+                                                                              neighbors_agents_id, neighbors_obj_dict,
+                                                                              self.query)
         return ax,id_
 
 
@@ -111,9 +120,11 @@ class Explanation():
         for agent in dcop.agents:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
-                if self.explanation_type == ExplanationType.CEDAR_opt2:
+                if self.explanation_type == ExplanationType.CEDAR_opt2 or  self.explanation_type == ExplanationType.CEDAR_opt2_no_sort:
                     ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
-                if self.explanation_type == ExplanationType.CEDAR_opt3A or self.explanation_type == ExplanationType.CEDAR_opt3B:
+                if self.explanation_type == ExplanationType.CEDAR_opt3A or self.explanation_type == ExplanationType.CEDAR_opt3B_not_optimal:
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
+                if self.explanation_type == ExplanationType.CEDAR_variant_max or self.explanation_type == ExplanationType.CEDAR_variant_mean:
                     ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
 
                 ans.append(ax)
@@ -126,6 +137,7 @@ class Explanation():
         self.min_cum_delta_from_solution = self.cum_delta_from_solution_dict[self.min_constraint_collection]
 
     def collect_data(self):
+        self.data_entry["Alternative_delta_cost_per_addition"] = self.query_agent.alternative_delta_constraints_cost_per_addition
         self.data_entry["Iterations"] = self.iteration
         self.data_entry["NCLO"] = self.mailer.mailer_clock
         self.data_entry["NCLO_for_valid_solution"] = self.query_agent.NCLO_for_valid_solution

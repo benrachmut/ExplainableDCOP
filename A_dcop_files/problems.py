@@ -426,7 +426,7 @@ class DCOP_MeetingSchedualingV2(DCOP):
         for d in range(self.D): domain.append(d)
         pref_domain = rnd_pref_time.choice(domain)
         for d in domain:
-            mu = MS_mult_cost_factor*abs(d - pref_domain)
+            mu = MS_mult_cost_factor**abs(d - pref_domain)
 
             #std = meeting_schedul_std
             #cost = round(rnd_pref_time.gauss(mu, std))

@@ -30,7 +30,7 @@ MS_min_users_per_meeting = 2
 #algorithm = Algorithm.bnb
 is_complete = None
 incomplete_iterations = 1000
-my_inf = 9999999
+my_inf = 10000
 special_generator_for_MeetingScheduling = True
 with_connectivity_constraint = True
 #### DCOPS_INPUT ####
@@ -107,7 +107,7 @@ def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 #*******************************************#
 
 
-MS_mult_cost_factor = 10
+MS_mult_cost_factor = 2
 MS_p1 = 0.5
 def meeting_scheduling_must_be_equal_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
@@ -506,3 +506,4 @@ debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
 debug_BNB = False
 distributed_explanation_debug = False
+

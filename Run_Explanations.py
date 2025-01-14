@@ -42,12 +42,12 @@ if __name__ == '__main__':
     folder_name = "pickles_query_scale"
     exp_name = "xdcops_meeting_scheduling_v2_A_[10]_p1_[0.7]_query_scale"
     with open(folder_name+"/"+exp_name+".pkl", "rb") as file:
-
-
-    #with open("xdcops_meeting_scheduling_v2_A_[5]_p1_[0.7]_query_scale.pkl", "rb") as file:
         x_dcops_dict = pickle.load(file)
-    explanation_types = [ExplanationType.CEDAR_opt3A,ExplanationType.CEDAR_opt3B, ExplanationType.CEDAR_opt2]#
 
+
+    #explanation_types = list(ExplanationType)
+    # [ExplanationType.CEDAR_opt3A, ExplanationType.CEDAR_opt3B_not_optimal, ExplanationType.CEDAR_opt2,ExplanationType.CEDAR_opt2_no_sort]#
+    explanation_types = list(ExplanationType)
     explanations = create_explanations()
 
     with open("C_Create_Graphs/explanations.pkl", "wb") as file:

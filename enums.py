@@ -11,10 +11,13 @@ class QueryType(Enum):
 
 
 class ExplanationType(Enum):
-    Centralized = 1
-    CEDAR_opt2 = 2
+    #Centralized = 1
+    CEDAR_opt2 = 1
+    CEDAR_opt2_no_sort = 2
     CEDAR_opt3A = 3
-    CEDAR_opt3B = 4
+    CEDAR_opt3B_not_optimal = 4
+    CEDAR_variant_max=5
+    CEDAR_variant_mean=6
 
 class DcopType(Enum):
     #sparse_random_uniform = 1

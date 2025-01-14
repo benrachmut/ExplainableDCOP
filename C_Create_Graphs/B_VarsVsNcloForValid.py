@@ -9,9 +9,9 @@ with open("explanations.pkl", "rb") as file:
 
 density = 0.7
 agent_amount = 10
-query_type = QueryType.educated.name
+query_type = QueryType.rnd.name
 explanation_type = [ExplanationType.CEDAR_opt2.name, ExplanationType.CEDAR_opt3A.name]
-measure_name =  "NCLO_for_valid_solution" #"Cost delta of All Alternatives""Cost delta of Valid"
+measure_name =  "Alternative # Constraint"#"NCLO_for_valid_solution" #"Delta Cost per Constraint" "Alternative # Constraint", "NCLO_for_valid_solution"
 
 dict_1 = exp_dict[density][agent_amount][query_type]
 x_y_full_dict = {}
