@@ -118,6 +118,20 @@ class QueryGenerator:
             self.a_q_dict[algo] = dcop.agents_dict[a_q_id]
         self.with_connectivity_constraint = with_connectivity_constraint
         self.variables_dict = self.get_variables()
+        if self.with_connectivity_constraint:
+            for algo, agent_dict in self.variables_dict.items():
+                if len(self.variables_dict[algo])>1:
+                    for a_id in agent_dict.keys():
+                        flag = False
+                        for other_id in agent_dict.keys():
+                            if a_id !=other_id:
+                                a_id_neighbors_ids = agent_dict[a_id].neighbors_agents_id
+                                if other_id in a_id_neighbors_ids:
+                                    flag = True
+
+                                    break
+                        if not flag:
+                            raise Exception("connectivity but")
         self.solution_partial_assignment_dict = self.get_solution_partial_assignment_dict()
         self.alternative_values = self.get_alternative_values()
 

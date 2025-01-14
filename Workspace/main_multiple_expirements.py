@@ -149,7 +149,7 @@ if __name__ == '__main__':
     meetings_per_agent = 2
     time_slots_D = 10
 
-    explanation_type = ExplanationType.BroadcastCentral
+    explanation_type = ExplanationType.CEDAR_opt2
     query_type = QueryType.educated
     with_connectivity_constraint = True
     seeds_xdcop = [1]  # range(0, 2)

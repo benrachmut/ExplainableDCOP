@@ -87,10 +87,13 @@ class Explanation():
 
     def create_query_x_agent(self, agent):
         id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
-        if self.explanation_type == ExplanationType.BroadcastCentral:
+        if self.explanation_type == ExplanationType.CEDAR_opt2:
             ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
-        if self.explanation_type == ExplanationType.BroadcastDistributed:
+        if self.explanation_type == ExplanationType.CEDAR_opt3A:
             ax = AgentX_Query_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
+        if self.explanation_type == ExplanationType.CEDAR_opt3B:
+            ax = AgentX_Query_BroadcastDistributedV2(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                                   self.query)
 
         return ax,id_
 
@@ -108,9 +111,9 @@ class Explanation():
         for agent in dcop.agents:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
-                if self.explanation_type == ExplanationType.BroadcastCentral:
+                if self.explanation_type == ExplanationType.CEDAR_opt2:
                     ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
-                if self.explanation_type == ExplanationType.BroadcastDistributed:
+                if self.explanation_type == ExplanationType.CEDAR_opt3A or self.explanation_type == ExplanationType.CEDAR_opt3B:
                     ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
 
                 ans.append(ax)
@@ -125,23 +128,33 @@ class Explanation():
     def collect_data(self):
         self.data_entry["Iterations"] = self.iteration
         self.data_entry["NCLO"] = self.mailer.mailer_clock
+        self.data_entry["NCLO_for_valid_solution"] = self.query_agent.NCLO_for_valid_solution
+
         self.data_entry["Total Messages"] =self.mailer.total_msgs
         self.data_entry["Bandwidth"] = self.mailer.total_bandwidth
-        self.data_entry["Alternative # Constraint"] = len(self.query_agent.alternative_constraints_for_explanations)
-        self.data_entry["Cost delta"] = self.get_alternative_cost_delta()
-        self.data_entry["Delta Cost per Constraint"] = self.data_entry["Cost delta"]/self.data_entry["Alternative # Constraint"]
 
+
+
+        self.data_entry["Alternative # Constraint"] = len(self.query_agent.alternative_constraints_for_explanations)
+        self.data_entry["Cost delta of Valid"] = self.get_alternative_cost_delta(is_min_for_valid=True)
+        self.data_entry["Delta Cost per Constraint"] = self.data_entry["Cost delta of Valid"]/self.data_entry["Alternative # Constraint"]
+        self.data_entry["Cost delta of All Alternatives"] = self.get_alternative_cost_delta(is_min_for_valid=False)
+        self.data_entry["Delta Cost of All Alternatives per Constraint"] = self.data_entry["Cost delta of All Alternatives"]/self.data_entry["Alternative # Constraint"]
+    #self.alternative_constraints_min_valid_cost = 0
+    #self.alternative_constraints_max_measure = 0
     @staticmethod
     def measure_names():
         return ["Iterations","NCLO","Total Messages","Bandwidth","Alternative # Constraint","Cost delta","Delta Cost per Constraint"]
-    def get_alternative_cost_delta(self):
-        alt_sum = self.query_agent.get_alternative_cost()
+    def get_alternative_cost_delta(self,is_min_for_valid):
+        if is_min_for_valid:
+            alt_sum = self.query_agent.alternative_constraints_min_valid_cost
+        else:
+            alt_sum = self.query_agent.alternative_constraints_max_measure
 
         solution_sum  = self.query_agent.solution_cost
 
         ans = alt_sum-solution_sum
-        if ans<0:
-            raise("invalid explanation: something is wrong with the algo")
+
         return ans
 
 

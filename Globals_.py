@@ -501,8 +501,8 @@ central_bnb_problem_details_debug = False
 
 central_bnb_debug = False
 debug_draw_graph = False
-debug_DFS_tree = True
+debug_DFS_tree = False
 debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
 debug_BNB = False
-distributed_explanation_debug = True
+distributed_explanation_debug = False

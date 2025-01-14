@@ -12,9 +12,9 @@ class QueryType(Enum):
 
 class ExplanationType(Enum):
     Centralized = 1
-    BroadcastCentral = 2
-    BroadcastDistributed = 3
-
+    CEDAR_opt2 = 2
+    CEDAR_opt3A = 3
+    CEDAR_opt3B = 4
 
 class DcopType(Enum):
     #sparse_random_uniform = 1

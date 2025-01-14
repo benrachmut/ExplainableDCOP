@@ -118,7 +118,7 @@ def get_x_dcops_dict(dcops_for_different_configs):
 
                 if scale_type == ScaleType.query_scale:
 
-                    amount_of_variables_list = range(1, 10+ 1)
+                    amount_of_variables_list = range(1, max_vars_below_eq_10+ 1)
                 else:
                     amount_of_variables_list = vars_DCOP_scale
 
