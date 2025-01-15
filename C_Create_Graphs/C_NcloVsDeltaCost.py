@@ -4,7 +4,7 @@ import numpy as np
 
 from enums import ExplanationType, QueryType
 
-with open("explanations.pkl", "rb") as file:
+with open("explanations_query_scale_meeting_scheduling.pkl", "rb") as file:
     exp_dict = pickle.load(file)
 
 density = 0.7
@@ -26,7 +26,7 @@ for query_name, dict_2 in dict_1.items():
         for exp_type,explanations in dict_3[num_vars].items():
             x_y_full_dict[query_name][algo][exp_type] = []
             for explanation in explanations:
-                data_ = explanation.data_entry[measure_name]
+                data_ = explanation[measure_name]
                 if len(data_) > max_size:
                     max_size = len(data_)
                 x_y_full_dict[query_name][algo][exp_type].append(data_)

@@ -33,24 +33,33 @@ def create_explanations():
                                 dcop = x_dcop.dcop
                                 query = x_dcop.query
                                 explanation = Explanation(dcop, query, ex_type)
-
-                                ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name].append(explanation)
+                                d_e = explanation.data_entry
+                                ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name].append(d_e)
     return ans
 
 
 if __name__ == '__main__':
-    folder_name = "pickles_query_scale"
-    exp_name = "xdcops_meeting_scheduling_v2_A_[10]_p1_[0.7]_query_scale"
-    with open(folder_name+"/"+exp_name+".pkl", "rb") as file:
-        x_dcops_dict = pickle.load(file)
+    folder_begin = "pickels_"
+    what_scale = "query_scale" #pickles_dcop_scale
+    prob = "random" #"random
+    directory = folder_begin+what_scale+"/"+prob
+    import os
+
+    files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    print()
+    ans= {}
+    for file in files:
+        with open(directory+"/"+file, "rb") as file:
+            x_dcops_dict = pickle.load(file)
 
 
-    #explanation_types = list(ExplanationType)
-    # [ExplanationType.CEDAR_opt3A, ExplanationType.CEDAR_opt3B_not_optimal, ExplanationType.CEDAR_opt2,ExplanationType.CEDAR_opt2_no_sort]#
-    explanation_types = list(ExplanationType)
-    explanations = create_explanations()
+        explanation_types = list(ExplanationType)
+        explanations = create_explanations()
+        for density,others in explanations.items():
+            ans[density] =others
 
-    with open("C_Create_Graphs/explanations.pkl", "wb") as file:
-        pickle.dump(explanations, file)
+    name_to_export = what_scale+"_"+prob+".pkl"
+    with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+".pkl", "wb") as file:
+        pickle.dump(ans, file)
 
 
