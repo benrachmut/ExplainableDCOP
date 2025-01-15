@@ -4,7 +4,14 @@ import numpy as np
 
 from enums import ExplanationType, QueryType
 
-with open("explanations_query_scale_meeting_scheduling.pkl", "rb") as file:
+
+
+
+scale = "query" #
+prob = "meeting_scheduling" #random
+
+file_name = "explanations_"+scale+"_scale_"+prob+".pkl"
+with open(file_name, "rb") as file:
     exp_dict = pickle.load(file)
 
 density = 0.7
