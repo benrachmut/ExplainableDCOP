@@ -310,11 +310,13 @@ class DCOP_RandomUniform(DCOP):
                     neighbors_dict_per_agent_ids[a2].append(a1)
         for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
             if len(neighbors_list)==0:
-                while True:
-                    rnd_agent = self.rnd_neighbors.choice(self.agents)
-                    if rnd_agent.id_ != a1.id_:
-                        self.neighbors.append(Neighbors(a1, rnd_agent, sparse_random_uniform_cost_function, self.dcop_id))
-                        break
+                raise Exception()
+                #while True:
+                    #rnd_agent = self.rnd_neighbors.choice(self.agents)
+
+                    #if rnd_agent.id_ != a1.id_:
+                        #self.neighbors.append(Neighbors(a1, rnd_agent, sparse_random_uniform_cost_function, self.dcop_id))
+                        #break
 
 class DCOP_GraphColoring(DCOP):
 
@@ -335,14 +337,14 @@ class DCOP_GraphColoring(DCOP):
 
 
 class DCOP_MeetingSchedualingV2(DCOP):
-    def __init__(self,id_, A, dcop_name, algorithm,p1):
+    def __init__(self,id_, A, dcop_name, algorithm,p1, amount_of_users):
         DCOP.__init__(self, id_, A, MS_time_slots_D, dcop_name, algorithm)
         DCOP.dcop_name = dcop_name
         self.meetings_per_user_amount = MS_meetings_per_user
         self.meetings = A
-        self.p1 = p1
 
-        self.users_amount = self.calc_user_amount()
+        self.p1 = p1
+        self.users_amount = amount_of_users
         self.meetings_per_user_amount = MS_meetings_per_user
         self.min_users_per_meeting = MS_min_users_per_meeting
         self.check_input()

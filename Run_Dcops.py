@@ -29,14 +29,23 @@ def get_DCOP(i,algorithm,dcop_type,A,p1):
 
 
     if dcop_type == DcopType.random_uniform:
-        return DCOP_RandomUniform(i, A, sparse_D,density_type_str+"_Random Uniform", algorithm,p1)
+        try:
+            return DCOP_RandomUniform(i, A, sparse_D,density_type_str+"_Random Uniform", algorithm,p1)
+        except Exception:
+            raise Exception()
 
     if dcop_type == DcopType.graph_coloring:
         return DCOP_GraphColoring(i, A,graph_coloring_D, density_type_str+"_Graph Coloring", algorithm)
 
     if  dcop_type == DcopType.meeting_scheduling_v2:
+        if p1<0.5:
+            amount_of_users = 20
+        if p1>=0.5:
+            amount_of_users = 30
+
+
         return DCOP_MeetingSchedualingV2(id_=i, A=A, dcop_name=density_type_str+"_Meeting Scheduling",
-                                       algorithm=algorithm,p1 = p1)
+                                       algorithm=algorithm,p1 = p1,amount_of_users =amount_of_users)
 
     #if dcop_type == DcopType.meeting_scheduling :
     #    return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_user,
@@ -54,14 +63,21 @@ def create_dcops():
             for algo in algos:
                 ans[p1][A][algo.name] = {}
                 if not (algo == Algorithm.bnb and A>10):
-                    for i in range(repetitions):
-                        dcop = get_DCOP(i, algo, dcop_type, A,p1)
-                        print(algo.name,"start:",i, dcop.create_summary())
-                        if algo == Algorithm.bnb:
-                            dcop.execute_center()
-                        else:
-                            dcop.execute_distributed()
-                        ans[p1][A][algo.name][i] = (dcop)
+                    i = 0
+                    while len(ans[p1][A][algo.name])<repetitions:
+                        try:
+                            dcop = get_DCOP(i, algo, dcop_type, A,p1)
+                            print(algo.name,"start:",i, dcop.create_summary())
+                            if algo == Algorithm.bnb:
+                                dcop.execute_center()
+                            else:
+                                dcop.execute_distributed()
+                            ans[p1][A][algo.name][i] = (dcop)
+                            i = i+1
+                        except Exception:
+                            i = i+1
+                print()
+
 
     return ans
 
@@ -171,19 +187,19 @@ def create_xdcop():
 if __name__ == '__main__':
     #####--------------------------------
     scale_type = ScaleType.query_scale
-    dcop_type = DcopType.meeting_scheduling_v2
-    p1s = [0.7]#,0.5,0.2]
-    repetitions = 3
+    dcop_type = DcopType.random_uniform
+    p1s = [0.2]
+    repetitions = 100
     agents_amounts = [5]#[5,15,20,25,30,35,40,45,50] #+[10]
     algos = [Algorithm.mgm,Algorithm.bnb]
     dcops = create_dcops()
 
     seeds_xdcop = [1]
     min_vars = 1
-    max_vars_below_eq_10 = 5
+    max_vars_below_eq_10 = 10
     vars_DCOP_scale = [1, 5]
 
-    query_types_list =[QueryType.rnd]# list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
+    query_types_list =[QueryType.educated,QueryType.rnd]
     xdcops = create_xdcop()
 
     with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+"_"+scale_type.name+".pkl", "wb") as file:
