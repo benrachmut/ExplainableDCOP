@@ -965,10 +965,11 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
         NCLO = 0
         mh = MaxHeap(key=lambda x: x.cost)
         for k, v in self.alternative_constraints.items():
-            constraint = v.pop(0)
-            constraint.who_created = k
-            if constraint not in self.alternative_constraints_for_explanations:
-                NCLO = NCLO + mh.insert(constraint)
+            if len(v)!=0:
+                constraint = v.pop(0)
+                constraint.who_created = k
+                if constraint not in self.alternative_constraints_for_explanations:
+                    NCLO = NCLO + mh.insert(constraint)
         return NCLO,mh
 
     def compute_check_if_explanation_is_complete(self):
