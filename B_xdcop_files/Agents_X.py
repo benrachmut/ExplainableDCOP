@@ -869,6 +869,71 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
 
         return NCLO
 
+class MaxHeap:
+    def __init__(self, key=lambda x: x):
+        self.data = []
+        self.key = key
+
+    def is_empty(self):
+        return len(self.data) == 0
+
+    def insert(self, value):
+
+        comparisons = 0
+        self.data.append(value)
+        comparisons += self._sift_up(len(self.data) - 1)
+        return comparisons
+
+    def extract_max(self):
+        if len(self.data) == 0:
+            raise IndexError("Extracting from an empty heap")
+        comparisons = 0
+        self._swap(0, len(self.data) - 1)
+        max_value = self.data.pop()
+        comparisons += self._sift_down(0)
+        return max_value, comparisons
+
+    def _sift_up(self, index):
+        comparisons = 0
+        parent = (index - 1) // 2
+        while index > 0 and self.key(self.data[index]) > self.key(self.data[parent]):
+            comparisons += 1
+            self._swap(index, parent)
+            index = parent
+            parent = (index - 1) // 2
+        if index > 0:
+            comparisons += 1
+        return comparisons
+
+    def _sift_down(self, index):
+        comparisons = 0
+        size = len(self.data)
+        while index < size:
+            left = 2 * index + 1
+            right = 2 * index + 2
+            largest = index
+
+            if left < size:
+                comparisons += 1
+                if self.key(self.data[left]) > self.key(self.data[largest]):
+                    largest = left
+
+            if right < size:
+                comparisons += 1
+                if self.key(self.data[right]) > self.key(self.data[largest]):
+                    largest = right
+
+            if largest != index:
+                self._swap(index, largest)
+                index = largest
+            else:
+                break
+        return comparisons
+
+    def _swap(self, i, j):
+        self.data[i], self.data[j] = self.data[j], self.data[i]
+
+
 class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query):
         AgentX_Query_BroadcastDistributed.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query)
@@ -896,10 +961,76 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                 del self.alternative_constraints[var_name]
         return queue_of_constraints,NCLO
 
+    def create_max_heap(self):
+        NCLO = 0
+        mh = MaxHeap(key=lambda x: x.cost)
+        for k, v in self.alternative_constraints.items():
+            constraint = v.pop(0)
+            constraint.who_created = k
+            if constraint not in self.alternative_constraints_for_explanations:
+                NCLO = NCLO + mh.insert(constraint)
+        return NCLO,mh
+
     def compute_check_if_explanation_is_complete(self):
+
         NCLO = 0
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
             who_you_took_from = list(self.alternative_constraints.keys())
+
+            NCLO,max_heap = self.create_max_heap()
+
+            self.add_dummy_to_front_alternative_constraints_cost_single_addition()
+            flag = False
+
+            while not max_heap.is_empty() :
+                const,max_heap_NCLO = max_heap.extract_max()
+                if not flag:
+                    flag = True
+                    self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,
+                                                                                        self.local_clock + NCLO)
+                if not self.is_done and const not in self.alternative_constraints_for_explanations:
+                    NCLO = NCLO+max_heap_NCLO
+                    self.alternative_cost += const.cost
+                    self.calc_sum_of_solution_cost()
+
+                    self.alternative_constraints_for_explanations.append(const)
+                    self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
+                    self.alternative_delta_constraints_cost_per_addition.append(
+                        self.alternative_cost - self.solution_cost)
+
+                who_created = const.who_created
+                if len(self.alternative_constraints[who_created]) == 0:
+                    del self.alternative_constraints[who_created]
+                else:
+                    constraint_to_add_heap = self.alternative_constraints[who_created].pop(0)
+                    constraint_to_add_heap.who_created = who_created
+                    NCLO = NCLO + max_heap.insert(constraint_to_add_heap)
+
+                if self.alternative_cost >= self.solution_cost and not self.is_done:
+                    self.is_done = True
+                    self.alternative_constraints_min_valid_cost = self.alternative_cost
+                    self.NCLO_for_valid_solution = self.local_clock + NCLO
+
+
+
+            self.alternative_constraints_max_measure = self.alternative_cost
+            if self.is_done == False:
+                self.alternative_constraints_min_valid_cost = self.alternative_cost
+            if self.is_finish_going_for_alternatives(who_you_took_from):
+                self.is_done = True
+
+        return NCLO
+
+    def compute_check_if_explanation_is_complete__(self):
+
+
+        NCLO = 0
+        if AgentXStatues.check_if_explanation_is_complete in self.statues:
+            who_you_took_from = list(self.alternative_constraints.keys())
+
+
+
+
             queue_of_constraints,NCLO = self.get_queue_of_constraints()
             self.add_dummy_to_front_alternative_constraints_cost_single_addition()
 

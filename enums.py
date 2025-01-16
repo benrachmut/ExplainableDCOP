@@ -11,13 +11,20 @@ class QueryType(Enum):
 
 
 class ExplanationType(Enum):
+    #"CEDAR_opt2_no_sort": "Grounded_Constraints(O1)",
+    #"CEDAR_opt2": "Shortest_Explanation(O2)",
+    #"CEDAR_opt3B_not_optimal": "Sort_Parallel(O3)",
+    #"CEDAR_variant_mean": "Varint(Mean)"
+
     #Centralized = 1
-    CEDAR_opt2 = 1
-    CEDAR_opt2_no_sort = 2
-    CEDAR_opt3A = 3
-    CEDAR_opt3B_not_optimal = 4
-    CEDAR_variant_max=5
-    CEDAR_variant_mean=6
+    Grounded_Constraints = 1
+
+    Shortest_Explanation = 2
+
+    #CEDAR_opt3A = 3
+    Sort_Parallel = 4
+    Varint_max=5
+    Varint_mean=6
 
 class DcopType(Enum):
     #sparse_random_uniform = 1

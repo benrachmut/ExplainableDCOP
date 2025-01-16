@@ -53,7 +53,9 @@ if __name__ == '__main__':
             x_dcops_dict = pickle.load(file)
 
 
-        explanation_types =  list(ExplanationType)
+        explanation_types =  [ExplanationType.CEDAR_opt2, ExplanationType.Sort_Parallel]#list(ExplanationType)
+
+
         explanations = create_explanations()
         for density,others in explanations.items():
             ans[density] =others

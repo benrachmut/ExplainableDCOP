@@ -87,20 +87,20 @@ class Explanation():
 
     def create_query_x_agent(self, agent):
         id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
-        if self.explanation_type == ExplanationType.CEDAR_opt2:
+        if self.explanation_type == ExplanationType.Shortest_Explanation:
             ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
-        if self.explanation_type == ExplanationType.CEDAR_opt2_no_sort:
+        if self.explanation_type == ExplanationType.Grounded_Constraints:
             ax = AgentX_Query_BroadcastCentral_NoSort(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
-        if self.explanation_type == ExplanationType.CEDAR_opt3A:
-            ax = AgentX_Query_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
-        if self.explanation_type == ExplanationType.CEDAR_opt3B_not_optimal:
+        #if self.explanation_type == ExplanationType.CEDAR_opt3A:
+        #    ax = AgentX_Query_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
+        if self.explanation_type == ExplanationType.Sort_Parallel:
             ax = AgentX_Query_BroadcastDistributedV2(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
                                                    self.query)
 
-        if self.explanation_type == ExplanationType.CEDAR_variant_max:
+        if self.explanation_type == ExplanationType.Varint_max:
             ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_max(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
                                                      self.query)
-        if self.explanation_type == ExplanationType.CEDAR_variant_mean:
+        if self.explanation_type == ExplanationType.Varint_mean:
             ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(id_, variable, domain,
                                                                               neighbors_agents_id, neighbors_obj_dict,
                                                                               self.query)
@@ -120,11 +120,11 @@ class Explanation():
         for agent in dcop.agents:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
-                if self.explanation_type == ExplanationType.CEDAR_opt2 or  self.explanation_type == ExplanationType.CEDAR_opt2_no_sort:
+                if self.explanation_type == ExplanationType.Shortest_Explanation or  self.explanation_type == ExplanationType.Grounded_Constraints:
                     ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
-                if self.explanation_type == ExplanationType.CEDAR_opt3A or self.explanation_type == ExplanationType.CEDAR_opt3B_not_optimal:
+                if self.explanation_type == ExplanationType.Sort_Parallel:
                     ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
-                if self.explanation_type == ExplanationType.CEDAR_variant_max or self.explanation_type == ExplanationType.CEDAR_variant_mean:
+                if self.explanation_type == ExplanationType.Varint_max or self.explanation_type == ExplanationType.Varint_mean:
                     ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
 
                 ans.append(ax)
