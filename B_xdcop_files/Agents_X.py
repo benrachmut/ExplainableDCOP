@@ -93,7 +93,7 @@ class AgentX(ABC):
 
         self.who_asked_for_solution_value=[]
         self.a_q = None
-
+        self.delta_nclo = 0
     def get_general_info_for_records(self):
         return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
 
@@ -291,7 +291,9 @@ class AgentX(ABC):
 
     def update_local_clock(self, msgs):
         max_nclo = max(msgs,key= lambda x: x.NCLO).NCLO
+
         if max_nclo> self.local_clock:
+            self.delta_nclo = max_nclo - self.local_clock
             self.local_clock = max_nclo
 
 
@@ -300,6 +302,7 @@ class AgentX_Query(AgentX,ABC):
         AgentX.__init__(self, id_, variable, domain, neighbors_agents_id,neighbors_obj_dict)
         self.alternative_constraints_cost_single_addition = []
         self.alternative_delta_constraints_cost_per_addition = []
+        #self.alternative_delta_constraints_cost_per_NCLO = {}
         self.query = query
         #if isinstance(query,QueryMeetingScheduling):
         #    self.alternative_partial_assignment= query.alternative_partial_assignments[0]
@@ -316,7 +319,20 @@ class AgentX_Query(AgentX,ABC):
             self.solution_constraints[v_q] = None
             #self.alternative_constraints[v_q] = None
     def is_termination_condition_met(self): return self.is_done
+    def calc_sum_of_solution_cost(self):
+        NCLO = 0
+        const_list = []
+        self.solution_cost = 0
+        for id_,const_list_of_id in self.solution_constraints.items():
+            for const in const_list_of_id:
+                if const not in const_list:
+                    const_list.append(const)
 
+
+        for const in const_list:
+            NCLO+=1
+            self.solution_cost+=const.cost
+        return NCLO
 
     def get_msgs_to_send_solution_request(self):
         msgs = []
@@ -342,6 +358,20 @@ class AgentX_Query(AgentX,ABC):
 
         self.statues.remove(AgentXStatues.request_solution_values)
         self.statues.append(AgentXStatues.wait_for_solution_value)
+
+    def add_dummy_to_front_alternative_constraints_cost_single_addition(self):
+        if len(self.alternative_delta_constraints_cost_per_addition)!=0:
+            list_size = len(self.alternative_delta_constraints_cost_per_addition)
+            what_to_add = self.alternative_delta_constraints_cost_per_addition[list_size-1]
+            how_many_time = self.delta_nclo
+            list_to_add = [what_to_add]*how_many_time
+            self.alternative_delta_constraints_cost_per_addition.extend(list_to_add)
+
+    def add_dummy_to_back_alternative_constraints_cost_single_addition(self,what_to_add,how_many_time):
+        if len(self.alternative_delta_constraints_cost_per_addition)==0:
+            self.calc_sum_of_solution_cost()
+            list_to_add = [what_to_add - self.solution_cost]*how_many_time
+            self.alternative_delta_constraints_cost_per_addition.extend(list_to_add)
 class AgentX_Query_BroadcastCentral(AgentX_Query):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query):
         AgentX_Query.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query)
@@ -415,6 +445,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
     def compose_alternative_constraints_for_explanations(self,sorted_constraints,total_cost_solution):
         counter_of_alt_constraint_valid = 0
         counter_of_alt_constraint_all = 0
+
         for constraint in sorted_constraints:
             if not self.is_done:
                 self.alternative_constraints_for_explanations.append(constraint)
@@ -489,16 +520,25 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             NCLO=NCLO+counter.count
             who_you_took_from = list(self.alternative_constraints.keys())
 
+
+            self.add_dummy_to_front_alternative_constraints_cost_single_addition()
+            flag = False
             while len(self.alternative_constraints_inbox)!=0:
                 NCLO =NCLO+1
                 const = self.alternative_constraints_inbox.pop(0)
                 if not self.is_done and const not in self.alternative_constraints_for_explanations:
+
+                    if not flag:
+                        flag = True
+                        self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,self.local_clock+NCLO)
+
                     self.alternative_cost += const.cost
                     self.calc_sum_of_solution_cost()
                     self.alternative_constraints_for_explanations.append(const)
                     self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
-                    self.calc_sum_of_solution_cost()
                     self.alternative_delta_constraints_cost_per_addition.append(self.alternative_cost - self.solution_cost)
+
+
                 if self.alternative_cost>=self.solution_cost and not self.is_done:
                     self.is_done=True
                     self.alternative_constraints_min_valid_cost = self.alternative_cost
@@ -512,20 +552,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
 
 
-    def calc_sum_of_solution_cost(self):
-        NCLO = 0
-        const_list = []
-        self.solution_cost = 0
-        for id_,const_list_of_id in self.solution_constraints.items():
-            for const in const_list_of_id:
-                if const not in const_list:
-                    const_list.append(const)
 
-
-        for const in const_list:
-            NCLO+=1
-            self.solution_cost+=const.cost
-        return NCLO
 
     def compute(self):
         NCLO = 0
@@ -597,11 +624,19 @@ class AgentX_Query_BroadcastCentral_NoSort(AgentX_Query_BroadcastCentral):
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
 
             who_you_took_from = list(self.alternative_constraints.keys())
+            self.add_dummy_to_front_alternative_constraints_cost_single_addition()
+            flag = False
             while len(self.alternative_constraints_inbox)!=0:
                 NCLO =NCLO+1
                 rnd_ = random.Random(NCLO + self.id_*17)
                 rnd_.shuffle(self.alternative_constraints_inbox)
                 const = self.alternative_constraints_inbox.pop(0)
+
+                if not flag:
+                    flag = True
+                    self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,
+                                                                                        self.local_clock + NCLO)
+
                 if self.is_done == False and const not in self.alternative_constraints_for_explanations:
                     self.alternative_cost += const.cost
                     self.calc_sum_of_solution_cost()
@@ -804,11 +839,17 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
 
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
             who_you_took_from = list(self.alternative_constraints.keys())
+            self.add_dummy_to_front_alternative_constraints_cost_single_addition()
+            flag = False
             while len(self.alternative_constraints) > 0:
                 NCLO = NCLO + len(self.alternative_constraints)
                 constraints_max = self.extract_max_constraint()
                 if not self.is_done and constraints_max not in self.alternative_constraints_for_explanations:
                     self.alternative_cost += constraints_max.cost
+                    if not flag:
+                        flag = True
+                        self.add_dummy_to_back_alternative_constraints_cost_single_addition(constraints_max.cost,
+                                                                                            self.local_clock + NCLO)
                     self.calc_sum_of_solution_cost()
 
                     self.alternative_constraints_for_explanations.append(constraints_max)
@@ -860,9 +901,16 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
             who_you_took_from = list(self.alternative_constraints.keys())
             queue_of_constraints,NCLO = self.get_queue_of_constraints()
+            self.add_dummy_to_front_alternative_constraints_cost_single_addition()
+
+            flag=False
             while len(queue_of_constraints) != 0:
                 NCLO = NCLO + 1
                 const = queue_of_constraints.pop(0)
+                if not flag:
+                    flag = True
+                    self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,
+                                                                                        self.local_clock + NCLO)
                 if not self.is_done and const not in self.alternative_constraints_for_explanations:
                     self.alternative_cost += const.cost
                     self.calc_sum_of_solution_cost()
@@ -941,7 +989,9 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
             NCLO += len(self.alternative_constraints[self.id_])
 
             self.statues.append(AgentXStatues.check_if_explanation_is_complete)
+
             self.compute_check_if_explanation_is_complete()
+
             if self.is_done:
                 self.statues.remove(AgentXStatues.request_alternative_constraints)
 

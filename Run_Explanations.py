@@ -26,7 +26,7 @@ def create_explanations():
 
                         ans[density][amount_agents][query_type][algo][vars_in_query] = {}
                         for ex_type in explanation_types:
-                            print("ex_type", ex_type)
+                            #print("ex_type", ex_type)
 
                             ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name] = []
                             for x_dcop in x_dcops_list:
@@ -41,7 +41,7 @@ def create_explanations():
 if __name__ == '__main__':
     folder_begin = "pickels_"
     what_scale = "query_scale" #pickles_dcop_scale
-    prob = "random" #"random
+    prob = "meeting_scheduling" #"random # meeting_scheduling
     directory = folder_begin+what_scale+"/"+prob
     import os
 
@@ -53,13 +53,13 @@ if __name__ == '__main__':
             x_dcops_dict = pickle.load(file)
 
 
-        explanation_types = list(ExplanationType)
+        explanation_types =  list(ExplanationType)
         explanations = create_explanations()
         for density,others in explanations.items():
             ans[density] =others
 
     name_to_export = what_scale+"_"+prob+".pkl"
-    with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+".pkl", "wb") as file:
+    with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+"_.pkl", "wb") as file:
         pickle.dump(ans, file)
 
 
