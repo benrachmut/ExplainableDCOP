@@ -246,7 +246,7 @@ class DCOP(ABC):
         return True
 
     def inform_root(self):
-        if self.algorithm == Algorithm.bnb:
+        if self.algorithm == Algorithm.Complete:
             root_agent = self.most_dense_agent()
             for a in self.agents:
                 if root_agent.id_ ==a.id_:
@@ -277,9 +277,9 @@ class DCOP(ABC):
 
     def create_agent(self,i):
 
-        if self.algorithm == Algorithm.bnb:
+        if self.algorithm == Algorithm.Complete:
             a = Bnb_Central_Agent(i + 1, self.D)
-        if self.algorithm == Algorithm.mgm:
+        if self.algorithm == Algorithm.One_Opt:
             a = MGM(i + 1, self.D,self.dcop_id)
         self.agents.append(a)
 

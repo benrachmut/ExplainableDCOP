@@ -104,6 +104,10 @@ class Explanation():
             ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(id_, variable, domain,
                                                                               neighbors_agents_id, neighbors_obj_dict,
                                                                               self.query)
+
+        if self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:
+            ax = AgentX_Query_BroadcastDistributedV3(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                                     self.query)
         return ax,id_
 
 
@@ -122,7 +126,7 @@ class Explanation():
             if id_ != query_agent_id:
                 if self.explanation_type == ExplanationType.Shortest_Explanation or  self.explanation_type == ExplanationType.Grounded_Constraints:
                     ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
-                if self.explanation_type == ExplanationType.Sort_Parallel:
+                if self.explanation_type == ExplanationType.Sort_Parallel or self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:
                     ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
                 if self.explanation_type == ExplanationType.Varint_max or self.explanation_type == ExplanationType.Varint_mean:
                     ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)

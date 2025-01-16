@@ -1022,7 +1022,15 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
 
         return NCLO
 
-    def compute_check_if_explanation_is_complete__(self):
+
+
+
+class AgentX_Query_BroadcastDistributedV3(AgentX_Query_BroadcastDistributedV2):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query):
+        AgentX_Query_BroadcastDistributedV2.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                                   query)
+
+    def compute_check_if_explanation_is_complete(self):
 
 
         NCLO = 0
@@ -1063,7 +1071,6 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
 
         return NCLO
 
-
 class AgentX_BroadcastDistributed(AgentX_BroadcastCentral ):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict):
         AgentX_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict)
@@ -1095,9 +1102,9 @@ class AgentX_BroadcastDistributed(AgentX_BroadcastCentral ):
 from abc import ABC, abstractmethod
 
 
-class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_BroadcastDistributedV2,ABC):
+class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_BroadcastDistributedV3,ABC):
     def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query):
-        AgentX_Query_BroadcastDistributedV2.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+        AgentX_Query_BroadcastDistributedV3.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
                                                      query)
         self.mean_constraints = self.calc_mean_constraints_of_agents_in_query()
         self.max_constraints = self.calc_max_constraints_of_agents_in_query()

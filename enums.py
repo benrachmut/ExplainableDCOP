@@ -23,8 +23,9 @@ class ExplanationType(Enum):
 
     #CEDAR_opt3A = 3
     Sort_Parallel = 4
-    Varint_max=5
-    Varint_mean=6
+    Sort_Parallel_Not_Opt = 5
+    Varint_max=6
+    Varint_mean=7
 
 class DcopType(Enum):
     #sparse_random_uniform = 1
@@ -39,5 +40,5 @@ class RunWhat(Enum):
     handle_data = 3
 
 class Algorithm(Enum):
-    bnb = 1
-    mgm = 2
+    Complete = 1
+    One_Opt = 2

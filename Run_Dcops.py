@@ -62,13 +62,13 @@ def create_dcops():
             ans[p1][A] = {}
             for algo in algos:
                 ans[p1][A][algo.name] = {}
-                if not (algo == Algorithm.bnb and A>10):
+                if not (algo == Algorithm.Complete and A > 10):
                     i = 0
                     while len(ans[p1][A][algo.name])<repetitions:
                         try:
                             dcop = get_DCOP(i, algo, dcop_type, A,p1)
                             print(algo.name,"start:",i, dcop.create_summary())
-                            if algo == Algorithm.bnb:
+                            if algo == Algorithm.Complete:
                                 dcop.execute_center()
                             else:
                                 dcop.execute_distributed()
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     p1s = [0.2]
     repetitions = 100
     agents_amounts = [5]#[5,15,20,25,30,35,40,45,50] #+[10]
-    algos = [Algorithm.mgm,Algorithm.bnb]
+    algos = [Algorithm.One_Opt, Algorithm.Complete]
     dcops = create_dcops()
 
     seeds_xdcop = [1]
