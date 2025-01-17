@@ -1,5 +1,5 @@
 import pickle
-
+from Graph_functions import *
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -68,10 +68,10 @@ def get_avg_dict(measure_dict):
 
 
 def get_all_avg_dict():
-    densities = [0.2, 0.5, 0.7]
+    densities = [0.2,0.7]
     agent_amount = 10
-    query_types = [QueryType.educated.name, QueryType.semi_educated.name, QueryType.rnd.name]
-    algos = ["bnb", "mgm"]
+    query_types = [QueryType.educated.name, QueryType.rnd.name]
+    algos = ["Complete", "One_Opt"]
     vars_nums_list = range(1, 11)
     explanation_types = []
     for exp_type in list(ExplanationType): explanation_types.append(exp_type.name)
@@ -93,59 +93,14 @@ def simply_avg_dict():
     return ans
 
 
-def create_single_graph():
-    plt.figure(figsize=(12, 6))
 
-    for primary_key, sub_dict in data.items():
-        for sub_key, values in sub_dict.items():
-            x = list(values.keys())  # X-axis values (range(1,11))
-            y = list(values.values()) # Apply log if positive, otherwise handle negatives
-            plt.plot(x, y, linewidth=linewidth, linestyle=line_styles[primary_key], color=colors[sub_key],
-                     label=f"{sub_key} ({primary_key})")
-
-    # Add labels, title, and legends
-    plt.xlabel(x_name, fontsize=axes_titles_font)  # Increase font size for x-axis label
-
-    plt.ylabel(y_name, fontsize=axes_titles_font)
-
-
-    # Custom legends
-    color_legend = [Line2D([0], [0], color=colors[key], lw=2, label=key) for key in colors]
-    line_legend = [Line2D([0], [0], color='black', linestyle=line_styles[key], lw=2, label=key) for key in line_styles]
-
-    # Place line type legend at the side of the graph (top)
-    first_legend = plt.legend(handles=line_legend, title="Query Type", loc="center left", bbox_to_anchor=(1.02, 0.5),
-                              borderaxespad=0., frameon=False)
-    plt.gca().add_artist(first_legend)
-
-    # Place algorithm color legend below the first legend
-    plt.legend(handles=color_legend, title="Algorithm", loc="center left", bbox_to_anchor=(1.02, 0.3), borderaxespad=0.,
-               frameon=False)
-
-    # Highlight y = 0 line
-    #plt.axhline(0, color='black', linewidth=1.5, linestyle='-', label='y = 0')
-    plt.grid(True)
-    plt.ylim(0,1.1)
-    # Increase font size of the axis tick labels
-    plt.tick_params(axis='both', which='major', labelsize=14)  # Increase size of tick labels
-
-    # Show the plot
-    plt.tight_layout(pad=5.0)  # Increase padding for better spacing
-    plt.savefig(folder_to_save+"/"+figure_name + ".pdf", format="pdf")
-    plt.savefig(folder_to_save+"/"+figure_name + ".jpeg", format="jpeg")
-    # plt.show()
-    plt.clf()
 
 if __name__ == '__main__':
-    is_clear = False
     scale = "query" #
-    prob = "random" #"random" "meeting_scheduling"
-    if is_clear:
-        folder_to_save = "B_vars_valid_count_clear"
-    else:
-        folder_to_save = "B_vars_valid_count"
+    prob = "meeting_scheduling" #"random" "meeting_scheduling"
 
-    graph_type = "B_VarsValidCountVsQuerySize"
+    folder_to_save = "1_vars_valid_count"
+    graph_type = "1_vars_valid_count"
     file_name = "explanations_"+scale+"_scale_"+prob+".pkl"
     with open(file_name, "rb") as file:
         exp_dict = pickle.load(file)
@@ -153,44 +108,31 @@ if __name__ == '__main__':
 
     measure_name =  "Cost delta of Valid" #"Cost delta of All Alternatives""Cost delta of Valid"
     avg_dict = get_all_avg_dict()
-    #
-    if is_clear:
-        selected_query_types_and_new_name = {QueryType.educated.name: "Educated",QueryType.rnd.name: "Random"}
-    else:
-        selected_query_types_and_new_name = {QueryType.educated.name: "Educated",
-                                             QueryType.semi_educated.name: "Educated*",  QueryType.rnd.name: "Random"}
 
-    selected_algos_and_new_name = {"bnb": "Complete", "mgm": "1-Opt"}
+
+
     selected_vars_nums_list = range(1, 11)
-    selected_explanation_type = ExplanationType.CEDAR_opt2.name
+    selected_explanation_type = ExplanationType.Shortest_Explanation.name
 
-    # Define line styles and colors for subkeys
-    axes_titles_font = 14
-    axes_number_font = 14
-    linewidth = 3
-    if is_clear:
-        line_styles = {'Educated': '-', 'Random': '--', }
-    else:
-        line_styles = {'Educated': '-', 'Educated*': '-.', 'Random': '--', }
-    colors = {'Complete': 'blue', '1-Opt': 'red'}
+    curve_dcop_algos = {'Complete': 4, '1-Opt': 2.5}
+
     y_name = "Valid Explanation %"
     x_name = "Variables in Query"
     ###################
+
+
+
     selected_density = 0.7
     figure_name = graph_type+"_"+prob+"_"+str(int(selected_density*10))
     data = simply_avg_dict()
-    create_single_graph()
 
+    create_single_graph(data, ColorsInGraph.dcop_algorithms,curve_dcop_algos, x_name, y_name, folder_to_save, figure_name,x_min = 1,x_max=10,y_min=0,y_max=1.1,is_highlight_horizontal=True,x_ticks=range(1,11))
+    #create_single_graph()
 
-    ###################
-    selected_density = 0.5
-    data = simply_avg_dict()
-    figure_name = graph_type+"_"+prob+"_"+str(int(selected_density*10))
-    create_single_graph()
 
 
     ###################
     selected_density = 0.2
     data = simply_avg_dict()
     figure_name = graph_type+"_"+prob+"_"+str(int(selected_density*10))
-    create_single_graph()
+    create_single_graph(data, ColorsInGraph.dcop_algorithms,curve_dcop_algos, x_name, y_name, folder_to_save, figure_name,x_min = 0.9,x_max=10.1,y_min=0,y_max=1.1,is_highlight_horizontal=True,x_ticks=range(1,11))
