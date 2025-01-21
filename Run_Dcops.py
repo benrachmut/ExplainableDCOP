@@ -187,7 +187,7 @@ def create_xdcop():
 if __name__ == '__main__':
     #####--------------------------------
     scale_type = ScaleType.query_scale
-    dcop_type = DcopType.random_uniform
+    dcop_type = DcopType.meeting_scheduling_v2
     p1s = [0.2]
     repetitions = 100
     agents_amounts = [5]#[5,15,20,25,30,35,40,45,50] #+[10]

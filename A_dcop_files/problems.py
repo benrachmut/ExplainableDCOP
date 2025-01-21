@@ -344,7 +344,7 @@ class DCOP_MeetingSchedualingV2(DCOP):
         self.meetings = A
 
         self.p1 = p1
-        self.users_amount = amount_of_users
+        self.users_amount = self.calc_user_amount()#amount_of_users
         self.meetings_per_user_amount = MS_meetings_per_user
         self.min_users_per_meeting = MS_min_users_per_meeting
         self.check_input()

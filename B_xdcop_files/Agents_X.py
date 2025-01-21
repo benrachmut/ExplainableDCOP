@@ -1005,7 +1005,8 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                 else:
                     constraint_to_add_heap = self.alternative_constraints[who_created].pop(0)
                     constraint_to_add_heap.who_created = who_created
-                    NCLO = NCLO + max_heap.insert(constraint_to_add_heap)
+                    if not self.is_done:
+                        NCLO = NCLO + max_heap.insert(constraint_to_add_heap)
 
                 if self.alternative_cost >= self.solution_cost and not self.is_done:
                     self.is_done = True

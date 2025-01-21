@@ -169,7 +169,8 @@ if __name__ == '__main__':
     else:
         y_name = (r"$\Delta$ cost")
 
-    x_name = "Variables in Query"
+    x_name = r" $|var(\sigma_Q)|$"
+
 
 
 

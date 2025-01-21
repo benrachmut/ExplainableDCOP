@@ -60,7 +60,10 @@ def get_avg_dict(measure_dict):
 
 
 def get_all_avg_dict():
-    densities = [0.2,  0.7]
+    if prob == "meeting_scheduling":
+        densities = [0.2,0.5,0.7]
+    else:
+        densities = [0.2,0.7]
     agent_amount = 10
     query_types = [QueryType.educated.name, QueryType.rnd.name]
     algos = ["Complete", "One_Opt"]
@@ -94,47 +97,56 @@ def simply_avg_dict():
 
 if __name__ == '__main__':
     scale = "query" #
-    prob ="meeting_scheduling" #"meeting_scheduling" #"random"
+    probs =["meeting_scheduling","random"]
 
-    folder_to_save = "3_vars_constraints_in_exp"
-    graph_type = "3_vars_constraints_in_exp"
+    for is_with_legend in [True,False]:
+        for prob in probs:
+            graph_type = "3_vars_constraints_in_exp"
 
-    file_name = "explanations_"+scale+"_scale_"+prob+".pkl"
-    with open(file_name, "rb") as file:
-        exp_dict = pickle.load(file)
-    measure_name =  'Alternative # Constraint'
-    avg_dict = get_all_avg_dict()
-
-
-    selected_vars_nums_list = range(1, 11)
-    selected_explanation_types = list(ExplanationType)
+            file_name = "explanations_"+scale+"_scale_"+prob+".pkl"
+            with open(file_name, "rb") as file:
+                exp_dict = pickle.load(file)
+            measure_name =  'Alternative # Constraint'
+            avg_dict = get_all_avg_dict()
 
 
-
-    axes_titles_font = 14
-    axes_number_font = 14
-    curve_explanation_algos = {
-        "Grounded_Constraints(O1)": 3,
-        "Shortest_Explanation(O2)": 5,
-        "Sort_Parallel(O3)": 2,
-        "Sort_Parallel(O3)*": 3,
-        # "Varint(Mean)":"brown",
-        "Varint(Max)": 3
-    }
+            selected_vars_nums_list = range(1, 11)
+            selected_explanation_types = list(ExplanationType)
 
 
-    y_name = "# Constraints in Explanation"
-    x_name = "Variables in Query"
+            curve_explanation_algos = {
+                "CEDAR": 3,
+                "CEDAR(O1)": 5,
+                "CEDAR(O2)": 2,
+                "CEDAR(V1)": 3,
+                "CEDAR(V2)": 3
+            }
+            y_name = "Number of Constraints"
+            x_name =  r" $|var(\sigma_Q)|$"
 
-    selected_density = 0.7
-    data = simply_avg_dict()
-    figure_name = graph_type+"_"+prob+"_"+str(int(selected_density*10))
-    create_single_graph(data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name, folder_to_save,
-                        figure_name,
-                        x_min = 1,x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,x_ticks=range(1,11))
-    selected_density = 0.2
-    data = simply_avg_dict()
-    figure_name = graph_type+"_"+prob+"_"+str(int(selected_density*10))
-    create_single_graph(data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name, folder_to_save,
-                        figure_name,
-                        x_min = 1,x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,x_ticks=range(1,11))
+            selected_density = 0.7
+            data = simply_avg_dict()
+            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
+
+            create_single_graph(is_with_legend,data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name, folder_to_save,
+                                figure_name,
+                                x_min = 1,x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,x_ticks=range(1,11))
+
+            selected_density = 0.2
+            data = simply_avg_dict()
+            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
+
+            create_single_graph(is_with_legend,data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name, folder_to_save,
+                                figure_name,
+                                x_min = 1,x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,x_ticks=range(1,11))
+
+            if prob == "meeting_scheduling":
+                selected_density = 0.5
+                data = simply_avg_dict()
+                folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type, prob, selected_density)
+
+                create_single_graph(is_with_legend, data, ColorsInGraph.explanation_algorithms, curve_explanation_algos,
+                                    x_name, y_name, folder_to_save,
+                                    figure_name,
+                                    x_min=1, x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,
+                                    x_ticks=range(1, 11))

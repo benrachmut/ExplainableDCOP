@@ -89,7 +89,10 @@ def get_avg_dict(measure_dict):
 
 
 def get_all_avg_dict():
-    densities = [0.2,  0.7]
+    if prob == "meeting_scheduling":
+        densities = [0.2,0.5, 0.7]
+    else:
+        densities = [0.2, 0.7]
     agent_amount = 10
     query_types = [QueryType.educated.name, QueryType.rnd.name]
     algos = ["Complete", "One_Opt"]
@@ -131,69 +134,76 @@ def simply_avg_dict():
             ans[query][exp_name] = dict_2
 
 
-    return ans
+    return ans,max_size
 
 
 
 if __name__ == '__main__':
     scale = "query" #
-    prob ="meeting_scheduling" #"meeting_scheduling" #"random"
-    folder_to_save = "4_constraint_count_delta_cost_exp"
+
+    probs =["meeting_scheduling","random"]
+    for is_with_legend in [True,False]:
+
+        for prob in probs:
+
+            graph_type = "4_constraint_count_delta_cost_exp"
+            file_name = "explanations_"+scale+"_scale_"+prob+".pkl"
+            with open(file_name, "rb") as file:
+                exp_dict = pickle.load(file)
+            measure_name =  "Alternative_delta_cost_per_addition"#NCLO_for_valid_solution" #"Cost delta of All Alternatives""Cost delta of Valid"
+            avg_dict = get_all_avg_dict()
 
 
-    graph_type = "4_constraint_count_delta_cost_exp"
-    file_name = "explanations_"+scale+"_scale_"+prob+".pkl"
-    with open(file_name, "rb") as file:
-        exp_dict = pickle.load(file)
-    measure_name =  "Alternative_delta_cost_per_addition"#NCLO_for_valid_solution" #"Cost delta of All Alternatives""Cost delta of Valid"
-    avg_dict = get_all_avg_dict()
-
-
-    selected_vars_num = 10
-    selected_explanation_types = list(ExplanationType)
-
-    axes_titles_font = 14
-    axes_number_font = 14
-
-
+            selected_vars_num = 10
+            selected_explanation_types = list(ExplanationType)
 
 
 
-    if prob == "meeting_scheduling":  # random:
-        y_name = r"$\Delta$ cost (Symlog Scale)"
-    else:
-        y_name = r"$\Delta$ cost"
-    x_name = "NCLO"
-
-    curve_explanation_algos = {
-        "Grounded_Constraints(O1)": 3,
-        "Shortest_Explanation(O2)": 3,
-        "Sort_Parallel(O3)": 3,
-        "Sort_Parallel(O3)*": 3,
-        # "Varint(Mean)":"brown",
-        "Varint(Max)": 3
-    }
-    if prob=="meeting_scheduling":
-        manipulate_y=True
-    else:
-        manipulate_y=False
-
-    selected_density = 0.7
-    data = simply_avg_dict()
-    figure_name = graph_type+"_"+prob+"_"+str(int(selected_density*10))
-    create_single_graph(data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name,
-                        folder_to_save,
-                        figure_name,manipulate_y=manipulate_y,
-                        x_min=None, x_max=None, y_min=None, y_max=None, is_highlight_horizontal=False, x_ticks=None, with_points = False)
-
-
-    selected_density = 0.2
-    data = simply_avg_dict()
-    figure_name = graph_type+"_"+prob+"_"+str(int(selected_density*10))
-    create_single_graph(data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name,
-                        folder_to_save,
-                        figure_name, manipulate_y=manipulate_y,
-                        x_min=None, x_max=None, y_min=None, y_max=None, is_highlight_horizontal=False, x_ticks=None,with_points = False)
 
 
 
+            y_name = r"$\Delta$ cost"
+            x_name = "NCLO"
+
+
+
+
+            curve_explanation_algos = {
+                "CEDAR": 3,
+                "CEDAR(O1)": 3,
+                "CEDAR(O2)": 3,
+                "CEDAR(V1)": 3,
+                "CEDAR(V2)": 3
+            }
+            if prob=="meeting_scheduling":
+                manipulate_y=True
+            else:
+                manipulate_y=False
+
+            selected_density = 0.7
+            data,x_max = simply_avg_dict()
+
+
+            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
+            create_single_graph(is_with_legend,data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name,
+                                folder_to_save,
+                                figure_name,manipulate_y=manipulate_y,
+                                x_min=0, x_max=x_max, y_min=None, y_max=None, is_highlight_horizontal=True, x_ticks=None, with_points = False,horizontal_width = 2, horizontal_alpha = 1,horizontal_location = 0)
+
+
+            selected_density = 0.2
+            data,x_max = simply_avg_dict()
+            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
+            create_single_graph(is_with_legend,data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name,
+                                folder_to_save,
+                                figure_name, manipulate_y=manipulate_y,
+                                x_min=0, x_max=x_max, y_min=None, y_max=None, is_highlight_horizontal=True, x_ticks=None,with_points = False,horizontal_width = 2, horizontal_alpha = 1,horizontal_location = 0)
+
+            if prob == "meeting_scheduling":
+                selected_density = 0.5
+                data,x_max = simply_avg_dict()
+                folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
+                create_single_graph(is_with_legend,data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name,
+                                folder_to_save,
+                                figure_name, manipulate_y=manipulate_y,
+                                x_min=0, x_max=x_max, y_min=None, y_max=None, is_highlight_horizontal=True, x_ticks=None,with_points = False,horizontal_width = 2, horizontal_alpha = 1,horizontal_location = 0,create_legend_image = True)
