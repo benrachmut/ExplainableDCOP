@@ -41,7 +41,7 @@ def create_explanations():
 if __name__ == '__main__':
     folder_begin = "pickels_"
     what_scale = "query_scale" #pickels_dcop_scale
-    prob = "meeting_scheduling" #"random # meeting_scheduling
+    prob = "random" #"random # meeting_scheduling
     directory = folder_begin+what_scale+"/"+prob
     import os
 

@@ -40,5 +40,9 @@ class RunWhat(Enum):
     handle_data = 3
 
 class Algorithm(Enum):
-    Complete = 1
-    One_Opt = 2
+    One_Opt = 1
+    Two_Opt = 2
+    Three_Opt = 3
+    Four_Opt = 4
+    Five_Opt = 5
+    BNB_Complete = 6

@@ -24,7 +24,7 @@ import graphviz
 MS_meetings_per_user=2
 MS_time_slots_D=8
 MS_min_users_per_meeting = 2
-
+max_iteration_k = 5000
 
 # for DCOPS
 #algorithm = Algorithm.bnb

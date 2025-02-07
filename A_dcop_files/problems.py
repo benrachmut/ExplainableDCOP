@@ -5,6 +5,7 @@ from itertools import combinations
 #from Algorithm_BnB import BranchAndBound
 from A_dcop_files.Agents import *
 from A_dcop_files.Algorithm_BnB_Central import Bnb_central, Bnb_Central_Agent
+from A_dcop_files.Algorithm_KOpt import K_Opt
 from A_dcop_files.Algorithm_MGM import MGM
 from Globals_ import *
 
@@ -194,7 +195,7 @@ class DCOP(ABC):
 
 
 
-    def execute_center(self):
+    def execute_bnb_center(self):
 
         if central_bnb_problem_details_debug:
             for a in self.agents:
@@ -209,6 +210,8 @@ class DCOP(ABC):
                 agent.neighbors_values[n_id] = UB[0][n_id]
 
 
+    def execute_k_opt(self,k):
+        kopt = K_Opt(k,self.agents)
 
     def execute_distributed(self):
 
@@ -246,7 +249,7 @@ class DCOP(ABC):
         return True
 
     def inform_root(self):
-        if self.algorithm == Algorithm.Complete:
+        if self.algorithm == Algorithm.BNB_Complete:
             root_agent = self.most_dense_agent()
             for a in self.agents:
                 if root_agent.id_ ==a.id_:
@@ -277,7 +280,7 @@ class DCOP(ABC):
 
     def create_agent(self,i):
 
-        if self.algorithm == Algorithm.Complete:
+        if self.algorithm == Algorithm.BNB_Complete:
             a = Bnb_Central_Agent(i + 1, self.D)
         if self.algorithm == Algorithm.One_Opt:
             a = MGM(i + 1, self.D,self.dcop_id)

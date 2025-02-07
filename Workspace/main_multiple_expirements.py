@@ -68,7 +68,7 @@ def create_dcops():
         dcop = get_DCOP(i, algorithm, dcop_type, A)
         # draw_dcop(dcop)
         if is_center_solver:
-            dcop.execute_center()
+            dcop.execute_bnb_center()
         else:
             dcop.execute_distributed()
         dcops_complete.append(dcop)

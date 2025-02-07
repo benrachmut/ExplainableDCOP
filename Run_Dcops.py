@@ -62,16 +62,28 @@ def create_dcops():
             ans[p1][A] = {}
             for algo in algos:
                 ans[p1][A][algo.name] = {}
-                if not (algo == Algorithm.Complete and A > 10):
+                if not (algo == Algorithm.BNB_Complete and A > 10):
                     i = 0
                     while len(ans[p1][A][algo.name])<repetitions:
                         try:
                             dcop = get_DCOP(i, algo, dcop_type, A,p1)
                             print(algo.name,"start:",i, dcop.create_summary())
-                            if algo == Algorithm.Complete:
-                                dcop.execute_center()
-                            else:
-                                dcop.execute_distributed()
+                            if algo == Algorithm.BNB_Complete:
+                                dcop.execute_bnb_center()
+                            if algo == Algorithm.One_Opt:
+                                dcop.execute_k_opt(1)
+                            if algo == Algorithm.Two_Opt:
+                                dcop.execute_k_opt(2)
+                            if algo == Algorithm.Three_Opt:
+                                dcop.execute_k_opt(3)
+                            if algo == Algorithm.Four_Opt:
+                                dcop.execute_k_opt(4)
+                            if algo == Algorithm.Five_Opt:
+                                dcop.execute_k_opt(5)
+
+
+                            #else:
+                            #    dcop.execute_distributed()
                             ans[p1][A][algo.name][i] = (dcop)
                             i = i+1
                         except Exception:
@@ -191,7 +203,7 @@ if __name__ == '__main__':
     p1s = [0.2]
     repetitions = 100
     agents_amounts = [5]#[5,15,20,25,30,35,40,45,50] #+[10]
-    algos = [Algorithm.One_Opt, Algorithm.Complete]
+    algos = [Algorithm.One_Opt, Algorithm.BNB_Complete]
     dcops = create_dcops()
 
     seeds_xdcop = [1]

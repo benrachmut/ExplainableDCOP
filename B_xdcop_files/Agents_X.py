@@ -990,13 +990,17 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                     self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,
                                                                                         self.local_clock + NCLO)
                 if not self.is_done and const not in self.alternative_constraints_for_explanations:
+
+                    max_heap_NCLO
                     NCLO = NCLO+max_heap_NCLO
                     self.alternative_cost += const.cost
                     self.calc_sum_of_solution_cost()
 
                     self.alternative_constraints_for_explanations.append(const)
                     self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
-                    self.alternative_delta_constraints_cost_per_addition.append(
+
+                    for _ in  range(max_heap_NCLO):
+                        self.alternative_delta_constraints_cost_per_addition.append(
                         self.alternative_cost - self.solution_cost)
 
                 who_created = const.who_created
@@ -1006,7 +1010,11 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                     constraint_to_add_heap = self.alternative_constraints[who_created].pop(0)
                     constraint_to_add_heap.who_created = who_created
                     if not self.is_done:
-                        NCLO = NCLO + max_heap.insert(constraint_to_add_heap)
+                        amount_to_insert = max_heap.insert(constraint_to_add_heap)
+                        for _ in range(amount_to_insert):
+                            self.alternative_delta_constraints_cost_per_addition.append(
+                                self.alternative_cost - self.solution_cost)
+                        NCLO = NCLO +amount_to_insert
 
                 if self.alternative_cost >= self.solution_cost and not self.is_done:
                     self.is_done = True
@@ -1022,8 +1030,6 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                 self.is_done = True
 
         return NCLO
-
-
 
 
 class AgentX_Query_BroadcastDistributedV3(AgentX_Query_BroadcastDistributedV2):

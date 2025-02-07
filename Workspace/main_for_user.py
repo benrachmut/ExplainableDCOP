@@ -24,7 +24,7 @@ def get_DCOP(i,algorithm,dcop_type,A = 50):
 def get_dcop_and_solve():
     dcop = get_DCOP(seed_dcop, algorithm, dcop_type, A)
     if is_center_solver:
-        dcop.execute_center()
+        dcop.execute_bnb_center()
     else:
         dcop.execute_distributed()
     return dcop
