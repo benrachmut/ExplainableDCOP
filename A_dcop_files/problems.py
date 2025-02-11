@@ -109,6 +109,11 @@ class Neighbors():
         return False
 
 
+    def get_agent_obj(self,id_):
+        if self.a1.id_ == id_:
+            return self.a1
+        if self.a2.id_ == id_:
+            return self.a2
 
     def get_other_agent(self,agent_input):
         if agent_input.id_ == self.a1.id_:
@@ -211,7 +216,7 @@ class DCOP(ABC):
 
 
     def execute_k_opt(self,k):
-        kopt = K_Opt(k,self.agents)
+        kopt = K_Opt(k,self.agents,self.dcop_id)
 
     def execute_distributed(self):
 
@@ -280,10 +285,13 @@ class DCOP(ABC):
 
     def create_agent(self,i):
 
-        if self.algorithm == Algorithm.BNB_Complete:
-            a = Bnb_Central_Agent(i + 1, self.D)
-        if self.algorithm == Algorithm.One_Opt:
-            a = MGM(i + 1, self.D,self.dcop_id)
+        #if self.algorithm == Algorithm.BNB_Complete:
+        a = Bnb_Central_Agent(i + 1, self.D)
+        #if self.algorithm == Algorithm.One_Opt:
+        #    a = MGM(i + 1, self.D,self.dcop_id)
+
+
+
         self.agents.append(a)
 
 

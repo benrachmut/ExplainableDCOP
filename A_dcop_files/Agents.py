@@ -12,6 +12,11 @@ class Agent(ABC):
 
     def __init__(self,id_,D):
         self.global_clock = 0
+        #(id_+1)*17
+        self.rnd_val_selection = random.Random((id_+1)*17)
+        for _ in range(5):
+            self.rnd_val_selection.random()
+
         self.variable = None
         self.anytime_variable = None
         self.anytime_context = None
@@ -29,6 +34,11 @@ class Agent(ABC):
         self.records = []
         self.records_dict = {}
         self.unary_constraint = {}
+
+
+    def select_random_value(self):
+        self.variable = self.rnd_val_selection.choice(self.domain)
+        print()
 
     def create_unary_costs(self,dcop_id):
         rnd_pref_time = random.Random((self.id_+23)*17+(dcop_id)*97)
@@ -65,11 +75,19 @@ class Agent(ABC):
         return ans
 
 
-    def calc_local_price(self, current_context):
+    def calc_local_price(self, current_context = None):
         local_cost = 0
-        for n_id, current_value in current_context.items():
-            neighbor_obj = self.get_n_obj(n_id)
-            local_cost = local_cost + neighbor_obj.get_cost(self.id_, self.variable, n_id, current_value)
+
+        if current_context is None:
+            for n_id,n_obj in self.neighbors_obj_dict.items():
+                agent_n_obj = n_obj.get_agent_obj(n_id)
+                current_value = agent_n_obj.variable
+                local_cost = local_cost + n_obj.get_cost(self.id_, self.variable, n_id, current_value)
+        else:
+            for n_id, current_value in current_context.items():
+                neighbor_obj = self.get_n_obj(n_id)
+
+                local_cost = local_cost + neighbor_obj.get_cost(self.id_, self.variable, n_id, current_value)
         return local_cost
 
     def get_general_info_for_records(self):
