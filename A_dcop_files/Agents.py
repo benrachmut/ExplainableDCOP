@@ -36,6 +36,22 @@ class Agent(ABC):
         self.unary_constraint = {}
 
 
+    def calculate_cost_given_context(self,context_):
+        local_cost = 0
+        if self.id_ in context_:
+            my_val = context_[self.id_]
+        else:
+            raise Exception("not using it correctly")
+        for n_id, n_obj in self.neighbors_obj_dict.items():
+            agent_n_obj = n_obj.get_agent_obj(n_id)
+            if n_id in context_:
+                n_value = context_[n_id]
+            else:
+                n_value = agent_n_obj.variable
+
+            local_cost = local_cost + n_obj.get_cost(self.id_, my_val, n_id, n_value)
+        return local_cost
+
     def select_random_value(self):
         self.variable = self.rnd_val_selection.choice(self.domain)
         print()

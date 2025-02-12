@@ -121,7 +121,7 @@ class Explanation():
 
     def create_x_agents(self, dcop, query_agent_id):
         ans = []
-        for agent in dcop.agents:
+        for agent in dcop.agents_in_group:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
                 if self.explanation_type == ExplanationType.Shortest_Explanation or  self.explanation_type == ExplanationType.Grounded_Constraints:

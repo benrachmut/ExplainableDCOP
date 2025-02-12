@@ -369,7 +369,7 @@ color_list_hex = [
 
 
 def get_distinct_values_colors(dcop):
-    distinct_values = {agent.anytime_variable for agent in dcop.agents}
+    distinct_values = {agent.anytime_variable for agent in dcop.agents_in_group}
     random.seed(((dcop.dcop_id + 1) * 17) + (dcop.A + 1) * 170 + (dcop.D + 2) * 1700)
     random.shuffle(color_list_hex)
 
