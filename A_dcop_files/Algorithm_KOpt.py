@@ -168,6 +168,8 @@ class K_Opt:
     def solve(self):
         self.all_select_random_value()
         self.calculate_global_cost()
+        if debug_k_opt:
+            print(self.iteration, ",", self.global_cost[self.iteration])
         while self.iteration<self.max_iteration:
             self.iteration = self.iteration+1
 
