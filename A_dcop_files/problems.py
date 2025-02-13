@@ -125,6 +125,7 @@ class Neighbors():
 
 class DCOP(ABC):
     def __init__(self,id_,A,D,dcop_name,algorithm):
+
         self.dcop_id = id_
         self.A = A
         self.D = D
@@ -216,7 +217,7 @@ class DCOP(ABC):
 
 
     def execute_k_opt(self,k):
-        kopt = K_Opt(k,self.agents,self.dcop_id)
+        self.kopt = K_Opt(k,self.agents,self.dcop_id)
 
     def execute_distributed(self):
 

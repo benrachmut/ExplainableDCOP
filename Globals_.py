@@ -24,7 +24,7 @@ import graphviz
 MS_meetings_per_user=2
 MS_time_slots_D=8
 MS_min_users_per_meeting = 2
-max_iteration_k = 5000
+max_iteration_k = 100
 
 # for DCOPS
 #algorithm = Algorithm.bnb
@@ -506,4 +506,4 @@ debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
 debug_BNB = False
 distributed_explanation_debug = False
-
+debug_k_opt = True

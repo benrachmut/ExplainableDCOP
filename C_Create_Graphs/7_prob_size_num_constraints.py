@@ -32,8 +32,7 @@ def get_full_dict(densities,agents_amounts,query_types,algos,explanation_type,va
                             if is_ignonre_valid:
                                 if data_["Cost delta of Valid"] > 0:
                                     updated_list.append(data_[measure_name])
-                                else:
-                                    print()
+
                             else:
                                 updated_list.append(data_[measure_name])
                         #for single_measure in measures_list:

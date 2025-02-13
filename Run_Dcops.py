@@ -88,7 +88,6 @@ def create_dcops():
                         i = i+1
                         #except Exception:
                         #    i = i+1
-                print()
 
 
     return ans
@@ -201,11 +200,12 @@ if __name__ == '__main__':
     scale_type = ScaleType.query_scale
     dcop_type = DcopType.random_uniform
     p1s = [0.2]
-    repetitions = 10
+    repetitions = 1
     agents_amounts = [50]#[5,15,20,25,30,35,40,45,50] #+[10]
-    algos = [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
+    algos = [Algorithm.Three_Opt,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]# ,Algorithm.Four_Opt,Algorithm.Five_Opt, [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
     dcops = create_dcops()
-
+    with open("test_k_opt.pkl", "wb") as file:
+        pickle.dump(dcops, file)
     seeds_xdcop = [1]
     min_vars = 1
     max_vars_below_eq_10 = 10

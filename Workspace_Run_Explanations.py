@@ -76,7 +76,6 @@ for query_name, dict_1 in x_y_full_V2_dict.items():
                 all_vals_per_constraint[query_name][algo][exp_type][iteration] = sum(iter_list)/len(iter_list)
 
 
-print()
 
 
 

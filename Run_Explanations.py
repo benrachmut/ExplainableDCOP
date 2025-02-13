@@ -46,7 +46,7 @@ if __name__ == '__main__':
     import os
 
     files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-    print()
+
     ans= {}
     for file in files:
         with open(directory+"/"+file, "rb") as file:

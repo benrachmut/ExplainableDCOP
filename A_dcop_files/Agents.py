@@ -54,7 +54,6 @@ class Agent(ABC):
 
     def select_random_value(self):
         self.variable = self.rnd_val_selection.choice(self.domain)
-        print()
 
     def create_unary_costs(self,dcop_id):
         rnd_pref_time = random.Random((self.id_+23)*17+(dcop_id)*97)
