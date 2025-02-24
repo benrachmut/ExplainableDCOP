@@ -506,4 +506,4 @@ debug_DFS_draw_tree = False
 draw_dfs_tree_flag = False
 debug_BNB = False
 distributed_explanation_debug = False
-debug_k_opt = True
+debug_k_opt = False

@@ -112,7 +112,9 @@ class QueryGenerator:
         for k,dcop in self.dcops_dict.items():
             self.complete_assignments_dict[k]=dcop.get_complete_assignment()
         self.num_variables = amount_of_vars
-        for _ in range(10):a_q_id = self.rnd.choice(list(self.dcops_dict.values())[0].agents_in_group).id_
+        for _ in range(10):
+            t = list(self.dcops_dict.values())[0].agents
+            a_q_id = self.rnd.choice(t).id_
         self.a_q_dict = {}
         for algo,dcop in self.dcops_dict.items():
             self.a_q_dict[algo] = dcop.agents_dict[a_q_id]
@@ -204,7 +206,7 @@ class QueryGenerator:
     def get_possible_alternatives_dict(self,for_what_dict ):
         values_to_remove_dict = self.get_values_to_remove_dict(for_what_dict)
 
-        domain_of_agents = list(self.dcops_dict.values())[0].agents_in_group[0].domain
+        domain_of_agents = list(self.dcops_dict.values())[0].agents[0].domain
         ans = {}
         for variable, values_to_remove_list in values_to_remove_dict.items():
             a = copy.deepcopy(domain_of_agents)
