@@ -203,9 +203,31 @@ class QueryGenerator:
                     ans[variable_num].append(value)
         return  ans
 
+    def get_possible_alternatives_per_algo_dict(self,for_what_dict ):
+        ans = {}
+        for algo,complete_ass in for_what_dict.items():
+            ans_temp = {}
+            for variable, value in complete_ass.items():
+                domain_of_agents = list(self.dcops_dict.values())[0].agents[0].domain
+                a = copy.deepcopy(domain_of_agents)
+                b = value
+                a.remove(b)
+                #possible_alternatives =#[item for item in a if item not in b]
+                ans_temp[variable] = a
+            ans[algo] = ans_temp
+        return ans
+        #values_to_remove_dict = self.get_values_to_remove_dict(for_what_dict)
+
+
+        #for variable, values_to_remove_list in values_to_remove_dict.items():
+        #    a = copy.deepcopy(domain_of_agents)
+        #    b = values_to_remove_list
+        #    possible_alternatives = [item for item in a if item not in b]
+        #    ans[variable] = possible_alternatives
+
+        #return ans
     def get_possible_alternatives_dict(self,for_what_dict ):
         values_to_remove_dict = self.get_values_to_remove_dict(for_what_dict)
-
         domain_of_agents = list(self.dcops_dict.values())[0].agents[0].domain
         ans = {}
         for variable, values_to_remove_list in values_to_remove_dict.items():
@@ -220,20 +242,27 @@ class QueryGenerator:
 
 
         if self.query_type == QueryType.rnd:
-            possible_alternatives_dict = self.get_possible_alternatives_dict(self.solution_partial_assignment_dict)
-            pa_rnd = {}
-            for agent_id, possible_alternatives in possible_alternatives_dict.items():
-                selected_alternative = self.rnd.choice(possible_alternatives)
-                pa_rnd[agent_id] = [selected_alternative]
-            for algo in self.dcops_dict.keys():
-                ans[algo] = copy.deepcopy(pa_rnd)
+            #possible_alternatives_dict = self.get_possible_alternatives_dict(self.solution_partial_assignment_dict)
+            possible_alternatives_dict = self.get_possible_alternatives_per_algo_dict(self.solution_partial_assignment_dict)
+
+            for algo, dict_ in possible_alternatives_dict.items():
+                ans[algo]={}
+                for variable, possible_alternatives in dict_.items():
+                    selected_alternative = self.rnd.choice(possible_alternatives)
+
+                    ans[algo][variable] = [selected_alternative]
+            #for agent_id, possible_alternatives in possible_alternatives_dict.items():
+            #    selected_alternative = self.rnd.choice(possible_alternatives)
+            #    pa_rnd[agent_id] = [selected_alternative]
+            #for algo in self.dcops_dict.keys():
+            #    ans[algo] = copy.deepcopy(pa_rnd)
 
 
         if self.query_type == QueryType.educated or self.query_type == QueryType.semi_educated:
-            possible_alternatives_dict = self.get_possible_alternatives_dict(self.complete_assignments_dict)
-
+            possible_alternatives_dict = self.get_possible_alternatives_per_algo_dict(self.complete_assignments_dict)
             agents_for_educated_dict = self.create_agents_for_educated(possible_alternatives_dict)
             for algo, agents_for_educated in agents_for_educated_dict.items():
+
                 bnb = Bnb_central(agents_for_educated)
 
                 dcop_solution = bnb.UB
@@ -267,7 +296,7 @@ class QueryGenerator:
         ans = {}
         for algo, dcop in self.dcops_dict.items():
             ans[algo] =[]
-            for agent in dcop.agents_in_group:
+            for agent in dcop.agents:
                 id_ = copy.deepcopy(agent.id_)
                 solution_value = self.complete_assignments_dict[algo][id_]
                 full_domain_list = copy.deepcopy(agent.domain)

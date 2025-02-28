@@ -136,6 +136,8 @@ class DCOP(ABC):
         self.create_agents()
         self.neighbors = []
         self.rnd_neighbors = random.Random((id_+5)*17)
+        for _ in range(10):
+            self.rnd_neighbors.randint(0,10)
         self.rnd_cost= random.Random((id_+7)*177)
         self.create_neighbors()
         self.connect_agents_to_neighbors()
@@ -321,24 +323,29 @@ class DCOP_RandomUniform(DCOP):
                     neighbors_dict_per_agent_ids[a1].append(a2)
                     neighbors_dict_per_agent_ids[a2].append(a1)
         for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
-            if len(neighbors_list)==0:
+            if len(neighbors_list) == 0:
                 raise Exception()
-                #while True:
-                    #rnd_agent = self.rnd_neighbors.choice(self.agents)
+            #while True:
+            #    rnd_agent = self.rnd_neighbors.choice(self.agents)
 
-                    #if rnd_agent.id_ != a1.id_:
-                        #self.neighbors.append(Neighbors(a1, rnd_agent, sparse_random_uniform_cost_function, self.dcop_id))
-                        #break
+            #    if rnd_agent.id_ != a1.id_:
+            #        self.neighbors.append(Neighbors(a1, rnd_agent, sparse_random_uniform_cost_function, self.dcop_id))
+            #        break
+
 
 class DCOP_GraphColoring(DCOP):
 
     def __init__(self, id_,A,D,dcop_name,algorithm,p1):
-        DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
         self.p1 = p1
+
+        DCOP.__init__(self,id_,A,D,dcop_name,algorithm)
     def create_summary(self):
         return self.dcop_name+"_A_"+str(self.A)+"_p1_"+str(graph_coloring_p1)
 
     def create_neighbors(self):
+        neighbors_dict_per_agent_ids = {}
+        for a in self.agents:
+            neighbors_dict_per_agent_ids[a] = []
         for i in range(self.A):
             a1 = self.agents[i]
             for j in range(i+1,self.A):
@@ -346,10 +353,17 @@ class DCOP_GraphColoring(DCOP):
                 rnd_number = self.rnd_neighbors.random()
                 if rnd_number<self.p1:
                     self.neighbors.append(Neighbors(a1, a2, graph_coloring_cost_function, self.dcop_id))
-
+                    neighbors_dict_per_agent_ids[a1].append(a2)
+                    neighbors_dict_per_agent_ids[a2].append(a1)
+        for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
+            if len(neighbors_list) == 0:
+                raise Exception()
+            #for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
+            #    if len(neighbors_list) == 0:
+            #        raise Exception()
 
 class DCOP_MeetingSchedualingV2(DCOP):
-    def __init__(self,id_, A, dcop_name, algorithm,p1, amount_of_users):
+    def __init__(self,id_, A, dcop_name, algorithm,p1):
         DCOP.__init__(self, id_, A, MS_time_slots_D, dcop_name, algorithm)
         DCOP.dcop_name = dcop_name
         self.meetings_per_user_amount = MS_meetings_per_user

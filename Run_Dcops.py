@@ -29,23 +29,23 @@ def get_DCOP(i,algorithm,dcop_type,A,p1):
 
 
     if dcop_type == DcopType.random_uniform:
-        #try:
-        return DCOP_RandomUniform(i, A, sparse_D,density_type_str+"_Random Uniform", algorithm,p1)
-        #except Exception:
-        #    raise Exception()
+        try:
+            return DCOP_RandomUniform(i, A, sparse_D,density_type_str+"_Random Uniform", algorithm,p1)
+        except Exception:
+            raise Exception()
 
     if dcop_type == DcopType.graph_coloring:
-        return DCOP_GraphColoring(i, A,graph_coloring_D, density_type_str+"_Graph Coloring", algorithm)
+        try:
+            return DCOP_GraphColoring(i, A,graph_coloring_D, density_type_str+"_Graph Coloring", algorithm,p1)
+        except Exception:
+            raise Exception()
 
     if  dcop_type == DcopType.meeting_scheduling_v2:
-        if p1<0.5:
-            amount_of_users = 20
-        if p1>=0.5:
-            amount_of_users = 30
 
 
         return DCOP_MeetingSchedualingV2(id_=i, A=A, dcop_name=density_type_str+"_Meeting Scheduling",
-                                       algorithm=algorithm,p1 = p1,amount_of_users =amount_of_users)
+                                       algorithm=algorithm,p1 = p1)
+
 
     #if dcop_type == DcopType.meeting_scheduling :
     #    return DCOP_MeetingSchedualing(id_=i, A=A, meetings=meetings, meetings_per_agent=meetings_per_user,
@@ -62,34 +62,46 @@ def create_dcops():
             ans[p1][A] = {}
             for algo in algos:
                 ans[p1][A][algo.name] = {}
-                if not (algo == Algorithm.BNB_Complete and A > 10):
+
+                max_num = 0
+                if dcop_type == DcopType.graph_coloring:
+                    max_num = 25
+                if dcop_type == DcopType.meeting_scheduling_v2:
+                    max_num = 15
+                if dcop_type == DcopType.random_uniform and p1 < 0.3:
+                    max_num = 15
+                if dcop_type == DcopType.random_uniform and p1 > 0.3:
+                    max_num = 10
+
+                if not (algo == Algorithm.BNB_Complete and A > max_num):
                     i = 0
                     while len(ans[p1][A][algo.name])<repetitions:
-                        #try:
-                        dcop = get_DCOP(i, algo, dcop_type, A,p1)
-                        print(algo.name,"start:",i, dcop.create_summary())
-                        if algo == Algorithm.BNB_Complete:
-                            dcop.execute_bnb_center()
-                        if algo == Algorithm.One_Opt:
-                            dcop.execute_k_opt(1)
-                        if algo == Algorithm.Two_Opt:
-                            dcop.execute_k_opt(2)
-                        if algo == Algorithm.Three_Opt:
-                            dcop.execute_k_opt(3)
-                        if algo == Algorithm.Four_Opt:
-                            dcop.execute_k_opt(4)
-                        if algo == Algorithm.Five_Opt:
-                            dcop.execute_k_opt(5)
+                        try:
 
+                            dcop = get_DCOP(i, algo, dcop_type, A,p1)
+                            print(algo.name, "start:", i, dcop.create_summary())
 
-                            #else:
-                            #    dcop.execute_distributed()
-                        ans[p1][A][algo.name][i] = (dcop)
-                        i = i+1
-                        with open("test_k_opt.pkl", "wb") as file:
-                            pickle.dump(ans, file)
-                        #except Exception:
-                        #    i = i+1
+                            if algo == Algorithm.BNB_Complete:
+                                dcop.execute_bnb_center()
+                            if algo == Algorithm.One_Opt:
+                                dcop.execute_k_opt(1)
+                            if algo == Algorithm.Two_Opt:
+                                dcop.execute_k_opt(2)
+                            if algo == Algorithm.Three_Opt:
+                                dcop.execute_k_opt(3)
+                            if algo == Algorithm.Four_Opt:
+                                dcop.execute_k_opt(4)
+                            if algo == Algorithm.Five_Opt:
+                                dcop.execute_k_opt(5)
+
+                                #else:
+                                #    dcop.execute_distributed()
+                            ans[p1][A][algo.name][i] = (dcop)
+                            i = i+1
+                            #with open("test_k_opt.pkl", "wb") as file:
+                            #    pickle.dump(ans, file)
+                        except Exception:
+                            i = i+1
 
 
     return ans
@@ -121,7 +133,7 @@ def get_dcops_for_different_configs():
             id_dcops_and_solutions_for_diff_algo = {}
 
 
-            for dcop_id in dict_2[algos_list[0]]:
+            for dcop_id in dict_2[algos_list[0]].keys():
                 id_dcops_and_solutions_for_diff_algo[dcop_id] = {}
                 for algo in algos_list:
                     dcop_for_algo = dict_2[algo][dcop_id]
@@ -147,7 +159,7 @@ def get_x_dcops_dict(dcops_for_different_configs):
 
                 if scale_type == ScaleType.query_scale:
 
-                    amount_of_variables_list = range(1, max_vars_below_eq_10+ 1)
+                    amount_of_variables_list = range(1, agents_amount+ 1)
                 else:
                     amount_of_variables_list = vars_DCOP_scale
 
@@ -201,19 +213,40 @@ if __name__ == '__main__':
     #####--------------------------------
     scale_type = ScaleType.query_scale
     dcop_type = DcopType.random_uniform
-    p1s = [0.5]
-    repetitions = 2
-    agents_amounts = [10]#[5,15,20,25,30,35,40,45,50] #+[10]
-    algos = [Algorithm.BNB_Complete,Algorithm.Three_Opt, Algorithm.One_Opt, Algorithm.Two_Opt]# ,Algorithm.Four_Opt,Algorithm.Five_Opt, [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
+    if dcop_type == DcopType.random_uniform:
+        p1s = [0.2]
+    if dcop_type == DcopType.graph_coloring:
+        p1s = [0.2]
+    if dcop_type == DcopType.meeting_scheduling_v2:
+        p1s = [0.5]
+
+    repetitions = 10
+    if scale_type ==ScaleType.dcop_scale:
+
+        agents_amounts = [10,15,20,25,30,35,40,45,50]
+        algos = [Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]#, Algorithm.One_Opt]
+    else:
+
+        if dcop_type == DcopType.random_uniform and 0.7 in p1s:
+            agents_amounts = [10]
+        if dcop_type == DcopType.random_uniform and 0.2 in p1s:
+            agents_amounts = [15,10]
+        if dcop_type == DcopType.meeting_scheduling_v2 :
+            agents_amounts = [15,10]
+        if dcop_type == DcopType.graph_coloring:
+            agents_amounts = [15,10]
+        algos =[Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt] #[Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]
+
+    #algos = [Algorithm.BNB_Complete,Algorithm.Three_Opt, Algorithm.One_Opt, Algorithm.Two_Opt,Algorithm.Four_Opt]# ,Algorithm.Four_Opt,Algorithm.Five_Opt, [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
     dcops = create_dcops()
     #with open("test_k_opt.pkl", "wb") as file:
     #    pickle.dump(dcops, file)
     seeds_xdcop = [1]
     min_vars = 1
-    max_vars_below_eq_10 = 10
+    #max_vars_below_eq_10 = 5
     vars_DCOP_scale = [5]
 
-    query_types_list =[QueryType.educated]
+    query_types_list =[QueryType.rnd,QueryType.educated]
     xdcops = create_xdcop()
 
     with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+"_"+scale_type.name+".pkl", "wb") as file:

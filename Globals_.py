@@ -22,10 +22,10 @@ import graphviz
 
 
 MS_meetings_per_user=2
-MS_time_slots_D=8
+MS_time_slots_D=6
 MS_min_users_per_meeting = 2
 max_iteration_k = 100
-
+min_iteration_k = 30
 # for DCOPS
 #algorithm = Algorithm.bnb
 is_complete = None
@@ -42,7 +42,7 @@ sparse_p1 = 0.2
 sparse_p2 = 1
 sparse_min_cost = 1
 sparse_max_cost = 100
-sparse_D = 10
+sparse_D = 5
 
 
 def sparse_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
@@ -62,7 +62,7 @@ dense_p1 = 0.7
 dense_p2 = 1
 dense_min_cost = 1
 dense_max_cost = 100
-dense_D = 10
+dense_D = 4
 
 def dense_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if rnd_cost.random()<dense_p2:
@@ -91,7 +91,7 @@ def scale_free_network_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
 # dcop_type = DcopType.graph_coloring
 #*******************************************#
 
-graph_coloring_p1 = 0.1
+graph_coloring_p1 = 0.2
 graph_coloring_constant_cost = 100
 graph_coloring_D = 3
 

@@ -151,7 +151,7 @@ class K_Opt:
         for _ in range(5):
             self.rnd_group_selection.random()
 
-
+        self.min_iteration = min_iteration_k
         self.max_iteration = max_iteration_k
         self.agents = agents
         self.agents_dict = {}
@@ -170,7 +170,9 @@ class K_Opt:
         self.calculate_global_cost()
         if debug_k_opt:
             print(self.iteration, ",", self.global_cost[self.iteration])
-        while self.iteration<self.max_iteration:
+
+
+        while not self.is_converge():
             self.iteration = self.iteration+1
 
             groups,groups_dict = self.create_groups_of_k()
@@ -305,4 +307,21 @@ class K_Opt:
         for a in self.agents:
             cost  = cost + a.calc_local_price()
         self.global_cost[self.iteration] = cost/2
+
+    def is_converge(self):
+        if self.iteration<self.min_iteration:
+            return False
+        else:
+            costs=[]
+
+
+            for i in range(self.iteration,self.iteration-self.min_iteration,-1):
+                costs.append(self.global_cost[i])
+
+            cost = costs[0]
+            for v in costs:
+                if v!=cost:
+                    return False
+            return True
+
 
