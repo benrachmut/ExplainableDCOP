@@ -1,7 +1,7 @@
 import pickle
 
 from B_xdcop_files.XDCOPS import Explanation
-from enums import ExplanationType
+from enums import ExplanationType, CommunicationType
 
 
 def create_explanations():
@@ -28,13 +28,16 @@ def create_explanations():
                         for ex_type in explanation_types:
                             #print("ex_type", ex_type)
 
-                            ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name] = []
-                            for x_dcop in x_dcops_list:
-                                dcop = x_dcop.dcop
-                                query = x_dcop.query
-                                explanation = Explanation(dcop, query, ex_type)
-                                d_e = explanation.data_entry
-                                ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name].append(d_e)
+                            ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name] = {}
+                            for communication_type in communication_types:
+                                ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name][communication_type.name] = []
+
+                                for x_dcop in x_dcops_list:
+                                    dcop = x_dcop.dcop
+                                    query = x_dcop.query
+                                    explanation = Explanation(dcop, query, ex_type, communication_type)
+                                    d_e = explanation.data_entry
+                                    ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name][communication_type.name].append(d_e)
     return ans
 
 
@@ -54,7 +57,7 @@ if __name__ == '__main__':
 
 
         explanation_types = list(ExplanationType)
-
+        communication_types = list(CommunicationType)
 
         explanations = create_explanations()
         for density,others in explanations.items():

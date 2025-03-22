@@ -31,14 +31,14 @@ def get_DCOP(i,algorithm,dcop_type,A,p1):
     if dcop_type == DcopType.random_uniform:
         try:
             return DCOP_RandomUniform(i, A, sparse_D,density_type_str+"_Random Uniform", algorithm,p1)
-        except Exception:
-            raise Exception()
+        except NoNeigException:
+            raise NoNeigException()
 
     if dcop_type == DcopType.graph_coloring:
         try:
             return DCOP_GraphColoring(i, A,graph_coloring_D, density_type_str+"_Graph Coloring", algorithm,p1)
-        except Exception:
-            raise Exception()
+        except NoNeigException:
+            raise NoNeigException()
 
     if  dcop_type == DcopType.meeting_scheduling_v2:
 
@@ -65,7 +65,7 @@ def create_dcops():
 
                 max_num = 0
                 if dcop_type == DcopType.graph_coloring:
-                    max_num = 25
+                    max_num = 20
                 if dcop_type == DcopType.meeting_scheduling_v2:
                     max_num = 15
                 if dcop_type == DcopType.random_uniform and p1 < 0.3:
@@ -76,8 +76,8 @@ def create_dcops():
                 if not (algo == Algorithm.BNB_Complete and A > max_num):
                     i = 0
                     while len(ans[p1][A][algo.name])<repetitions:
-                        try:
 
+                        try:
                             dcop = get_DCOP(i, algo, dcop_type, A,p1)
                             print(algo.name, "start:", i, dcop.create_summary())
 
@@ -94,13 +94,13 @@ def create_dcops():
                             if algo == Algorithm.Five_Opt:
                                 dcop.execute_k_opt(5)
 
-                                #else:
-                                #    dcop.execute_distributed()
+                            #else:
+                            #    dcop.execute_distributed()
                             ans[p1][A][algo.name][i] = (dcop)
                             i = i+1
-                            #with open("test_k_opt.pkl", "wb") as file:
-                            #    pickle.dump(ans, file)
-                        except Exception:
+                        #with open("test_k_opt.pkl", "wb") as file:
+                        #    pickle.dump(ans, file)
+                        except NoNeigException:
                             i = i+1
 
 
@@ -211,16 +211,16 @@ def create_xdcop():
 
 if __name__ == '__main__':
     #####--------------------------------
-    scale_type = ScaleType.query_scale
-    dcop_type = DcopType.random_uniform
+    scale_type = ScaleType.dcop_scale
+    dcop_type = DcopType.graph_coloring
     if dcop_type == DcopType.random_uniform:
         p1s = [0.2]
     if dcop_type == DcopType.graph_coloring:
-        p1s = [0.2]
+        p1s = [0.1]
     if dcop_type == DcopType.meeting_scheduling_v2:
         p1s = [0.5]
 
-    repetitions = 10
+    repetitions = 100
     if scale_type ==ScaleType.dcop_scale:
 
         agents_amounts = [10,15,20,25,30,35,40,45,50]
@@ -228,14 +228,14 @@ if __name__ == '__main__':
     else:
 
         if dcop_type == DcopType.random_uniform and 0.7 in p1s:
-            agents_amounts = [10]
+            agents_amounts = [15,10,5]
         if dcop_type == DcopType.random_uniform and 0.2 in p1s:
-            agents_amounts = [15,10]
+            agents_amounts = [15,10,5]
         if dcop_type == DcopType.meeting_scheduling_v2 :
-            agents_amounts = [15,10]
+            agents_amounts = [15,10,5]
         if dcop_type == DcopType.graph_coloring:
-            agents_amounts = [15,10]
-        algos =[Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt] #[Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]
+            agents_amounts = [20,15,10,5]
+        algos =[Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]
 
     #algos = [Algorithm.BNB_Complete,Algorithm.Three_Opt, Algorithm.One_Opt, Algorithm.Two_Opt,Algorithm.Four_Opt]# ,Algorithm.Four_Opt,Algorithm.Five_Opt, [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
     dcops = create_dcops()
@@ -251,5 +251,4 @@ if __name__ == '__main__':
 
     with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+"_"+scale_type.name+".pkl", "wb") as file:
         pickle.dump(xdcops, file)
-
 

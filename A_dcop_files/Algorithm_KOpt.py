@@ -125,21 +125,25 @@ class Group:
             self.LR_leaders_dict[leader_of_sender] = lr_of_sender
 
     def change_values_if_can(self):
-        max_lr = max(list(self.LR_leaders_dict.values()))
-
-        if max_lr > self.LR:
-            return
-        if max_lr == self.LR:
-            leaders_of_max_lr = []
-            for id_,lr in self.LR_leaders_dict.items():
-                if lr == max_lr:
-                    leaders_of_max_lr.append(id_)
-            if self.group_leader>min(leaders_of_max_lr):
-                return
-        if self.LR>0:
-            #print("Group leader:",self.group_leader,"LR:",self.LR)
+        if len(self.neighbors_of_agents)==0:
             for a_id, agent in self.agents_in_group.items():
                 agent.variable = self.best_context[a_id]
+        else:
+            max_lr = max(list(self.LR_leaders_dict.values()))
+
+            if max_lr > self.LR:
+                return
+            if max_lr == self.LR:
+                leaders_of_max_lr = []
+                for id_,lr in self.LR_leaders_dict.items():
+                    if lr == max_lr:
+                        leaders_of_max_lr.append(id_)
+                if self.group_leader>min(leaders_of_max_lr):
+                    return
+            if self.LR>0:
+                #print("Group leader:",self.group_leader,"LR:",self.LR)
+                for a_id, agent in self.agents_in_group.items():
+                    agent.variable = self.best_context[a_id]
 
 class K_Opt:
     def __init__(self,  K,agents,dcop_id):

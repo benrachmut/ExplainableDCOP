@@ -5,21 +5,14 @@ from Globals_ import *
 
 
 class Explanation():
-    def __init__(self, dcop,query,explanation_type ):
+    def __init__(self, dcop,query,explanation_type,communication_type ):
         self.query = query
         self.explanation_type = explanation_type
+        self.communication_type = communication_type
         self.iteration = 0
         self.data_entry = {}
-        #self.data_entry["dcop_id"] =  dcop.dcop_id
-        #self.data_entry["dcop_type"] = dcop.dcop_name
-        #self.data_entry["num_variables"] = len(query.variables_in_query)
-        #self.data_entry["Explanation_Algorithm"]= explanation_type.name
-        #self.data_entry["Query_Generator_Type"]= query.query_type.name
 
-        #if explanation_type == ExplanationType.Centralized:
-        #    self.get_centralized_explanation()
 
-        #else:# explanation_type == ExplanationType.BroadcastNaive:
         self.query_agent,query_agent_id = self.create_query_x_agent(self.query.agent)
         self.x_agents = self.create_x_agents(dcop,query_agent_id) # all
         self.x_agents.append(self.query_agent)
@@ -87,12 +80,11 @@ class Explanation():
 
     def create_query_x_agent(self, agent):
         id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
+        need to add communication type to all
         if self.explanation_type == ExplanationType.Shortest_Explanation:
             ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
         if self.explanation_type == ExplanationType.Grounded_Constraints:
             ax = AgentX_Query_BroadcastCentral_NoSort(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
-        #if self.explanation_type == ExplanationType.CEDAR_opt3A:
-        #    ax = AgentX_Query_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
         if self.explanation_type == ExplanationType.Sort_Parallel:
             ax = AgentX_Query_BroadcastDistributedV2(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
                                                    self.query)
@@ -124,6 +116,8 @@ class Explanation():
         for agent in dcop.agents_in_group:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
+                need to add communication type to all
+
                 if self.explanation_type == ExplanationType.Shortest_Explanation or  self.explanation_type == ExplanationType.Grounded_Constraints:
                     ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
                 if self.explanation_type == ExplanationType.Sort_Parallel or self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:

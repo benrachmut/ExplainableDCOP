@@ -298,6 +298,9 @@ class DCOP(ABC):
         self.agents.append(a)
 
 
+
+
+
 class DCOP_RandomUniform(DCOP):
     def __init__(self, id_,A,D,dcop_name,algorithm,p1):
         self.p1 = p1
@@ -324,13 +327,7 @@ class DCOP_RandomUniform(DCOP):
                     neighbors_dict_per_agent_ids[a2].append(a1)
         for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
             if len(neighbors_list) == 0:
-                raise Exception()
-            #while True:
-            #    rnd_agent = self.rnd_neighbors.choice(self.agents)
-
-            #    if rnd_agent.id_ != a1.id_:
-            #        self.neighbors.append(Neighbors(a1, rnd_agent, sparse_random_uniform_cost_function, self.dcop_id))
-            #        break
+                raise NoNeigException()
 
 
 class DCOP_GraphColoring(DCOP):
@@ -357,7 +354,7 @@ class DCOP_GraphColoring(DCOP):
                     neighbors_dict_per_agent_ids[a2].append(a1)
         for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
             if len(neighbors_list) == 0:
-                raise Exception()
+                raise NoNeigException()
             #for a1, neighbors_list in neighbors_dict_per_agent_ids.items():
             #    if len(neighbors_list) == 0:
             #        raise Exception()
@@ -815,7 +812,6 @@ class DCOP_MeetingSchedualing(DCOP):
             n.a1.neighbors_obj.append(n)
             n.a1.neighbors_agents_id.append(n.a1.id_)
             n.a1.neighbors_obj_dict[n.a1.id_] = n
-
 
 
 

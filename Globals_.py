@@ -95,6 +95,9 @@ graph_coloring_p1 = 0.2
 graph_coloring_constant_cost = 100
 graph_coloring_D = 3
 
+class NoNeigException(Exception):
+    pass
+
 def graph_coloring_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if d_a1==d_a2:
         return graph_coloring_constant_cost

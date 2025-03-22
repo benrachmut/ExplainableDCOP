@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from functools import cmp_to_key
 
+from torch.nn.parallel.comm import broadcast
+
 from B_xdcop_files.Queries import *
 
 
@@ -599,12 +601,17 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
     def send_solution_constraint_request(self, msgs_to_send):
         if AgentXStatues.request_solution_constraints in self.statues:
-            for n_id in self.query.variables_in_query:
-                if n_id!=self.id_:
-                    msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,msg_type=MsgTypeX.solution_constraint_request,bandwidth=0,NCLO = self.local_clock))
+            if bsf
+
+            else:
+                for n_id in self.query.variables_in_query:
+                    if n_id!=self.id_:
+                        msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,msg_type=MsgTypeX.solution_constraint_request,bandwidth=0,NCLO = self.local_clock))
 
     def send_alternative_constraint_request(self,msgs_to_send):
         if AgentXStatues.request_alternative_constraints in self.statues:
+            if communication_structure = CommunicationStructure.bsg:
+            if broadcast
             n_ids_to_send= self.get_n_ids_to_send()
             for n_id in n_ids_to_send:
                 msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment), NCLO = self.local_clock))
