@@ -17,6 +17,10 @@ class Explanation():
         self.x_agents = self.create_x_agents(dcop,query_agent_id) # all
         self.x_agents.append(self.query_agent)
         self.mailer = Mailer(self.x_agents)
+
+        if communication_type == CommunicationType.BFS:
+            vars_in_query =  query.variables_in_query
+            print()
         self.execute_distributed()
 
     def agents_init(self):
@@ -80,26 +84,26 @@ class Explanation():
 
     def create_query_x_agent(self, agent):
         id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
-        need to add communication type to all
+
         if self.explanation_type == ExplanationType.Shortest_Explanation:
-            ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
+            ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query,self.communication_type)
         if self.explanation_type == ExplanationType.Grounded_Constraints:
-            ax = AgentX_Query_BroadcastCentral_NoSort(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query)
+            ax = AgentX_Query_BroadcastCentral_NoSort(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query,self.communication_type)
         if self.explanation_type == ExplanationType.Sort_Parallel:
             ax = AgentX_Query_BroadcastDistributedV2(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                   self.query)
+                                                   self.query,self.communication_type)
 
         if self.explanation_type == ExplanationType.Varint_max:
             ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_max(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                     self.query)
+                                                     self.query,self.communication_type)
         if self.explanation_type == ExplanationType.Varint_mean:
             ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(id_, variable, domain,
                                                                               neighbors_agents_id, neighbors_obj_dict,
-                                                                              self.query)
+                                                                              self.query,self.communication_type)
 
         if self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:
             ax = AgentX_Query_BroadcastDistributedV3(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                     self.query)
+                                                     self.query,self.communication_type)
         return ax,id_
 
 
@@ -116,14 +120,13 @@ class Explanation():
         for agent in dcop.agents_in_group:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
-                need to add communication type to all
 
                 if self.explanation_type == ExplanationType.Shortest_Explanation or  self.explanation_type == ExplanationType.Grounded_Constraints:
-                    ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
+                    ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,self.communication_type)
                 if self.explanation_type == ExplanationType.Sort_Parallel or self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:
-                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,self.communication_type)
                 if self.explanation_type == ExplanationType.Varint_max or self.explanation_type == ExplanationType.Varint_mean:
-                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict)
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,self.communication_type)
 
                 ans.append(ax)
         return ans

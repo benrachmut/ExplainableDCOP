@@ -45,6 +45,7 @@ if __name__ == '__main__':
     folder_begin = "pickels_"
     what_scale = "query_scale" #pickels_dcop_scale
     prob = "random" #"random # meeting_scheduling
+
     directory = folder_begin+what_scale+"/"+prob
     import os
 
@@ -54,10 +55,10 @@ if __name__ == '__main__':
     for file in files:
         with open(directory+"/"+file, "rb") as file:
             x_dcops_dict = pickle.load(file)
-
+        #selected = x_dcops_dict[0.2][10]["educated"]["Complete"][5]
 
         explanation_types = list(ExplanationType)
-        communication_types = list(CommunicationType)
+        communication_types = [CommunicationType.BFS]#list(CommunicationType)
 
         explanations = create_explanations()
         for density,others in explanations.items():
