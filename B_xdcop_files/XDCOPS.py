@@ -1,3 +1,5 @@
+from collections import deque
+
 from B_xdcop_files.Agents_X import *
 from B_xdcop_files.Queries import *
 from Globals_ import *
@@ -20,9 +22,35 @@ class Explanation():
 
         if communication_type == CommunicationType.BFS:
             vars_in_query =  query.variables_in_query
-            print()
+            bfs_representation = self.bfs_representation()
         self.execute_distributed()
 
+    def bfs_representation(self):
+        bfs_tree = {}
+        visited = set()
+        root = self.query.agent.id_
+
+        queue = deque([root])
+        graph = self.get_graph_of_query()
+
+
+        bfs_tree[root] = (None, [])  # Root has no parent
+        visited.add(root)
+
+        while queue:
+            node = queue.popleft()
+            children = []
+
+            for neighbor in graph.get(node, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+                    bfs_tree[neighbor] = (node, [])  # Set parent
+                    children.append(neighbor)
+
+            bfs_tree[node] = (bfs_tree[node][0], children)  # Update children
+
+        return bfs_tree
     def agents_init(self):
         for a in self.x_agents:
             a.initialize()
@@ -117,7 +145,7 @@ class Explanation():
 
     def create_x_agents(self, dcop, query_agent_id):
         ans = []
-        for agent in dcop.agents_in_group:
+        for agent in dcop.agents:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
 
@@ -168,6 +196,18 @@ class Explanation():
 
         ans = alt_sum-solution_sum
 
+        return ans
+
+    def get_graph_of_query(self):
+        ans = {}
+        variables_in_query_dict = self.query.variables_in_query
+        for id_,agent in variables_in_query_dict.items():
+            t = []
+            for n_id in agent.neighbors_agents_id:
+                if n_id in variables_in_query_dict.keys():
+                    t.append(n_id)
+
+            ans[id_] = t
         return ans
 
 

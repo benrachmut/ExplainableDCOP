@@ -41,6 +41,17 @@ def create_explanations():
     return ans
 
 
+def cut_for_privacy(x_dcops_dict):
+    selected = x_dcops_dict[0.2][10]["educated"]["Complete"][5]
+    ans = {}
+    ans[0.2] ={}
+    ans[0.2][10] ={}
+    ans[0.2][10]["educated"] ={}
+    ans[0.2][10]["educated"]["Complete"] ={}
+    ans[0.2][10]["educated"]["Complete"][5] =selected
+    return ans
+
+
 if __name__ == '__main__':
     folder_begin = "pickels_"
     what_scale = "query_scale" #pickels_dcop_scale
@@ -55,8 +66,7 @@ if __name__ == '__main__':
     for file in files:
         with open(directory+"/"+file, "rb") as file:
             x_dcops_dict = pickle.load(file)
-        #selected = x_dcops_dict[0.2][10]["educated"]["Complete"][5]
-
+        x_dcops_dict = cut_for_privacy(x_dcops_dict)
         explanation_types = list(ExplanationType)
         communication_types = [CommunicationType.BFS]#list(CommunicationType)
 
