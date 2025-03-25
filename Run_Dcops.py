@@ -211,14 +211,14 @@ def create_xdcop():
 
 if __name__ == '__main__':
     #####--------------------------------
-    scale_type = ScaleType.dcop_scale
-    dcop_type = DcopType.graph_coloring
+    scale_type = ScaleType.query_scale
+    dcop_type = DcopType.meeting_scheduling_v2
     if dcop_type == DcopType.random_uniform:
         p1s = [0.2]
     if dcop_type == DcopType.graph_coloring:
         p1s = [0.1]
     if dcop_type == DcopType.meeting_scheduling_v2:
-        p1s = [0.5]
+        p1s = [0.3]
 
     repetitions = 100
     if scale_type ==ScaleType.dcop_scale:

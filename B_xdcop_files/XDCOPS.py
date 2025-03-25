@@ -9,10 +9,17 @@ from Globals_ import *
 class Explanation():
     def __init__(self, dcop,query,explanation_type,communication_type ):
         self.query = query
+        self.all_ids = list(dcop.agents_dict.keys())
         self.explanation_type = explanation_type
         self.communication_type = communication_type
         self.iteration = 0
         self.data_entry = {}
+        self.bfs_representation = None
+        self.bfs_route = None
+        if communication_type == CommunicationType.BFS:
+            self.bfs_representation = self.bfs_representation_()
+            self.bfs_route = self.construct_routes()
+
 
 
         self.query_agent,query_agent_id = self.create_query_x_agent(self.query.agent)
@@ -20,12 +27,27 @@ class Explanation():
         self.x_agents.append(self.query_agent)
         self.mailer = Mailer(self.x_agents)
 
-        if communication_type == CommunicationType.BFS:
-            vars_in_query =  query.variables_in_query
-            bfs_representation = self.bfs_representation()
+
         self.execute_distributed()
 
-    def bfs_representation(self):
+    def construct_routes(self ):
+        routes = {}
+
+        for node in self.bfs_representation:
+            if node == self.query.agent.id_:
+                continue
+
+            path = []
+            current = node
+
+            while current is not None:
+                path.append(current)
+                current = self.bfs_representation[current][0]
+
+            routes[node] = path[::-1]  # Reverse to get the route from root to node
+
+        return routes
+    def bfs_representation_(self):
         bfs_tree = {}
         visited = set()
         root = self.query.agent.id_
@@ -112,26 +134,26 @@ class Explanation():
 
     def create_query_x_agent(self, agent):
         id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
-
+        self.all_ids.remove(id_)
         if self.explanation_type == ExplanationType.Shortest_Explanation:
-            ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query,self.communication_type)
+            ax = AgentX_Query_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query, self.communication_type, self.bfs_representation, self.bfs_route,self.all_ids)
         if self.explanation_type == ExplanationType.Grounded_Constraints:
-            ax = AgentX_Query_BroadcastCentral_NoSort(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query,self.communication_type)
+            ax = AgentX_Query_BroadcastCentral_NoSort(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.query, self.communication_type, self.bfs_representation, self.bfs_route,self.all_ids)
         if self.explanation_type == ExplanationType.Sort_Parallel:
             ax = AgentX_Query_BroadcastDistributedV2(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                   self.query,self.communication_type)
+                                                     self.query, self.communication_type, self.bfs_representation, self.bfs_route,self.all_ids)
 
         if self.explanation_type == ExplanationType.Varint_max:
             ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_max(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                     self.query,self.communication_type)
+                                                                              self.query, self.communication_type, self.bfs_representation, self.bfs_route,self.all_ids)
         if self.explanation_type == ExplanationType.Varint_mean:
             ax = AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(id_, variable, domain,
-                                                                              neighbors_agents_id, neighbors_obj_dict,
-                                                                              self.query,self.communication_type)
+                                                                               neighbors_agents_id, neighbors_obj_dict,
+                                                                               self.query, self.communication_type, self.bfs_representation, self.bfs_route,self.all_ids)
 
         if self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:
             ax = AgentX_Query_BroadcastDistributedV3(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                     self.query,self.communication_type)
+                                                     self.query, self.communication_type, self.bfs_representation, self.bfs_route,self.all_ids)
         return ax,id_
 
 
@@ -150,11 +172,11 @@ class Explanation():
             if id_ != query_agent_id:
 
                 if self.explanation_type == ExplanationType.Shortest_Explanation or  self.explanation_type == ExplanationType.Grounded_Constraints:
-                    ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,self.communication_type)
+                    ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route)
                 if self.explanation_type == ExplanationType.Sort_Parallel or self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:
-                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,self.communication_type)
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route)
                 if self.explanation_type == ExplanationType.Varint_max or self.explanation_type == ExplanationType.Varint_mean:
-                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,self.communication_type)
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route)
 
                 ans.append(ax)
         return ans

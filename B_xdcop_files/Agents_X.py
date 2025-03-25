@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from functools import cmp_to_key
 
+from jinja2.lexer import TOKEN_DOT
 from torch.nn.parallel.comm import broadcast
 
 from B_xdcop_files.Queries import *
@@ -72,7 +73,7 @@ class Constraint:
 
 class AgentX(ABC):
 
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj,communication_type):
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj,communication_type,bfs_representation,bsf_route):
         self.alternative_partial_assignment =None
         self.global_clock = 0
         self.id_ = id_
@@ -97,6 +98,8 @@ class AgentX(ABC):
         self.a_q = None
         self.delta_nclo = 0
         self.communication_type=communication_type
+        self.bfs_representation = bfs_representation
+        self.bsf_route = bsf_route
     def get_general_info_for_records(self):
         return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
 
@@ -142,9 +145,14 @@ class AgentX(ABC):
     ######### send msgs
     def send_solution_value_information(self, msgs_to_send):
         if AgentXStatues.send_solution_value in self.statues:
-            for n_id in self.who_asked_for_solution_value:
-                msgs_to_send.append(Msg(sender = self.id_, receiver=n_id, information=self.variable, msg_type = MsgTypeX.solution_value_information, bandwidth=1, NCLO = self.local_clock))
-            self.who_asked_for_solution_value = []
+            if self.communication_type == CommunicationType.BFS:
+                #TODO
+            if self.communication_type == CommunicationType.broadcast:
+                #TODO
+            if self.communication_type == CommunicationType.Direct:
+                for n_id in self.who_asked_for_solution_value:
+                    msgs_to_send.append(Msg(sender = self.id_, receiver=n_id, information=self.variable, msg_type = MsgTypeX.solution_value_information, bandwidth=1, NCLO = self.local_clock))
+                self.who_asked_for_solution_value = []
 
     def local_view_has_nones(self):
         for v in self.local_view.values():
@@ -301,12 +309,13 @@ class AgentX(ABC):
 
 
 class AgentX_Query(AgentX,ABC):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,query,communication_type):
-        AgentX.__init__(self, id_, variable, domain, neighbors_agents_id,neighbors_obj_dict,communication_type)
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids):
+        AgentX.__init__(self, id_, variable, domain, neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation, bfs_route)
         self.alternative_constraints_cost_single_addition = []
         self.alternative_delta_constraints_cost_per_addition = []
         #self.alternative_delta_constraints_cost_per_NCLO = {}
         self.query = query
+        self.all_ids =all_ids
         #if isinstance(query,QueryMeetingScheduling):
         #    self.alternative_partial_assignment= query.alternative_partial_assignments[0]
         #else:
@@ -376,8 +385,8 @@ class AgentX_Query(AgentX,ABC):
             list_to_add = [what_to_add - self.solution_cost]*how_many_time
             self.alternative_delta_constraints_cost_per_addition.extend(list_to_add)
 class AgentX_Query_BroadcastCentral(AgentX_Query):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type):
-        AgentX_Query.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type)
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids):
+        AgentX_Query.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids)
         self.alternative_constraints_min_valid_cost = 0
         self.alternative_constraints_max_measure = 0
         for agent_in_query in self.query.variables_in_query:
@@ -602,18 +611,26 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
     def send_solution_constraint_request(self, msgs_to_send):
         if AgentXStatues.request_solution_constraints in self.statues:
-            #TODO who to send
-            for n_id in self.query.variables_in_query:
-                if n_id!=self.id_:
-                    msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,msg_type=MsgTypeX.solution_constraint_request,bandwidth=0,NCLO = self.local_clock))
+            if self.communication_type == CommunicationType.BFS:
+            # TODO
+            if self.communication_type == CommunicationType.broadcast:
+            # TODO
+            if self.communication_type == CommunicationType.Direct:
+                for n_id in self.query.variables_in_query:
+                    if n_id!=self.id_:
+                        msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,msg_type=MsgTypeX.solution_constraint_request,bandwidth=0,NCLO = self.local_clock))
 
     def send_alternative_constraint_request(self,msgs_to_send):
         if AgentXStatues.request_alternative_constraints in self.statues:
-            # TODO who to send
+            if self.communication_type == CommunicationType.BFS:
+            # TODO
+            if self.communication_type == CommunicationType.broadcast:
+            # TODO
+            if self.communication_type == CommunicationType.Direct:
 
-            n_ids_to_send= self.get_n_ids_to_send()
-            for n_id in n_ids_to_send:
-                msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment), NCLO = self.local_clock))
+                n_ids_to_send= self.get_n_ids_to_send()
+                for n_id in n_ids_to_send:
+                    msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment), NCLO = self.local_clock))
 
     def get_n_ids_to_send(self):
         ans = list(self.alternative_partial_assignment.keys())
@@ -622,8 +639,8 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         return ans
 
 class AgentX_Query_BroadcastCentral_NoSort(AgentX_Query_BroadcastCentral):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type):
-        AgentX_Query_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type)
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids):
+        AgentX_Query_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids)
 
     def compute_check_if_explanation_is_complete(self):
         NCLO = 0
@@ -664,8 +681,8 @@ class AgentX_Query_BroadcastCentral_NoSort(AgentX_Query_BroadcastCentral):
         return NCLO
 
 class AgentX_BroadcastCentral(AgentX):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type):
-        AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type)
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation,bfs_route):
+        AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation,bfs_route)
     def initialize(self):
         pass  # do nothing, wait for solution request
 
@@ -726,9 +743,14 @@ class AgentX_BroadcastCentral(AgentX):
 
     def send_solution_constraints(self,msgs_to_send):
        if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
-           bandwidth = len(self.solution_constraints[self.id_])
-           msg = Msg( sender=self.id_, receiver=self.a_q, information=self.solution_constraints[self.id_],msg_type = MsgTypeX.solution_constraints_information,bandwidth=bandwidth,NCLO = self.local_clock)
-           msgs_to_send.append(msg)
+           if self.communication_type == CommunicationType.BFS:
+           # TODO
+           if self.communication_type == CommunicationType.broadcast:
+           # TODO
+           if self.communication_type == CommunicationType.Direct:
+               bandwidth = len(self.solution_constraints[self.id_])
+               msg = Msg( sender=self.id_, receiver=self.a_q, information=self.solution_constraints[self.id_],msg_type = MsgTypeX.solution_constraints_information,bandwidth=bandwidth,NCLO = self.local_clock)
+               msgs_to_send.append(msg)
 
     def change_status_after_send_msgs(self):
         if AgentXStatues.send_solution_value in self.statues:
@@ -753,14 +775,19 @@ class AgentX_BroadcastCentral(AgentX):
 
     def send_alternative_constraints(self, msgs_to_send):
         if AgentXStatues.send_alternative_constraints_to_a_q in self.statues:
-            msg = Msg(sender= self.id_, receiver=self.a_q, information=self.alternative_constraints[self.id_],
-            msg_type= MsgTypeX.alternative_constraints_information,bandwidth=len(self.alternative_constraints[self.id_]),NCLO = self.local_clock)
-            msgs_to_send.append(msg)
+            if self.communication_type == CommunicationType.BFS:
+                #TODO
+            if self.communication_type == CommunicationType.broadcast:
+                #TODO
+            if self.communication_type == CommunicationType.Direct:
+                msg = Msg(sender= self.id_, receiver=self.a_q, information=self.alternative_constraints[self.id_],
+                msg_type= MsgTypeX.alternative_constraints_information,bandwidth=len(self.alternative_constraints[self.id_]),NCLO = self.local_clock)
+                msgs_to_send.append(msg)
 
 
 class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type):
-        AgentX_Query_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type)
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids):
+        AgentX_Query_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids)
         self.solution_total_cost_per_q_n = {}
 
 
@@ -941,8 +968,8 @@ class MaxHeap:
 
 
 class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type):
-        AgentX_Query_BroadcastDistributed.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type)
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids):
+        AgentX_Query_BroadcastDistributed.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids)
 
 
     def get_queue_of_constraints(self):
@@ -1039,9 +1066,9 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
 
 
 class AgentX_Query_BroadcastDistributedV3(AgentX_Query_BroadcastDistributedV2):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
         AgentX_Query_BroadcastDistributedV2.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                   query,communication_type)
+                                                   query,communication_type,bfs_representation,bfs_route,all_ids)
 
     def compute_check_if_explanation_is_complete(self):
 
@@ -1085,8 +1112,8 @@ class AgentX_Query_BroadcastDistributedV3(AgentX_Query_BroadcastDistributedV2):
         return NCLO
 
 class AgentX_BroadcastDistributed(AgentX_BroadcastCentral ):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type):
-        AgentX_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type)
+    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation, bfs_route):
+        AgentX_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation, bfs_route)
         self.total_local_cost_solution = 0
 
     def compute_send_solution_constraints_to_a_q(self):
@@ -1096,10 +1123,15 @@ class AgentX_BroadcastDistributed(AgentX_BroadcastCentral ):
         return 0
     def send_solution_constraints(self,msgs_to_send):
         if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
-            bandwidth = len(self.solution_constraints[self.id_])
-            msg = Msg(sender=self.id_, receiver=self.a_q, information=(self.solution_constraints[self.id_],self.total_local_cost_solution),
-                      msg_type=MsgTypeX.solution_constraints_information, bandwidth=bandwidth+1, NCLO=self.local_clock)
-            msgs_to_send.append(msg)
+            if self.communication_type == CommunicationType.BFS:
+                #TODO
+            if self.communication_type == CommunicationType.broadcast:
+                #TODO
+            if self.communication_type == CommunicationType.Direct:
+                bandwidth = len(self.solution_constraints[self.id_])
+                msg = Msg(sender=self.id_, receiver=self.a_q, information=(self.solution_constraints[self.id_],self.total_local_cost_solution),
+                          msg_type=MsgTypeX.solution_constraints_information, bandwidth=bandwidth+1, NCLO=self.local_clock)
+                msgs_to_send.append(msg)
 
 
 
@@ -1116,9 +1148,9 @@ from abc import ABC, abstractmethod
 
 
 class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_BroadcastDistributedV3,ABC):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
         AgentX_Query_BroadcastDistributedV3.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                     query,communication_type)
+                                                     query,communication_type,bfs_representation,bfs_route,all_ids)
         self.mean_constraints = self.calc_mean_constraints_of_agents_in_query()
         self.max_constraints = self.calc_max_constraints_of_agents_in_query()
         self.degree_of_query_agents_dict = self.get_degree_of_query_agents_dict()
@@ -1229,13 +1261,18 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
 
     def send_alternative_constraint_request(self,msgs_to_send):
         if AgentXStatues.request_alternative_constraints in self.statues:
-
             n_ids_to_send = self.get_n_ids_to_send()
-            for n_id in n_ids_to_send:
-                msgs_to_send.append(
-                    Msg(sender=self.id_, receiver=n_id, information=self.alternative_partial_assignment,
-                        msg_type=MsgTypeX.alternative_constraints_request,
-                        bandwidth=len(self.alternative_partial_assignment), NCLO=self.local_clock))
+
+            if self.communication_type == CommunicationType.BFS:
+                #TODO
+            if self.communication_type == CommunicationType.broadcast:
+                #TODO
+            if self.communication_type == CommunicationType.Direct:
+                for n_id in n_ids_to_send:
+                    msgs_to_send.append(
+                        Msg(sender=self.id_, receiver=n_id, information=self.alternative_partial_assignment,
+                            msg_type=MsgTypeX.alternative_constraints_request,
+                            bandwidth=len(self.alternative_partial_assignment), NCLO=self.local_clock))
 
             for a_id in n_ids_to_send:
                 self.query_agents_to_send_alternative_request.remove(a_id)
@@ -1244,16 +1281,16 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
 
 
 class AgentX_Query_BroadcastDistributed_communication_heurtsic_max(AgentX_Query_BroadcastDistributed_communication_heurtsic):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
         AgentX_Query_BroadcastDistributed_communication_heurtsic.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                               query,communication_type)
+                                               query,communication_type,bfs_representation,bfs_route,all_ids)
 
     def get_heuristic_estimation_of_cost(self):
         return self.max_constraints
 class AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(AgentX_Query_BroadcastDistributed_communication_heurtsic):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
         AgentX_Query_BroadcastDistributed_communication_heurtsic.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                               query,communication_type)
+                                               query,communication_type,bfs_representation,bfs_route,all_ids)
 
     def get_heuristic_estimation_of_cost(self):
         return self.mean_constraints
