@@ -34,7 +34,7 @@ def create_explanations():
 
                                 for x_dcop in x_dcops_list:
                                     dcop = x_dcop.dcop
-                                    print("dcop",dcop.dcop_id)
+                                    #print("dcop",dcop.dcop_id)
                                     query = x_dcop.query
                                     explanation = Explanation(dcop, query, ex_type, communication_type)
                                     d_e = explanation.data_entry
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     for file in files:
         with open(directory+"/"+file, "rb") as file:
             x_dcops_dict = pickle.load(file)
-        x_dcops_dict = cut_for_privacy(x_dcops_dict)
+        #x_dcops_dict = cut_for_privacy(x_dcops_dict)
         explanation_types = list(ExplanationType)
         communication_types = [CommunicationType.BFS]#list(CommunicationType)
 

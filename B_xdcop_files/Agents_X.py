@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from functools import cmp_to_key
 
-from jinja2.lexer import TOKEN_DOT
-from torch.nn.parallel.comm import broadcast
+
 
 from B_xdcop_files.Queries import *
 
@@ -32,6 +31,7 @@ class AgentXStatues(Enum):
     send_alternative_constraints_to_a_q = 12
     check_if_explanation_is_complete = 13
     send_request_down_the_tree = 14
+    send_information_up_the_tree = 15
 
 class CostComparisonCounter:
     def __init__(self):
@@ -117,6 +117,7 @@ class AgentX(ABC):
                 msgs = [msgs]
             self.update_local_clock(msgs)
             self.update_msgs_in_context(msgs)
+
             self.change_status_after_update_msgs_in_context(msgs)
             self.print_after_statues_after_receive_msgs()
             if self.is_compute_in_this_iteration():
@@ -702,6 +703,10 @@ class AgentX_BroadcastCentral(AgentX):
         AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation,bfs_route)
         self.a_q = a_q
         self.request_to_send_down_the_tree = []
+        self.requests_to_remember = []
+
+        self.information_to_send_up_the_tree = []
+        self.information_to_remember = []
     def initialize(self):
         pass  # do nothing, wait for solution request
 
@@ -711,17 +716,20 @@ class AgentX_BroadcastCentral(AgentX):
             self.alternative_partial_assignment = copy.deepcopy(info)
 
 
-    def update_request_to_send_forward(self,msg):
-        if msg.final_destination is not None and msg.final_destination!=msg.receiver and (msg.msg_type== MsgTypeX.solution_constraint_request or msg.msg_type== MsgTypeX.alternative_constraints_request):
-            print()
+    def update_send_down_the_tree(self,msg):
+        if (msg.final_destination is None or msg.receiver != msg.final_destination) and (
+                msg.msg_type == MsgTypeX.solution_constraint_request or msg.msg_type == MsgTypeX.alternative_constraints_request):
+            self.request_to_send_down_the_tree.append(msg)
+
     def update_msgs_in_context(self, msgs):
         for msg in msgs:
             self.update_solution_value_infrormation_in_local_view(msg)
             self.update_solution_value_request_data(msg)
             self.update_alternative_partial_assignment(msg)
+            if self.communication_type == CommunicationType.BFS:
+                self.update_send_down_the_tree(msg)
+                self.update_send_up_the_tree(msg)
 
-            if (msg.final_destination is None or msg.receiver != msg.final_destination) and (msg.msg_type == MsgTypeX.solution_constraint_request or msg.msg_type == MsgTypeX.alternative_constraints_request):
-                self.request_to_send_down_the_tree.append(msg)
 
     def change_status_after_update_msgs_in_context(self, msgs):
         if len(self.who_asked_for_solution_value)!=0:
@@ -742,14 +750,15 @@ class AgentX_BroadcastCentral(AgentX):
                     self.statues.append(AgentXStatues.send_alternative_constraints_to_a_q)
 
             elif msg.msg_type == MsgTypeX.solution_constraint_request or msg.msg_type == MsgTypeX.alternative_constraints_request:
-                #self.a_q = msg.sender
                 if AgentXStatues.send_request_down_the_tree not in self.statues:
                     self.statues.append(AgentXStatues.send_request_down_the_tree)
-            #elif msg.msg_type == MsgTypeX.solution_constraint_request or msg.msg_type == MsgTypeX.alternative_constraints_request:
+            elif msg.msg_type == MsgTypeX.solution_constraints_information or msg.msg_type == MsgTypeX.alternative_constraints_information:
+                if AgentXStatues.send_information_up_the_tree not in self.statues:
+                    self.statues.append(AgentXStatues.send_information_up_the_tree)
+        if AgentXStatues.wait_for_solution_value_then_send_solution_constraints in self.statues and self.local_view_has_nones() == False:
+            self.statues.remove(AgentXStatues.wait_for_solution_value_then_send_solution_constraints)
+            self.statues.append(AgentXStatues.send_solution_constraints_to_a_q)
 
-            if AgentXStatues.wait_for_solution_value_then_send_solution_constraints in self.statues and self.local_view_has_nones() == False:
-                self.statues.remove(AgentXStatues.wait_for_solution_value_then_send_solution_constraints)
-                self.statues.append(AgentXStatues.send_solution_constraints_to_a_q)
 
     def compute_send_solution_constraints_to_a_q(self):
         if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
@@ -770,12 +779,23 @@ class AgentX_BroadcastCentral(AgentX):
             for msg_request_to_send in self.request_to_send_down_the_tree:
                 final_destination = msg_request_to_send.final_destination
                 who_to_send = self.get_who_to_send_in_bfs(final_destination)
-                print()
+                msg_request_to_send.receiver = who_to_send
+                msgs_to_send.append(msg_request_to_send)
 
-        self.request_to_send_down_the_tree = []
+            for i in self.request_to_send_down_the_tree:
+                self.requests_to_remember.append(i)
+            self.request_to_send_down_the_tree = []
 
     def send_to_bfs_parent(self,msgs_to_send):
-        print("TODO")
+        if AgentXStatues.send_information_up_the_tree in self.statues:
+            for msg_info_to_send in self.information_to_send_up_the_tree:
+                who_to_send = self.get_who_to_send_up_the_tree()
+                msg_info_to_send.receiver = who_to_send
+                msgs_to_send.append(msg_info_to_send)
+
+            for i in self.request_to_send_down_the_tree:
+                self.information_to_remember.append(i)
+            self.information_to_send_up_the_tree = []
     def send_msgs(self):
         msgs_to_send = []
         if self.communication_type==CommunicationType.BFS:
@@ -788,6 +808,19 @@ class AgentX_BroadcastCentral(AgentX):
         if len(msgs_to_send)!=0:
             self.outbox.insert(msgs_to_send)
 
+    def get_who_to_send_up_the_tree(self):
+        my_route = self.bsf_route[self.id_]
+        for i in range(len(my_route)):
+            agent_id = my_route[i]
+            if agent_id==self.id_:
+                return my_route[i-1]
+
+    def get_who_to_send(self):
+        if self.communication_type == CommunicationType.BFS:
+            return self.get_who_to_send_up_the_tree()
+        else:
+            return self.a_q
+
     def send_solution_constraints(self,msgs_to_send):
        if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
            #if self.communication_type == CommunicationType.BFS:
@@ -796,7 +829,11 @@ class AgentX_BroadcastCentral(AgentX):
            #    pass
            #if self.communication_type == CommunicationType.Direct:
            bandwidth = len(self.solution_constraints[self.id_])
-           msg = Msg( sender=self.id_, receiver=self.a_q, information=self.solution_constraints[self.id_],msg_type = MsgTypeX.solution_constraints_information,bandwidth=bandwidth,NCLO = self.local_clock)
+           who_to_send = self.get_who_to_send()
+           if who_to_send!=self.a_q:
+               msg = Msg( sender=self.id_, receiver=who_to_send, information=self.solution_constraints[self.id_],msg_type = MsgTypeX.solution_constraints_information,bandwidth=bandwidth,NCLO = self.local_clock,final_destination=self.a_q)
+           else:
+               msg = Msg( sender=self.id_, receiver=self.a_q, information=self.solution_constraints[self.id_],msg_type = MsgTypeX.solution_constraints_information,bandwidth=bandwidth,NCLO = self.local_clock)
            msgs_to_send.append(msg)
 
     def change_status_after_send_msgs(self):
@@ -810,6 +847,12 @@ class AgentX_BroadcastCentral(AgentX):
             self.statues.remove(AgentXStatues.send_solution_constraints_to_a_q)
         if AgentXStatues.send_alternative_constraints_to_a_q in self.statues:
             self.statues.remove(AgentXStatues.send_alternative_constraints_to_a_q)
+        if AgentXStatues.send_request_down_the_tree in self.statues:
+            self.statues.remove(AgentXStatues.send_request_down_the_tree)
+
+        if AgentXStatues.send_information_up_the_tree in self.statues:
+            self.statues.remove(AgentXStatues.send_information_up_the_tree)
+
 
 
     def compute_send_alternative_constraints_to_a_q(self):
@@ -828,9 +871,23 @@ class AgentX_BroadcastCentral(AgentX):
             #    pass
             #if self.communication_type == CommunicationType.Direct:
                 #pass
-            msg = Msg(sender= self.id_, receiver=self.a_q, information=self.alternative_constraints[self.id_],
-            msg_type= MsgTypeX.alternative_constraints_information,bandwidth=len(self.alternative_constraints[self.id_]),NCLO = self.local_clock)
+            bandwidth = len(self.alternative_constraints[self.id_])
+            who_to_send = self.get_who_to_send()
+
+            if who_to_send != self.a_q:
+                msg = Msg(sender=self.id_, receiver=who_to_send, information=self.alternative_constraints[self.id_],
+                          msg_type=MsgTypeX.alternative_constraints_information, bandwidth=bandwidth,
+                          NCLO=self.local_clock, final_destination=self.a_q)
+            else:
+                msg = Msg(sender=self.id_, receiver=self.a_q, information=self.alternative_constraints[self.id_],
+                          msg_type=MsgTypeX.alternative_constraints_information, bandwidth=bandwidth,
+                          NCLO=self.local_clock)
             msgs_to_send.append(msg)
+
+    def update_send_up_the_tree(self, msg):
+        if (msg.final_destination is None or msg.receiver != msg.final_destination) and (
+                msg.msg_type == MsgTypeX.solution_constraints_information or msg.msg_type == MsgTypeX.alternative_constraints_information):
+            self.information_to_send_up_the_tree.append(msg)
 
 
 class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):

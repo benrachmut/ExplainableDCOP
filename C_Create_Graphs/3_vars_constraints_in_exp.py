@@ -97,7 +97,7 @@ def simply_avg_dict():
 
 if __name__ == '__main__':
     scale = "query" #
-    probs =["meeting_scheduling","random"]
+    probs =["random"]#["meeting_scheduling","random"]
 
     for is_with_legend in [True,False]:
         for prob in probs:
