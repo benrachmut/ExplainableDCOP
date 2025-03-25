@@ -12,7 +12,7 @@ class QueryType(Enum):
 class CommunicationType(Enum):
     Direct = 1
     BFS = 2
-    broadcast = 3
+    Broadcast = 3
 
 class ExplanationType(Enum):
     #"CEDAR_opt2_no_sort": "Grounded_Constraints(O1)",

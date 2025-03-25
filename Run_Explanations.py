@@ -34,6 +34,7 @@ def create_explanations():
 
                                 for x_dcop in x_dcops_list:
                                     dcop = x_dcop.dcop
+                                    print("dcop",dcop.dcop_id)
                                     query = x_dcop.query
                                     explanation = Explanation(dcop, query, ex_type, communication_type)
                                     d_e = explanation.data_entry

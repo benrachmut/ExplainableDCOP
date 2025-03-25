@@ -197,13 +197,14 @@ def draw_dcop_graph(dcop):
 
 class Msg():
 
-    def __init__(self, sender, receiver, information,msg_type,bandwidth=0,NCLO = 0):
+    def __init__(self, sender, receiver, information,msg_type,final_destination=None,bandwidth=0,NCLO = 0,):
         self.sender = sender
         self.receiver = receiver
         self.information = information
         self.msg_type = msg_type
         self.bandwidth = bandwidth
         self.NCLO =NCLO
+        self.final_destination = final_destination
 
 class UnboundedBuffer():
 
