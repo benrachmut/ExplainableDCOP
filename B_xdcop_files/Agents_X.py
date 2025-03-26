@@ -103,6 +103,30 @@ class AgentX(ABC):
         self.communication_type=communication_type
         self.bfs_representation = bfs_representation
         self.bsf_route = bsf_route
+
+        self.information_to_remember = []
+        self.information_solution_to_remember = {}
+        self.information_alternative_to_remember = {}
+
+        self.requests_to_remember = {}
+
+
+    def add_agent_privacy_request(self):
+        if self.communication_type == CommunicationType.BFS:
+            print("todo 1")
+        if self.communication_type == CommunicationType.Broadcast:
+            print("todo 2")
+        if self.communication_type == CommunicationType.Direct:
+            print("todo 5")
+
+    def add_agent_privacy_information(self):
+        if self.communication_type == CommunicationType.BFS:
+            print("todo 3")
+        if self.communication_type == CommunicationType.Broadcast:
+            print("todo 4")
+        if self.communication_type == CommunicationType.Direct:
+            print("todo 6")
+
     def get_general_info_for_records(self):
         return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
 
@@ -391,6 +415,7 @@ class AgentX_Query(AgentX,ABC):
             self.calc_sum_of_solution_cost()
             list_to_add = [what_to_add - self.solution_cost]*how_many_time
             self.alternative_delta_constraints_cost_per_addition.extend(list_to_add)
+
 class AgentX_Query_BroadcastCentral(AgentX_Query):
     def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids):
         AgentX_Query.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids)
@@ -411,6 +436,14 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             sender = msg.sender
             info = msg.information
             self.solution_constraints[sender] = info
+
+            if msg.msg_type == MsgTypeX.solution_constraints_information:
+                self.information_solution_to_remember[msg.sender] = msg.information
+                self.add_agent_privacy_information()
+
+            else:
+                self.information_alternative_to_remember[msg.sender] = msg.information
+                self.add_agent_privacy_information()
 
     def update_alternative_constraints(self,msg):
         if msg.msg_type == MsgTypeX.alternative_constraints_information:
@@ -446,12 +479,14 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         if AgentXStatues.wait_for_solution_constraints in self.statues and self.solution_constraints_has_none() == False:
             self.statues.remove(AgentXStatues.wait_for_solution_constraints)
             self.statues.append(AgentXStatues.request_alternative_constraints)
-        if AgentXStatues.wait_for_alternative_constraints in self.statues:
-            self.statues.remove(AgentXStatues.wait_for_alternative_constraints)
-            self.statues.append(AgentXStatues.check_if_explanation_is_complete)
+        if AgentXStatues.wait_for_alternative_constraints in self.statues : #and self.alternative_constraints_has_none()==False:
+            if self.is_receive_all_alternative_constraints():
+                self.statues.remove(AgentXStatues.wait_for_alternative_constraints)
+                self.statues.append(AgentXStatues.check_if_explanation_is_complete)
 
 
-
+    def is_receive_all_alternative_constraints(self):
+        return len(self.alternative_constraints) == len(self.query.variables_in_query)
     def get_all_alternative_constraints_list(self):
         constraints_alternative_list = []
         for v in self.alternative_constraints.values():
@@ -703,10 +738,10 @@ class AgentX_BroadcastCentral(AgentX):
         AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation,bfs_route)
         self.a_q = a_q
         self.request_to_send_down_the_tree = []
-        self.requests_to_remember = []
 
         self.information_to_send_up_the_tree = []
-        self.information_to_remember = []
+
+
     def initialize(self):
         pass  # do nothing, wait for solution request
 
@@ -783,7 +818,8 @@ class AgentX_BroadcastCentral(AgentX):
                 msgs_to_send.append(msg_request_to_send)
 
             for i in self.request_to_send_down_the_tree:
-                self.requests_to_remember.append(i)
+                self.requests_to_remember[i.sender] = i.information#.append(i)
+                self.add_agent_privacy_request()
             self.request_to_send_down_the_tree = []
 
     def send_to_bfs_parent(self,msgs_to_send):
@@ -794,8 +830,17 @@ class AgentX_BroadcastCentral(AgentX):
                 msgs_to_send.append(msg_info_to_send)
 
             for i in self.request_to_send_down_the_tree:
-                self.information_to_remember.append(i)
+                #self.information_to_remember.append(i)
+                if i.msg_type ==MsgTypeX.solution_constraints_information:
+                    self.information_solution_to_remember[i.sender] = i.information
+                    self.add_agent_privacy_information()
+                else:
+                    self.information_alternative_to_remember[i.sender] = i.information
+                    self.add_agent_privacy_information()
+
+
             self.information_to_send_up_the_tree = []
+
     def send_msgs(self):
         msgs_to_send = []
         if self.communication_type==CommunicationType.BFS:
@@ -1261,8 +1306,10 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
         self.degree_of_query_agents_dict = self.get_degree_of_query_agents_dict()
         self.query_agents_to_send_alternative_request =sorted(self.degree_of_query_agents_dict, key=lambda k: self.degree_of_query_agents_dict[k], reverse=True)
         self.query_agents_to_send_alternative_request.remove(self.id_)
+        self.who_i_wait_for = []
 
-
+    def is_receive_all_alternative_constraints(self):
+        return len(self.alternative_constraints) == len(self.who_i_wait_for)
 
     def compute_request_alternative_constraints(self):
         NCLO = 0
@@ -1367,6 +1414,7 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
     def send_alternative_constraint_request(self,msgs_to_send):
         if AgentXStatues.request_alternative_constraints in self.statues:
             n_ids_to_send = self.get_n_ids_to_send()
+            self.who_i_wait_for=  n_ids_to_send
 
             #if self.communication_type == CommunicationType.BFS:
             #    pass

@@ -246,7 +246,9 @@ class Mailer():
 
     def place_messages_in_agents_inbox(self):
         msgs_to_send = self.inbox.extract()
+
         max_nclo = max(msgs_to_send, key=lambda msg: msg.NCLO).NCLO
+
         if max_nclo>self.mailer_clock:
             self.mailer_clock = max_nclo
         

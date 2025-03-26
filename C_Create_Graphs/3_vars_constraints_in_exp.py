@@ -35,10 +35,12 @@ def get_measure_dict(full_dict):
                 ans[density][query_type][algo] = {}
                 for var_num, dict_4 in dict_3.items():
                     ans[density][query_type][algo][var_num] = {}
-                    for explanation_type,measures_all_dicts in dict_4.items():
-                        ans[density][query_type][algo][var_num][explanation_type] = []
-                        for measure_single_dict in measures_all_dicts:
-                            ans[density][query_type][algo][var_num][explanation_type].append(measure_single_dict[measure_name])
+                    for explanation_type,dict_5 in dict_4.items():
+                        ans[density][query_type][algo][var_num][explanation_type] = {}
+                        for com_type, measures_all_dicts in dict_5.items():
+                            ans[density][query_type][algo][var_num][explanation_type][com_type] = []
+                            for measure_single_dict in measures_all_dicts:
+                                ans[density][query_type][algo][var_num][explanation_type][com_type].append(measure_single_dict[measure_name])
     return ans
 
 
@@ -52,9 +54,12 @@ def get_avg_dict(measure_dict):
                 ans[density][query_type][algo] = {}
                 for var_num, dict_4 in dict_3.items():
                     ans[density][query_type][algo][var_num] = {}
-                    for explanation_type, measures_list in dict_4.items():
-                        avg_ = sum(measures_list) / len(measures_list)
-                        ans[density][query_type][algo][var_num][explanation_type] = avg_
+                    for explanation_type,dict_5 in dict_4.items():
+                        ans[density][query_type][algo][var_num][explanation_type] = {}
+                        for comm_type, measures_list in dict_5.items():
+                            avg_ = sum(measures_list) / len(measures_list)
+                            ans[density][query_type][algo][var_num][explanation_type][comm_type] = avg_
+
 
     return ans
 
@@ -88,7 +93,7 @@ def simply_avg_dict():
             for var_num in selected_vars_nums_list:
                 ans[query_new_name][exp_new_name][var_num]=  {}
 
-                data_to_put = avg_dict[selected_density][query_name]["Complete"][var_num][exp_name]
+                data_to_put = avg_dict[selected_density][query_name]["Complete"][var_num][exp_name]["BFS"]
                 ans[query_new_name][exp_new_name][var_num]  = data_to_put
     return ans
 
@@ -124,7 +129,7 @@ if __name__ == '__main__':
             y_name = "Number of Constraints"
             x_name =  r" $|var(\sigma_Q)|$"
 
-            selected_density = 0.7
+            selected_density = 0.2
             data = simply_avg_dict()
             folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
 
