@@ -1,5 +1,7 @@
 from collections import deque
 
+from networkx.algorithms.structuralholes import constraint
+
 from B_xdcop_files.Agents_X import *
 from B_xdcop_files.Queries import *
 from Globals_ import *
@@ -207,11 +209,33 @@ class Explanation():
         self.data_entry["Delta Cost per Constraint"] = self.data_entry["Cost delta of Valid"]/self.data_entry["Alternative # Constraint"]
         self.data_entry["Cost delta of All Alternatives"] = self.get_alternative_cost_delta(is_min_for_valid=False)
         self.data_entry["Delta Cost of All Alternatives per Constraint"] = self.data_entry["Cost delta of All Alternatives"]/self.data_entry["Alternative # Constraint"]
-    #self.alternative_constraints_min_valid_cost = 0
-    #self.alternative_constraints_max_measure = 0
+
+        self.data_entry["agent_privacy_normalized"],self.data_entry["agent_privacy"], = self.calc_agent_privacy()
+        self.data_entry["topology_privacy"] = self.calc_topology_privacy()
+        #self.data_entry["constraint_privacy"] = self.calc_constraint_privacy()
+        #self.data_entry["decision_privacy_with_send_sol_constraint"] = self.calc_decision_privacy_with_send_sol_constraint()
+        #self.data_entry["decision_privacy_without_send_sol_constraint"] = self.calc_constraint_privacy_without_send_sol_constraint()
+
+
+    def calc_topology_privacy(self):
+        who_is_aware_per_agent = {}
+        amount_of_agent = len(self.x_agents)
+        for a_i in self.x_agents:
+            who_is_aware_per_agent[a_i] = []
+            for a_j in self.x_agents:
+                if a_i.id_ != a_j.id_:
+                    if a_i.id_ in a_j.topology_privacy.keys():
+                        print()
+                        #what_topology_exposed_to_a_j = a_j.topology_privacy[a_i.id_]
+                        #print()
+        pass
+
     @staticmethod
     def measure_names():
-        return ["Iterations","NCLO","Total Messages","Bandwidth","Alternative # Constraint","Cost delta","Delta Cost per Constraint"]
+        return ["Iterations","NCLO","Total Messages","Bandwidth","Alternative # Constraint","Cost delta","Delta Cost per Constraint",    "agent_privacy","topology_privacy","constraint_privacy","decision_privacy_with_send_sol_constraint","decision_privacy_without_send_sol_constraint",
+                "agent_privacy_normalized", "topology_privacy_normalized", "constraint_privacy_normalized", "decision_privacy_with_send_sol_constraint_normalized",
+                "decision_privacy_without_send_sol_constraint_normalized"
+                ]
     def get_alternative_cost_delta(self,is_min_for_valid):
         if is_min_for_valid:
             alt_sum = self.query_agent.alternative_constraints_min_valid_cost
@@ -235,6 +259,24 @@ class Explanation():
 
             ans[id_] = t
         return ans
+
+    def calc_agent_privacy(self):
+        who_is_aware_per_agent = {}
+        amount_of_agent = len(self.x_agents)
+        for a_i in self.x_agents:
+            who_is_aware_per_agent[a_i] = []
+            for a_j in self.x_agents:
+                if a_i.id_ != a_j.id_:
+                    if a_i.id_ in a_j.agents_discovered:
+                        who_is_aware_per_agent[a_i].append(a_j.id_)
+        amount_normal = {}
+        amount = {}
+        for a, l_of_loss in who_is_aware_per_agent.items():
+            amount_normal[a.id_] = len(l_of_loss) / (amount_of_agent-len(a.neighbors_obj_dict))
+            amount[a.id_] = len(l_of_loss)
+        ans_normalize = sum(amount_normal.values())/len(amount_normal)
+        ans = sum(amount.values())/len(amount)
+        return ans_normalize,ans
 
 
 class XDCOP:

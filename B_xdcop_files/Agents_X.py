@@ -104,28 +104,66 @@ class AgentX(ABC):
         self.bfs_representation = bfs_representation
         self.bsf_route = bsf_route
 
-        self.information_to_remember = []
-        self.information_solution_to_remember = {}
         self.information_alternative_to_remember = {}
 
-        self.requests_to_remember = {}
+        self.agents_discovered = []
+        self.topology_privacy = {}
+        self.constraint_privacy = {}
+
+    def agents_become_aware_of_request_bfs(self, msg):
+        if msg.msg_type== MsgTypeX.alternative_constraints_request:
+            info = msg.information
+            for k in info.keys():
+                if k not in self.neighbors_obj_dict.keys() and k not in self.agents_discovered:
+                    self.agents_discovered.append(k)
+
+    def agents_become_aware_of_information_bfs(self, msg):
+        info = msg.information
+        for c in info:
+            ids_in_c = [c.first_id,c.second_id]
+            for id_ in ids_in_c:
+                if id_ not in self.neighbors_obj_dict.keys() and id_ not in self.agents_discovered:
+                    self.agents_discovered.append(id_)
 
 
-    def add_agent_privacy_request(self):
+    def constraint_topology_become_aware_of_information_bfs(self,msg):
+        info = msg.information
+        for c in info:
+            ids_in_c = [c.first_id, c.second_id]
+            first_id = c.first_id
+            second_id = c.second_id
+            if self.id_ not in ids_in_c:
+                if first_id not in self.topology_privacy:
+                    self.topology_privacy[first_id] = []
+                    self.constraint_privacy[first_id] = []
+                if second_id not in self.topology_privacy:
+                    self.topology_privacy[second_id] = []
+                    self.constraint_privacy[second_id] = []
+                self.constraint_privacy[first_id].append(c)
+                self.constraint_privacy[second_id].append(c)
+
+
+                if second_id not in self.topology_privacy[first_id]:
+                    self.topology_privacy[first_id].append(second_id)
+                if first_id not in self.topology_privacy[second_id]:
+                    self.topology_privacy[second_id].append(first_id)
+
+    def add_agent_privacy_request(self,msg):
         if self.communication_type == CommunicationType.BFS:
-            print("todo 1")
+            self.agents_become_aware_of_request_bfs(msg)
+
         if self.communication_type == CommunicationType.Broadcast:
             print("todo 2")
         if self.communication_type == CommunicationType.Direct:
             print("todo 5")
 
-    def add_agent_privacy_information(self):
-        if self.communication_type == CommunicationType.BFS:
-            print("todo 3")
+    def add_agent_privacy_information(self,msg):
+        if self.communication_type == CommunicationType.BFS or self.communication_type == CommunicationType.Direct:
+            self.agents_become_aware_of_information_bfs(msg)
+            self.constraint_topology_become_aware_of_information_bfs(msg)
         if self.communication_type == CommunicationType.Broadcast:
             print("todo 4")
-        if self.communication_type == CommunicationType.Direct:
-            print("todo 6")
+
 
     def get_general_info_for_records(self):
         return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
@@ -436,14 +474,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             sender = msg.sender
             info = msg.information
             self.solution_constraints[sender] = info
-
-            if msg.msg_type == MsgTypeX.solution_constraints_information:
-                self.information_solution_to_remember[msg.sender] = msg.information
-                self.add_agent_privacy_information()
-
-            else:
-                self.information_alternative_to_remember[msg.sender] = msg.information
-                self.add_agent_privacy_information()
+            self.add_agent_privacy_information(msg)
 
     def update_alternative_constraints(self,msg):
         if msg.msg_type == MsgTypeX.alternative_constraints_information:
@@ -675,15 +706,27 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
     def send_alternative_constraint_request(self,msgs_to_send):
         if AgentXStatues.request_alternative_constraints in self.statues:
-            #if self.communication_type == CommunicationType.BFS:
+            if self.communication_type == CommunicationType.BFS:
+
+                for final_destination in self.query.variables_in_query:
+                    if final_destination != self.id_:
+                        if final_destination not in self.neighbors_agents_id:
+                            who_to_send = self.get_who_to_send_in_bfs(final_destination)
+                        else:
+                            who_to_send = final_destination
+                        msgs_to_send.append(Msg(sender=self.id_, receiver=who_to_send, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment),
+                                                NCLO=self.local_clock, final_destination=final_destination))
             #    pass
             #if self.communication_type == CommunicationType.broadcast:
             #    pass
             #if self.communication_type == CommunicationType.Direct:
             #    pass
-            n_ids_to_send= self.get_n_ids_to_send()
-            for n_id in n_ids_to_send:
-                msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment), NCLO = self.local_clock))
+            if self.communication_type == CommunicationType.Broadcast:
+                pass
+            if self.communication_type == CommunicationType.Direct:
+                n_ids_to_send= self.get_n_ids_to_send()
+                for n_id in n_ids_to_send:
+                    msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment), NCLO = self.local_clock))
 
     def get_n_ids_to_send(self):
         ans = list(self.alternative_partial_assignment.keys())
@@ -818,8 +861,8 @@ class AgentX_BroadcastCentral(AgentX):
                 msgs_to_send.append(msg_request_to_send)
 
             for i in self.request_to_send_down_the_tree:
-                self.requests_to_remember[i.sender] = i.information#.append(i)
-                self.add_agent_privacy_request()
+                #self.requests_to_remember[i.sender] = i.information
+                self.add_agent_privacy_request(i)
             self.request_to_send_down_the_tree = []
 
     def send_to_bfs_parent(self,msgs_to_send):
@@ -829,14 +872,9 @@ class AgentX_BroadcastCentral(AgentX):
                 msg_info_to_send.receiver = who_to_send
                 msgs_to_send.append(msg_info_to_send)
 
-            for i in self.request_to_send_down_the_tree:
-                #self.information_to_remember.append(i)
-                if i.msg_type ==MsgTypeX.solution_constraints_information:
-                    self.information_solution_to_remember[i.sender] = i.information
-                    self.add_agent_privacy_information()
-                else:
-                    self.information_alternative_to_remember[i.sender] = i.information
-                    self.add_agent_privacy_information()
+            for i in self.information_to_send_up_the_tree:
+
+                self.add_agent_privacy_information(i)
 
 
             self.information_to_send_up_the_tree = []
