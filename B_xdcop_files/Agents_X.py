@@ -207,6 +207,8 @@ class AgentX(ABC):
             self.local_view[sender] = info
 
     def update_solution_value_request_data(self,msg):
+
+
         if msg.msg_type == MsgTypeX.solution_value_request:
             self.who_asked_for_solution_value.append(msg.sender)
 
@@ -698,7 +700,12 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                                                 NCLO=self.local_clock,final_destination=final_destination))
 
             if self.communication_type == CommunicationType.Broadcast:
-                pass
+                for final_destination in self.all_ids:
+                    for who_to_send in self.query.variables_in_query:
+                        msgs_to_send.append(Msg(sender=self.id_, receiver=who_to_send, information=None,
+                                                msg_type=MsgTypeX.solution_constraint_request, bandwidth=0,
+                                                NCLO=self.local_clock, final_destination=final_destination))
+
             if self.communication_type == CommunicationType.Direct:
                 for n_id in self.query.variables_in_query:
                     if n_id!=self.id_:

@@ -69,7 +69,7 @@ if __name__ == '__main__':
             x_dcops_dict = pickle.load(file)
         #x_dcops_dict = cut_for_privacy(x_dcops_dict)
         explanation_types = list(ExplanationType)
-        communication_types = [CommunicationType.Broadcast]#list(CommunicationType)
+        communication_types = [CommunicationType.BFS]#list(CommunicationType)
 
         explanations = create_explanations()
         for density,others in explanations.items():
