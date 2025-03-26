@@ -204,6 +204,7 @@ class K_Opt:
                         first_group.add_learder(second_group.group_leader)
                         second_group.add_learder(first_group.group_leader)
                         break
+
     def all_LR_is_zero(self,groups):
         for group in groups:
             if group.LR !=0:

@@ -11,6 +11,7 @@ from Globals_ import *
 class Explanation():
     def __init__(self, dcop,query,explanation_type,communication_type ):
         self.query = query
+        self.D = dcop.D
         self.all_ids = list(dcop.agents_dict.keys())
         self.explanation_type = explanation_type
         self.communication_type = communication_type
@@ -21,15 +22,13 @@ class Explanation():
         if communication_type == CommunicationType.BFS:
             self.bfs_representation = self.bfs_representation_()
             self.bfs_route = self.construct_routes()
-
-
-
         self.query_agent,query_agent_id = self.create_query_x_agent(self.query.agent)
         self.x_agents = self.create_x_agents(dcop,query_agent_id) # all
         self.x_agents.append(self.query_agent)
+        self.x_agents_dict = {}
+        for a in self.x_agents:
+            self.x_agents_dict[a.id_]=a
         self.mailer = Mailer(self.x_agents)
-
-
         self.execute_distributed()
 
     def construct_routes(self ):
@@ -210,27 +209,81 @@ class Explanation():
         self.data_entry["Cost delta of All Alternatives"] = self.get_alternative_cost_delta(is_min_for_valid=False)
         self.data_entry["Delta Cost of All Alternatives per Constraint"] = self.data_entry["Cost delta of All Alternatives"]/self.data_entry["Alternative # Constraint"]
 
-        self.data_entry["agent_privacy_normalized"],self.data_entry["agent_privacy"], = self.calc_agent_privacy()
-        self.data_entry["topology_privacy"] = self.calc_topology_privacy()
-        #self.data_entry["constraint_privacy"] = self.calc_constraint_privacy()
-        #self.data_entry["decision_privacy_with_send_sol_constraint"] = self.calc_decision_privacy_with_send_sol_constraint()
-        #self.data_entry["decision_privacy_without_send_sol_constraint"] = self.calc_constraint_privacy_without_send_sol_constraint()
+        self.data_entry["agent_privacy"], self.data_entry["agent_privacy_normalized"] = self.calc_agent_privacy()
+        self.data_entry["topology_privacy"], self.data_entry["topology_privacy_normalized"] = self.calc_topology_privacy()
+        self.data_entry["constraint_privacy"], self.data_entry["constraint_privacy_normalized"] = self.calc_constraint_privacy()
+        self.data_entry["decision_privacy_with_send_sol_constraint"], self.data_entry["decision_privacy_with_send_sol_normalized"] = self.calc_decision_privacy_with_send_sol_constraint()
+        self.data_entry["decision_privacy_without_send_sol_constraint"],self.data_entry["decision_privacy_without_send_sol_constraint_normalized"] = self.calc_constraint_privacy_without_send_sol_constraint()
 
+
+    def calc_constraint_privacy_without_send_sol_constraint(self):
+        share_val_with_neighbors = 0
+        amount_of_agent = len(self.x_agents)
+
+        for var_obj in self.query.variables_in_query.values():
+            share_val_with_neighbors = share_val_with_neighbors + len(var_obj.neighbors_obj_dict)
+
+        ans = share_val_with_neighbors / amount_of_agent
+        ans_norm = ans /(amount_of_agent-1)
+
+        return ans,ans_norm
+
+    def calc_decision_privacy_with_send_sol_constraint(self):
+        share_val_with_neighbors = 0
+        amount_of_agent = len(self.x_agents)
+
+        for var_obj in self.query.variables_in_query.values():
+            share_val_with_neighbors = share_val_with_neighbors + len(var_obj.neighbors_obj_dict)
+        for var_obj in self.query.variables_in_query.values():
+            share_val_with_neighbors = share_val_with_neighbors + len(self.x_agents_dict[var_obj.id_].agents_discovered)
+
+        ans = share_val_with_neighbors / amount_of_agent
+        ans_norm = ans /(amount_of_agent-1)
+
+        return ans,ans_norm
+    def calc_constraint_privacy(self):
+        who_is_aware_per_agent = {}
+        amount_of_agent = len(self.x_agents)
+
+        for a_i in self.x_agents:
+            who_is_aware_per_agent[a_i] = []
+            for a_j in self.x_agents:
+                if a_i.id_ != a_j.id_:
+                    if a_i.id_ in a_j.constraint_privacy.keys():
+                        what_topology_exposed_to_a_j = a_j.constraint_privacy[a_i.id_]
+                        who_is_aware_per_agent[a_i].extend(what_topology_exposed_to_a_j)
+        amount = {}
+        amount_normalized = {}
+        for who_lost, to_who_list in who_is_aware_per_agent.items():
+            amount[who_lost.id_] = len(to_who_list) / (len(who_lost.neighbors_obj_dict)*(self.D*self.D))
+            amount_normalized[who_lost.id_] = amount[who_lost.id_]/(amount_of_agent-1)
+        ans = sum(amount.values())/len(amount.values())
+        ans_normalized = sum(amount_normalized.values())/len(amount_normalized.values())
+
+
+        return ans,ans_normalized
 
     def calc_topology_privacy(self):
         who_is_aware_per_agent = {}
         amount_of_agent = len(self.x_agents)
-        amount = {}
-        amount_normalized = {}
+
         for a_i in self.x_agents:
-            who_is_aware_per_agent[a_i] = {}
+            who_is_aware_per_agent[a_i] = []
             for a_j in self.x_agents:
                 if a_i.id_ != a_j.id_:
                     if a_i.id_ in a_j.topology_privacy.keys():
                         what_topology_exposed_to_a_j = a_j.topology_privacy[a_i.id_]
-                        print("1")
+                        who_is_aware_per_agent[a_i].extend(what_topology_exposed_to_a_j)
+        amount = {}
+        amount_normalized = {}
+        for who_lost, to_who_list in who_is_aware_per_agent.items():
+            amount[who_lost.id_] = len(to_who_list) / len(who_lost.neighbors_obj_dict)
+            amount_normalized[who_lost.id_] = amount[who_lost.id_]/(amount_of_agent-1)
+        ans = sum(amount.values())/amount_of_agent
+        ans_normalized = sum(amount_normalized.values())/amount_of_agent
 
-        pass
+
+        return ans,ans_normalized
 
     @staticmethod
     def measure_names():
@@ -276,9 +329,9 @@ class Explanation():
         for a, l_of_loss in who_is_aware_per_agent.items():
             amount_normal[a.id_] = len(l_of_loss) / (amount_of_agent-len(a.neighbors_obj_dict))
             amount[a.id_] = len(l_of_loss)
-        ans_normalize = sum(amount_normal.values())/len(amount_normal)
-        ans = sum(amount.values())/len(amount)
-        return ans_normalize,ans
+        ans_normalize = sum(amount_normal.values())/amount_of_agent
+        ans = sum(amount.values())/amount_of_agent
+        return ans,ans_normalize
 
 
 class XDCOP:
