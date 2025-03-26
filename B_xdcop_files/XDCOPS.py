@@ -220,14 +220,16 @@ class Explanation():
     def calc_topology_privacy(self):
         who_is_aware_per_agent = {}
         amount_of_agent = len(self.x_agents)
+        amount = {}
+        amount_normalized = {}
         for a_i in self.x_agents:
-            who_is_aware_per_agent[a_i] = []
+            who_is_aware_per_agent[a_i] = {}
             for a_j in self.x_agents:
                 if a_i.id_ != a_j.id_:
                     if a_i.id_ in a_j.topology_privacy.keys():
-                        print()
-                        #what_topology_exposed_to_a_j = a_j.topology_privacy[a_i.id_]
-                        #print()
+                        what_topology_exposed_to_a_j = a_j.topology_privacy[a_i.id_]
+                        print("1")
+
         pass
 
     @staticmethod
