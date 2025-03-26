@@ -76,7 +76,7 @@ if __name__ == '__main__':
             ans[density] =others
 
     name_to_export = what_scale+"_"+prob+".pkl"
-    with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+"_.pkl", "wb") as file:
+    with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+".pkl", "wb") as file:
         pickle.dump(ans, file)
 
 
