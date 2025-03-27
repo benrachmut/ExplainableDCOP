@@ -54,11 +54,15 @@ def cut_for_privacy(x_dcops_dict):
 
 
 if __name__ == '__main__':
-    folder_begin = "pickels_"
-    what_scale = "query_scale" #pickels_dcop_scale
-    prob = "random" #"random # meeting_scheduling
+    folder_begin = "pickles_"
+    what_scale = "query_scale" #dcop_scale, query_scale
+    prob = "meeting_scheduling" #"random # meeting_scheduling
+    is_privacy = True
+    if is_privacy:
+        directory = folder_begin+what_scale+"_privacy/"+prob
+    else:
+        directory = folder_begin+what_scale+"/"+prob
 
-    directory = folder_begin+what_scale+"/"+prob
     import os
 
     files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
@@ -68,15 +72,25 @@ if __name__ == '__main__':
         with open(directory+"/"+file, "rb") as file:
             x_dcops_dict = pickle.load(file)
         #x_dcops_dict = cut_for_privacy(x_dcops_dict)
-        explanation_types = list(ExplanationType)
-        communication_types = list(CommunicationType)
+        if is_privacy:
+            explanation_types = [ExplanationType.Shortest_Explanation]
+            communication_types = list(CommunicationType)
+
+        else:
+            explanation_types = list(ExplanationType)
+            communication_types = [CommunicationType.Direct]
 
         explanations = create_explanations()
         for density,others in explanations.items():
             ans[density] =others
 
+
     name_to_export = what_scale+"_"+prob+".pkl"
-    with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+".pkl", "wb") as file:
-        pickle.dump(ans, file)
+    if is_privacy:
+        with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+"_privacy.pkl", "wb") as file:
+            pickle.dump(ans, file)
+    else:
+        with open("C_Create_Graphs/explanations_" + what_scale + "_" + prob + ".pkl", "wb") as file:
+            pickle.dump(ans, file)
 
 

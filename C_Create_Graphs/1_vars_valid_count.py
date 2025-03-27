@@ -24,22 +24,25 @@ def get_full_dict(densities,agent_amount,query_types,algos,vars_nums_list,explan
     return ans
 
 
-def get_measure_dict(full_dict):
-    ans = {}
-    for density, dict_1 in full_dict.items():
-        ans[density] = {}
-        for query_type, dict_2 in dict_1.items():
-            ans[density][query_type] = {}
-            for algo,dict_3 in dict_2.items():
-                ans[density][query_type][algo] = {}
-                for var_num, dict_4 in dict_3.items():
-                    ans[density][query_type][algo][var_num] = {}
-                    for explanation_type,measures_all_dicts in dict_4.items():
-                        ans[density][query_type][algo][var_num][explanation_type] = []
-                        for measure_single_dict in measures_all_dicts:
-                            ans[density][query_type][algo][var_num][explanation_type].append(measure_single_dict[measure_name])
-    return ans
 
+
+
+def get_all_avg_dict():
+    if prob == "meeting_scheduling":
+        densities = [0.2,0.5,0.7]
+    else:
+        densities = [0.2,0.7]
+
+    agent_amount = 10
+    query_types = [QueryType.educated.name, QueryType.rnd.name]
+    algos = ["Complete", "One_Opt"]
+    vars_nums_list = range(1, 11)
+    explanation_types = []
+    for exp_type in list(ExplanationType): explanation_types.append(exp_type.name)
+
+    full_dict = get_full_dict(densities,agent_amount,query_types,algos,vars_nums_list,explanation_types)
+    measure_dict = get_measure_dict(full_dict)
+    return get_avg_dict(measure_dict)
 
 def get_avg_dict(measure_dict):
     ans = {}
@@ -66,23 +69,21 @@ def get_avg_dict(measure_dict):
 
     return ans
 
-
-def get_all_avg_dict():
-    if prob == "meeting_scheduling":
-        densities = [0.2,0.5,0.7]
-    else:
-        densities = [0.2,0.7]
-
-    agent_amount = 10
-    query_types = [QueryType.educated.name, QueryType.rnd.name]
-    algos = ["Complete", "One_Opt"]
-    vars_nums_list = range(1, 11)
-    explanation_types = []
-    for exp_type in list(ExplanationType): explanation_types.append(exp_type.name)
-
-    full_dict = get_full_dict(densities,agent_amount,query_types,algos,vars_nums_list,explanation_types)
-    measure_dict = get_measure_dict(full_dict)
-    return get_avg_dict(measure_dict)
+def get_measure_dict(full_dict):
+    ans = {}
+    for density, dict_1 in full_dict.items():
+        ans[density] = {}
+        for query_type, dict_2 in dict_1.items():
+            ans[density][query_type] = {}
+            for algo,dict_3 in dict_2.items():
+                ans[density][query_type][algo] = {}
+                for var_num, dict_4 in dict_3.items():
+                    ans[density][query_type][algo][var_num] = {}
+                    for explanation_type,measures_all_dicts in dict_4.items():
+                        ans[density][query_type][algo][var_num][explanation_type] = []
+                        for measure_single_dict in measures_all_dicts:
+                            ans[density][query_type][algo][var_num][explanation_type].append(measure_single_dict[measure_name])
+    return ans
 
 
 def simply_avg_dict():
@@ -93,7 +94,7 @@ def simply_avg_dict():
         for algo,algo_new_name in selected_algos_and_new_name.items():
             ans[query_new_name][algo_new_name] = {}
             for var_ in selected_vars_nums_list:
-                ans[query_new_name][algo_new_name][var_] = avg_dict[selected_density][query_name][algo][var_][selected_explanation_type]*100
+                ans[query_new_name][algo_new_name][var_] = avg_dict[selected_density][query_name][algo][var_][selected_explanation_type]["Direct"]*100
     return ans
 
 
@@ -135,36 +136,38 @@ if __name__ == '__main__':
             x_name = r" $|var(\sigma_Q)|$"
             ###################
 
+            if prob == "random":
 
 
-            selected_density = 0.7
-            data = simply_avg_dict()
-            print_data_for_table()
+                selected_density = 0.7
+                data = simply_avg_dict()
+                print_data_for_table()
 
-            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
+                folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
 
-            create_single_graph(is_with_legend,data, ColorsInGraph.dcop_algorithms,curve_dcop_algos, x_name, y_name, folder_to_save, figure_name,x_min = 1,x_max=10,y_min=0,y_max=110,is_highlight_horizontal=True,x_ticks=range(1,11),horizontal_width = 10, horizontal_alpha = 0.2,horizontal_location = 100)
-            #create_single_graph()
-
-
-
-            ###################
+                create_single_graph(is_with_legend,data, ColorsInGraph.dcop_algorithms,curve_dcop_algos, x_name, y_name, folder_to_save, figure_name,x_min = 1,x_max=10,y_min=0,y_max=110,is_highlight_horizontal=True,x_ticks=range(1,11),horizontal_width = 10, horizontal_alpha = 0.2,horizontal_location = 100)
+                #create_single_graph()
 
 
 
-            selected_density = 0.2
-            data = simply_avg_dict()
-            print_data_for_table()
+                ###################
 
-            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
-            create_single_graph(is_with_legend,data, ColorsInGraph.dcop_algorithms,curve_dcop_algos, x_name, y_name, folder_to_save, figure_name,x_min = 1,x_max=10,y_min=0,y_max=110,is_highlight_horizontal=True,x_ticks=range(1,11),horizontal_width = 10, horizontal_alpha = 0.2,horizontal_location = 100)
+
+
+                selected_density = 0.2
+                data = simply_avg_dict()
+                print_data_for_table()
+
+                folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
+                create_single_graph(is_with_legend,data, ColorsInGraph.dcop_algorithms,curve_dcop_algos, x_name, y_name, folder_to_save, figure_name,x_min = 1,x_max=10,y_min=0,y_max=110,is_highlight_horizontal=True,x_ticks=range(1,11),horizontal_width = 10, horizontal_alpha = 0.2,horizontal_location = 100)
 
 
             if prob == "meeting_scheduling":
                 selected_density = 0.5
-                print_data_for_table()
 
                 data = simply_avg_dict()
+                print_data_for_table()
+
                 folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type, prob, selected_density)
                 create_single_graph(is_with_legend, data, ColorsInGraph.dcop_algorithms, curve_dcop_algos, x_name,
                                     y_name, folder_to_save, figure_name, x_min=1, x_max=10, y_min=0, y_max=110,

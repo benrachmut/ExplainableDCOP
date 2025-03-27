@@ -22,7 +22,7 @@ import graphviz
 
 
 MS_meetings_per_user=2
-MS_time_slots_D=6
+MS_time_slots_D=8
 MS_min_users_per_meeting = 2
 max_iteration_k = 100
 min_iteration_k = 30
@@ -42,7 +42,7 @@ sparse_p1 = 0.2
 sparse_p2 = 1
 sparse_min_cost = 1
 sparse_max_cost = 100
-sparse_D = 5
+sparse_D = 10
 
 
 def sparse_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
@@ -62,7 +62,7 @@ dense_p1 = 0.7
 dense_p2 = 1
 dense_min_cost = 1
 dense_max_cost = 100
-dense_D = 4
+dense_D = 10
 
 def dense_random_uniform_cost_function(rnd_cost:Random,a1,a2,d_a1,d_a2):
     if rnd_cost.random()<dense_p2:

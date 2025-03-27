@@ -153,3 +153,6 @@ def create_single_graph(is_with_legend,data,colors_type,curve_widths,x_name,y_na
 
     # Clear the plot
     plt.clf()
+
+
+

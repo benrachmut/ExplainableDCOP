@@ -211,20 +211,24 @@ def create_xdcop():
 
 if __name__ == '__main__':
     #####--------------------------------
-    scale_type = ScaleType.query_scale
+    is_privacy = True
+    scale_type = ScaleType.dcop_scale
     dcop_type = DcopType.meeting_scheduling_v2
     if dcop_type == DcopType.random_uniform:
-        p1s = [0.2]
+        p1s = [0.7]
     if dcop_type == DcopType.graph_coloring:
         p1s = [0.1]
     if dcop_type == DcopType.meeting_scheduling_v2:
-        p1s = [0.3]
+        p1s = [0.5]
 
     repetitions = 100
     if scale_type ==ScaleType.dcop_scale:
 
         agents_amounts = [10,15,20,25,30,35,40,45,50]
-        algos = [Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]#, Algorithm.One_Opt]
+        if is_privacy:
+            algos = [Algorithm.One_Opt]
+        else:
+            algos = [Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]#, Algorithm.One_Opt]
     else:
 
         if dcop_type == DcopType.random_uniform and 0.7 in p1s:
@@ -235,8 +239,11 @@ if __name__ == '__main__':
             agents_amounts = [15,10,5]
         if dcop_type == DcopType.graph_coloring:
             agents_amounts = [20,15,10,5]
-        algos =[Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]
-
+        if is_privacy:
+            algos = [Algorithm.One_Opt]
+        else:
+            algos = [Algorithm.BNB_Complete, Algorithm.One_Opt, Algorithm.Two_Opt, Algorithm.Three_Opt,
+                     Algorithm.Four_Opt, Algorithm.Five_Opt]  #
     #algos = [Algorithm.BNB_Complete,Algorithm.Three_Opt, Algorithm.One_Opt, Algorithm.Two_Opt,Algorithm.Four_Opt]# ,Algorithm.Four_Opt,Algorithm.Five_Opt, [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
     dcops = create_dcops()
     #with open("test_k_opt.pkl", "wb") as file:
@@ -244,11 +251,19 @@ if __name__ == '__main__':
     seeds_xdcop = [1]
     min_vars = 1
     #max_vars_below_eq_10 = 5
-    vars_DCOP_scale = [5]
+    if is_privacy:
+        vars_DCOP_scale = [5, 10]
+        query_types_list = [QueryType.rnd]  # [QueryType.rnd,QueryType.educated]
+    else:
+        vars_DCOP_scale = [5]
+        query_types_list =  [QueryType.rnd,QueryType.educated]
 
-    query_types_list =[QueryType.rnd,QueryType.educated]
+
     xdcops = create_xdcop()
 
-    with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+"_"+scale_type.name+".pkl", "wb") as file:
-        pickle.dump(xdcops, file)
+    if is_privacy:
+        with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+"_"+scale_type.name+"_privacy.pkl", "wb") as file:pickle.dump(xdcops, file)
+
+    else:
+        with open("xdcops_"+dcop_type.name+"_A_"+str(agents_amounts)+"_p1_"+str(p1s)+"_"+scale_type.name+".pkl", "wb") as file:pickle.dump(xdcops, file)
 
