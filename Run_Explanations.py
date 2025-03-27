@@ -57,7 +57,7 @@ if __name__ == '__main__':
     folder_begin = "pickles_"
     what_scale = "dcop_scale" #dcop_scale, query_scale
     prob = "meeting_scheduling" #"random # meeting_scheduling
-    is_privacy = False
+    is_privacy = True
     if is_privacy:
         directory = folder_begin+what_scale+"_privacy/"+prob
     else:
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         #x_dcops_dict = cut_for_privacy(x_dcops_dict)
         if is_privacy:
             explanation_types = [ExplanationType.Shortest_Explanation]
-            communication_types = [CommunicationType.Broadcast_Total]#list(CommunicationType)
+            communication_types = list(CommunicationType)
 
         else:
             explanation_types = list(ExplanationType)

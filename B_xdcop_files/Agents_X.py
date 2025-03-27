@@ -85,7 +85,7 @@ class AgentX(ABC):
         self.domain = domain
 
 
-        self.all_ids = all_ids
+        self.all_ids = copy.deepcopy(all_ids)
         self.all_ids.remove(self.id_)
 
         self.neighbors_agents_id = neighbors_agents_id
@@ -125,6 +125,7 @@ class AgentX(ABC):
 
     def constraint_topology_become_aware_of_information_bfs(self, msg):
         info = msg.information
+
         for c in info:
             ids_in_c = [c.first_id, c.second_id]
             first_id = c.first_id
@@ -152,6 +153,7 @@ class AgentX(ABC):
                     self.agents_discovered.append(k)
 
     def add_agent_privacy_information(self, msg):
+        if msg.msg_type == MsgTypeX.solution_constraints_information or msg.msg_type == MsgTypeX.alternative_constraints_information:
             self.agents_become_aware_of_information_bfs(msg)
             self.constraint_topology_become_aware_of_information_bfs(msg)
 
@@ -696,14 +698,14 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                                                 msg_type=MsgTypeX.solution_constraint_request, bandwidth=0,
                                                 NCLO=self.local_clock, final_destination=final_destination))
 
-            if self.communication_type == CommunicationType.Broadcast:
+            if self.communication_type == CommunicationType.Broadcast or self.communication_type == CommunicationType.Broadcast_Total:
                 for final_destination in self.query.variables_in_query:
                     for who_to_send in self.all_ids:
                         msgs_to_send.append(Msg(sender=self.id_, receiver=who_to_send, information=None,
                                                 msg_type=MsgTypeX.solution_constraint_request, bandwidth=0,
                                                 NCLO=self.local_clock, final_destination=final_destination))
 
-            if self.communication_type == CommunicationType.Direct:
+            if self.communication_type == CommunicationType.Direct  :
                 for n_id in self.query.variables_in_query:
                     if n_id != self.id_:
                         msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,
@@ -832,8 +834,7 @@ class AgentX_BroadcastCentral(AgentX):
     def change_status_after_update_msgs_in_context(self, msgs):
         if len(self.who_asked_for_solution_value) != 0:
             self.statues.append(AgentXStatues.send_solution_value)
-            # if AgentXStatues.idle in self.statues:
-            #    self.statues.remove(AgentXStatues.idle)
+
         if isinstance(msgs, Msg):
             msgs = [msgs]
 
@@ -943,6 +944,7 @@ class AgentX_BroadcastCentral(AgentX):
                         Msg(sender=self.id_, receiver=who_to_send, information=self.solution_constraints[self.id_],
                             msg_type=MsgTypeX.solution_constraints_information, bandwidth=0,
                             NCLO=self.local_clock, final_destination=final_destination))
+
 
     def change_status_after_send_msgs(self):
         if AgentXStatues.send_solution_value in self.statues:
