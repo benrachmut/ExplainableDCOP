@@ -723,8 +723,8 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                                 NCLO=self.local_clock, final_destination=final_destination))
 
             if self.communication_type == CommunicationType.Broadcast:
-                for final_destination in self.all_ids:
-                    for who_to_send in self.query.variables_in_query:
+                for final_destination in self.query.variables_in_query :
+                    for who_to_send in self.all_ids:
                         msgs_to_send.append(
                             Msg(sender=self.id_, receiver=who_to_send, information=self.alternative_partial_assignment,
                                 msg_type=MsgTypeX.alternative_constraints_request, bandwidth=0,

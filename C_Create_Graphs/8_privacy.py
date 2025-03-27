@@ -1,4 +1,5 @@
 import pickle
+import matplotlib.pyplot as plt
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -85,64 +86,70 @@ def simply_avg_dict():
     return ans
 
 
+from collections import defaultdict
+
+
+def transform_data(input_dict):
+    output_dict = {}
+
+    for density, agent_data in input_dict.items():
+        transformed = defaultdict(lambda: defaultdict(dict))
+
+        for num_agents, comm_data in agent_data.items():
+            for comm_type, measures in comm_data.items():
+                for measure_name, value in measures.items():
+                    transformed[measure_name][comm_type][num_agents] = value
+
+        output_dict[density] = {k: dict(v) for k, v in transformed.items()}
+
+    return output_dict
+
+def plot_communication_curves(data,x_label,y_label):
+    plt.figure(figsize=(10, 6))
+
+    for comm_type, xy_values in data.items():
+        x_values = list(xy_values.keys())
+        y_values = list(xy_values.values())
+        plt.plot(x_values, y_values, marker='o', label=comm_type)
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.legend()
+    plt.savefig(f"{folder_to_save}/{figure_name}.pdf", format="pdf", bbox_inches='tight')
+
+    #plt.grid(True)
+    #plt.show()
+
 
 
 if __name__ == '__main__':
     scale = "dcop" #
-    probs =["random"] #["meeting_scheduling","random"]
-    is_with_normalized=True
-    for is_with_legend in [True,False]:
-        for prob in probs:
-            graph_type = "8_privacy"
+    probs =["meeting_scheduling"] #["meeting_scheduling","random"]
+    for is_with_legend in [True]:
+        for is_with_normalized in [False]:
+            for prob in probs:
+                graph_type = "8_privacy"
 
-            file_name = "explanations_"+scale+"_scale_"+prob+"_privacy.pkl"
-            with open(file_name, "rb") as file:
-                exp_dict = pickle.load(file)
-            if is_with_normalized:
-                measure_names =  [ "agent_privacy_normalized","topology_privacy_normalized","constraint_privacy_normalized","decision_privacy_with_send_sol_normalized","decision_privacy_without_send_sol_constraint_normalized"]
+                file_name = "explanations_"+scale+"_scale_"+prob+"_privacy.pkl"
+                with open(file_name, "rb") as file:
+                    exp_dict = pickle.load(file)
+                if is_with_normalized:
+                    measure_names =  [ "agent_privacy_normalized","topology_privacy_normalized","constraint_privacy_normalized","decision_privacy_with_send_sol_normalized","decision_privacy_without_send_sol_constraint_normalized"]
 
-            else:
-                measure_names =  [ "agent_privacy","topology_privacy","constraint_privacy","decision_privacy_with_send_sol_constraint","decision_privacy_without_send_sol_constraint"]
-            avg_dict = get_all_avg_dict()
+                else:
+                    measure_names =  [ "agent_privacy","topology_privacy","constraint_privacy","decision_privacy_with_send_sol_constraint","decision_privacy_without_send_sol_constraint"]
+                avg_dict = get_all_avg_dict()
+                avg_dict = transform_data(avg_dict)
+
+                selected_vars_nums_list = range(1, 11)
+                selected_explanation_types = list(ExplanationType)
+                for measure in measure_names:
+                    if prob == "meeting_scheduling":
+                        y_name = measure
+                        x_name = "Amount of Agents"
+                        selected_density = 0.5
+                        data =avg_dict[selected_density][measure]
+                        folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type+"_"+measure, prob, selected_density)
+                        plot_communication_curves(data,x_name,y_name)
 
 
-            selected_vars_nums_list = range(1, 11)
-            selected_explanation_types = list(ExplanationType)
-
-
-            curve_explanation_algos = {
-                "CEDAR": 3,
-                "CEDAR(O1)": 5,
-                "CEDAR(O2)": 2,
-                "CEDAR(V1)": 3,
-                "CEDAR(V2)": 3
-            }
-            y_name = "Number of Constraints"
-            x_name =  r" $|var(\sigma_Q)|$"
-
-            selected_density = 0.2
-            data = simply_avg_dict()
-            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
-
-            create_single_graph(is_with_legend,data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name, folder_to_save,
-                                figure_name,
-                                x_min = 1,x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,x_ticks=range(1,11))
-
-            selected_density = 0.2
-            data = simply_avg_dict()
-            folder_to_save,figure_name = get_folder_to_save_figure_name(graph_type,prob,selected_density)
-
-            create_single_graph(is_with_legend,data, ColorsInGraph.explanation_algorithms, curve_explanation_algos, x_name, y_name, folder_to_save,
-                                figure_name,
-                                x_min = 1,x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,x_ticks=range(1,11))
-
-            if prob == "meeting_scheduling":
-                selected_density = 0.5
-                data = simply_avg_dict()
-                folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type, prob, selected_density)
-
-                create_single_graph(is_with_legend, data, ColorsInGraph.explanation_algorithms, curve_explanation_algos,
-                                    x_name, y_name, folder_to_save,
-                                    figure_name,
-                                    x_min=1, x_max=10, y_min=None, y_max=None, is_highlight_horizontal=False,
-                                    x_ticks=range(1, 11))

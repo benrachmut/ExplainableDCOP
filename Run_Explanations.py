@@ -54,10 +54,10 @@ def cut_for_privacy(x_dcops_dict):
 
 
 if __name__ == '__main__':
-    folder_begin = "pickles_"
+    folder_begin = "pickels_"
     what_scale = "query_scale" #dcop_scale, query_scale
     prob = "meeting_scheduling" #"random # meeting_scheduling
-    is_privacy = True
+    is_privacy = False
     if is_privacy:
         directory = folder_begin+what_scale+"_privacy/"+prob
     else:
