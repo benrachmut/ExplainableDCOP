@@ -136,7 +136,6 @@ class Explanation():
 
     def create_query_x_agent(self, agent):
         id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
-        self.all_ids.remove(id_)
 
 
 
@@ -173,16 +172,17 @@ class Explanation():
     def create_x_agents(self, dcop, query_agent_id):
         ans = []
         a_q = self.query.agent.id_
+
         for agent in dcop.agents:
             id_,variable,domain,neighbors_agents_id,neighbors_obj_dict = self.get_info_for_x_agent(agent)
             if id_ != query_agent_id:
 
                 if self.explanation_type == ExplanationType.Shortest_Explanation or  self.explanation_type == ExplanationType.Grounded_Constraints:
-                    ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route,a_q)
+                    ax = AgentX_BroadcastCentral(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route,a_q,self.all_ids)
                 if self.explanation_type == ExplanationType.Sort_Parallel or self.explanation_type == ExplanationType.Sort_Parallel_Not_Opt:
-                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route,a_q)
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route,a_q,self.all_ids)
                 if self.explanation_type == ExplanationType.Varint_max or self.explanation_type == ExplanationType.Varint_mean:
-                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route,a_q)
+                    ax = AgentX_BroadcastDistributed(id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, self.communication_type, self.bfs_representation, self.bfs_route,a_q,self.all_ids)
 
                 ans.append(ax)
         return ans

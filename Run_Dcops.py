@@ -215,7 +215,7 @@ if __name__ == '__main__':
     scale_type = ScaleType.dcop_scale
     dcop_type = DcopType.meeting_scheduling_v2
     if dcop_type == DcopType.random_uniform:
-        p1s = [0.7]
+        p1s = [0.2]
     if dcop_type == DcopType.graph_coloring:
         p1s = [0.1]
     if dcop_type == DcopType.meeting_scheduling_v2:
