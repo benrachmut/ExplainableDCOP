@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
         else:
             explanation_types = list(ExplanationType)
-            communication_types = [CommunicationType.Direct]
+            communication_types = [CommunicationType.Broadcast]
 
         explanations = create_explanations()
         for density,others in explanations.items():

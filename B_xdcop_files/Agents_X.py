@@ -721,11 +721,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                                 msg_type=MsgTypeX.alternative_constraints_request,
                                 bandwidth=len(self.alternative_partial_assignment),
                                 NCLO=self.local_clock, final_destination=final_destination))
-            #    pass
-            # if self.communication_type == CommunicationType.broadcast:
-            #    pass
-            # if self.communication_type == CommunicationType.Direct:
-            #    pass
+
             if self.communication_type == CommunicationType.Broadcast:
                 for final_destination in self.all_ids:
                     for who_to_send in self.query.variables_in_query:
