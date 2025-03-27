@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import cmp_to_key
 
-
-
 from B_xdcop_files.Queries import *
 
 
@@ -16,10 +14,11 @@ class MsgTypeX(Enum):
     alternative_constraints_request = 7
     alternative_constraints_information = 8
 
+
 class AgentXStatues(Enum):
     wait_for_solution_value = 1
     wait_for_solution_constraints = 2
-    #idle = 3
+    # idle = 3
     request_solution_constraints = 4
     request_self_solution_and_alternatives = 5
     request_solution_values = 6
@@ -27,11 +26,12 @@ class AgentXStatues(Enum):
     wait_for_solution_value_then_send_solution_constraints = 8
     send_solution_constraints_to_a_q = 9
     request_alternative_constraints = 10
-    wait_for_alternative_constraints =11
+    wait_for_alternative_constraints = 11
     send_alternative_constraints_to_a_q = 12
     check_if_explanation_is_complete = 13
     send_request_down_the_tree = 14
     send_information_up_the_tree = 15
+
 
 class CostComparisonCounter:
     def __init__(self):
@@ -43,9 +43,9 @@ class CostComparisonCounter:
 
 
 class Constraint:
-    def __init__(self,first_id, first_value, second_id,second_value, cost):
+    def __init__(self, first_id, first_value, second_id, second_value, cost):
 
-        if first_id<second_id:
+        if first_id < second_id:
             self.first_id = first_id
             self.first_value = first_value
             self.second_id = second_id
@@ -58,11 +58,12 @@ class Constraint:
         self.cost = cost
 
     def __str__(self):
-        return "[<A_"+str(self.first_id)+"="+str(self.first_value)+",A_"+str(self.second_id)+"="+str(self.second_value)+">,cost=",str(self.cost)+"]"
-
+        return "[<A_" + str(self.first_id) + "=" + str(self.first_value) + ",A_" + str(self.second_id) + "=" + str(
+            self.second_value) + ">,cost=", str(self.cost) + "]"
 
     def __repr__(self):
-        return "[<A_"+str(self.first_id)+"="+str(self.first_value)+",A_"+str(self.second_id)+"="+str(self.second_value)+">,cost=",str(self.cost)+"]"
+        return "[<A_" + str(self.first_id) + "=" + str(self.first_value) + ",A_" + str(self.second_id) + "=" + str(
+            self.second_value) + ">,cost=", str(self.cost) + "]"
 
     def __eq__(self, other):
         first_cond = other.first_id == self.first_id
@@ -74,19 +75,19 @@ class Constraint:
 
 class AgentX(ABC):
 
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj,communication_type,bfs_representation,bsf_route):
-        self.alternative_partial_assignment =None
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj, communication_type,
+                 bfs_representation, bsf_route):
+        self.alternative_partial_assignment = None
         self.global_clock = 0
         self.id_ = id_
         self.neighbors_obj_dict = neighbors_obj
         self.variable = variable
         self.domain = domain
 
-
         self.neighbors_agents_id = neighbors_agents_id
         self.local_view = {}
         for k in self.neighbors_agents_id:
-            self.local_view[k]=None
+            self.local_view[k] = None
         self.inbox = None
         self.outbox = None
         self.local_clock = 0
@@ -97,10 +98,10 @@ class AgentX(ABC):
         self.solution_constraints = {}
         self.alternative_constraints = {}
 
-        self.who_asked_for_solution_value=[]
+        self.who_asked_for_solution_value = []
         self.a_q = None
         self.delta_nclo = 0
-        self.communication_type=communication_type
+        self.communication_type = communication_type
         self.bfs_representation = bfs_representation
         self.bsf_route = bsf_route
 
@@ -110,23 +111,15 @@ class AgentX(ABC):
         self.topology_privacy = {}
         self.constraint_privacy = {}
 
-    def agents_become_aware_of_request_bfs(self, msg):
-        if msg.msg_type== MsgTypeX.alternative_constraints_request:
-            info = msg.information
-            for k in info.keys():
-                if k not in self.neighbors_obj_dict.keys() and k not in self.agents_discovered:
-                    self.agents_discovered.append(k)
-
     def agents_become_aware_of_information_bfs(self, msg):
         info = msg.information
         for c in info:
-            ids_in_c = [c.first_id,c.second_id]
+            ids_in_c = [c.first_id, c.second_id]
             for id_ in ids_in_c:
                 if id_ not in self.neighbors_obj_dict.keys() and id_ not in self.agents_discovered:
                     self.agents_discovered.append(id_)
 
-
-    def constraint_topology_become_aware_of_information_bfs(self,msg):
+    def constraint_topology_become_aware_of_information_bfs(self, msg):
         info = msg.information
         for c in info:
             ids_in_c = [c.first_id, c.second_id]
@@ -142,38 +135,34 @@ class AgentX(ABC):
                 self.constraint_privacy[first_id].append(c)
                 self.constraint_privacy[second_id].append(c)
 
-
                 if second_id not in self.topology_privacy[first_id]:
                     self.topology_privacy[first_id].append(second_id)
                 if first_id not in self.topology_privacy[second_id]:
                     self.topology_privacy[second_id].append(first_id)
 
-    def add_agent_privacy_request(self,msg):
-        if self.communication_type == CommunicationType.BFS:
-            self.agents_become_aware_of_request_bfs(msg)
+    def add_agent_privacy_request(self, msg):
+        if msg.msg_type == MsgTypeX.alternative_constraints_request:
+            info = msg.information
+            for k in info.keys():
+                if k not in self.neighbors_obj_dict.keys() and k not in self.agents_discovered:
+                    self.agents_discovered.append(k)
 
-        if self.communication_type == CommunicationType.Broadcast:
-            print("todo 2")
-        if self.communication_type == CommunicationType.Direct:
-            print("todo 5")
-
-    def add_agent_privacy_information(self,msg):
+    def add_agent_privacy_information(self, msg):
         if self.communication_type == CommunicationType.BFS or self.communication_type == CommunicationType.Direct:
             self.agents_become_aware_of_information_bfs(msg)
             self.constraint_topology_become_aware_of_information_bfs(msg)
         if self.communication_type == CommunicationType.Broadcast:
-            print("todo 4")
-
+            pass
+            #print("todo 4")
 
     def get_general_info_for_records(self):
-        return {"Agent_id":self.id_,"local_clock":self.local_clock,"global_clock":self.global_clock}
-
+        return {"Agent_id": self.id_, "local_clock": self.local_clock, "global_clock": self.global_clock}
 
     def execute_iteration(self):
 
         msgs = self.inbox.extract()
 
-        if len(msgs)!=0:
+        if len(msgs) != 0:
             self.prev_status = copy.deepcopy(self.statues)
             if isinstance(msgs, Msg):
                 msgs = [msgs]
@@ -196,8 +185,7 @@ class AgentX(ABC):
             self.atomic_operations = 0
 
     def __str__(self):
-        return "A_"+str(self.id_)
-
+        return "A_" + str(self.id_)
 
     ########## UPDATE INFO FROM MESSAGE
     def update_solution_value_infrormation_in_local_view(self, msg):
@@ -206,8 +194,7 @@ class AgentX(ABC):
             info = msg.information
             self.local_view[sender] = info
 
-    def update_solution_value_request_data(self,msg):
-
+    def update_solution_value_request_data(self, msg):
 
         if msg.msg_type == MsgTypeX.solution_value_request:
             self.who_asked_for_solution_value.append(msg.sender)
@@ -217,7 +204,9 @@ class AgentX(ABC):
         if AgentXStatues.send_solution_value in self.statues:
 
             for n_id in self.who_asked_for_solution_value:
-                msgs_to_send.append(Msg(sender = self.id_, receiver=n_id, information=self.variable, msg_type = MsgTypeX.solution_value_information, bandwidth=1, NCLO = self.local_clock))
+                msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=self.variable,
+                                        msg_type=MsgTypeX.solution_value_information, bandwidth=1,
+                                        NCLO=self.local_clock))
             self.who_asked_for_solution_value = []
 
     def local_view_has_nones(self):
@@ -235,18 +224,16 @@ class AgentX(ABC):
     def get_self_solution_constraints(self):
         constraints = []
         total_cost = 0
-        for n_id,n_obj in self.neighbors_obj_dict.items():
+        for n_id, n_obj in self.neighbors_obj_dict.items():
             my_id = self.id_
             my_value = self.variable
             n_value = self.local_view[n_id]
             cost = n_obj.get_cost(my_id, my_value, n_id, n_value)
             total_cost += cost
-            constraints.append(Constraint(my_id,my_value,n_id,n_value,cost))
+            constraints.append(Constraint(my_id, my_value, n_id, n_value, cost))
 
         self.solution_constraints[self.id_] = constraints
         return total_cost
-
-
 
     def get_self_alternative_constraints(self):
         constraints = []
@@ -273,21 +260,21 @@ class AgentX(ABC):
                 n_val = n_val[0]
 
             if flag_other or flag_all:
-                cost = n_obj.get_cost(self.id_, my_val,n_id,n_val)
-                if cost>0:
-                    total_cost+=total_cost
-                    constraints.append(Constraint(self.id_,my_val,n_id,n_val,cost))
-            flag_other  =False
+                cost = n_obj.get_cost(self.id_, my_val, n_id, n_val)
+                if cost > 0:
+                    total_cost += total_cost
+                    constraints.append(Constraint(self.id_, my_val, n_id, n_val, cost))
+            flag_other = False
         self.alternative_constraints[self.id_] = constraints
         return total_cost
 
     @abstractmethod
     def initialize(self):
-       pass
-
+        pass
 
     @abstractmethod
-    def update_msgs_in_context(self,msgs): pass
+    def update_msgs_in_context(self, msgs):
+        pass
 
     def is_compute_in_this_iteration(self):
         if AgentXStatues.request_solution_constraints in self.statues:
@@ -308,18 +295,22 @@ class AgentX(ABC):
             False
 
     @abstractmethod
-    def compute(self): pass
+    def compute(self):
+        pass
 
     @abstractmethod
-    def send_msgs(self): pass
+    def send_msgs(self):
+        pass
 
     @abstractmethod
-    def change_status_after_update_msgs_in_context(self, msgs): pass
+    def change_status_after_update_msgs_in_context(self, msgs):
+        pass
 
     @abstractmethod
-    def change_status_after_send_msgs(self):pass
+    def change_status_after_send_msgs(self):
+        pass
 
-    def send_solution_value_request(self,msgs):
+    def send_solution_value_request(self, msgs):
         if AgentXStatues.request_solution_values in self.statues:
             sender = self.id_
             # information = self.variable
@@ -330,109 +321,115 @@ class AgentX(ABC):
                 msg = Msg(sender, receiver, None, msg_type, bandwidth, NCLO=self.atomic_operations)
                 msgs.append(msg)
 
-
-    #def compute_request_alternative_constraints(self):
+    # def compute_request_alternative_constraints(self):
     #        total_cost,constraints_list = self.get_self_alternative_constraints()
     #        self.alternative_constraints[self.id_] = constraints_list
     #        NCLO_count = len(constraints_list)
     #        return NCLO_count
 
-
-
     def print_after_statues_after_receive_msgs(self):
         prev_status = self.get_statues_from_list(self.prev_status)
         current_status = self.get_statues_from_list(self.statues)
         if distributed_explanation_debug:
-            print("A_"+str(self.id_),"statues was",prev_status,"and now is", current_status)
+            print("A_" + str(self.id_), "statues was", prev_status, "and now is", current_status)
 
     def print_after_compute(self):
         if distributed_explanation_debug:
-            print("A_" + str(self.id_), "compute took",  self.atomic_operations, "oporations, local time is:",self.local_clock)
+            print("A_" + str(self.id_), "compute took", self.atomic_operations, "oporations, local time is:",
+                  self.local_clock)
 
     def print_after_send_msgs(self):
         prev_status = self.get_statues_from_list(self.prev_status)
         current_status = self.get_statues_from_list(self.statues)
         if distributed_explanation_debug:
-            print("A_" + str(self.id_), "statues was", prev_status, "and now is",current_status+",local time is:",self.local_clock)
+            print("A_" + str(self.id_), "statues was", prev_status, "and now is", current_status + ",local time is:",
+                  self.local_clock)
 
     def get_statues_from_list(self, stat_list):
         ans = ""
         for i in stat_list:
-            if len(ans)==0:
+            if len(ans) == 0:
                 ans += i.name
             else:
-                ans+=(","+i.name)
+                ans += ("," + i.name)
         if ans == "":
             ans = "idle"
         return ans
 
     def update_local_clock(self, msgs):
-        max_nclo = max(msgs,key= lambda x: x.NCLO).NCLO
+        max_nclo = max(msgs, key=lambda x: x.NCLO).NCLO
 
-        if max_nclo> self.local_clock:
+        if max_nclo > self.local_clock:
             self.delta_nclo = max_nclo - self.local_clock
             self.local_clock = max_nclo
 
-    def get_who_to_send_in_bfs(self,n_id):
+    def get_who_to_send_in_bfs(self, n_id):
         route = self.bsf_route[n_id]
         for i in range(len(route)):
             if self.id_ == route[i]:
-                return route[i+1]
+                return route[i + 1]
 
-class AgentX_Query(AgentX,ABC):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids):
-        AgentX.__init__(self, id_, variable, domain, neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation, bfs_route)
+
+class AgentX_Query(AgentX, ABC):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, communication_type,
+                        bfs_representation, bfs_route)
         self.alternative_constraints_cost_single_addition = []
         self.alternative_delta_constraints_cost_per_addition = []
-        #self.alternative_delta_constraints_cost_per_NCLO = {}
+        # self.alternative_delta_constraints_cost_per_NCLO = {}
         self.query = query
-        self.all_ids =all_ids
-        #if isinstance(query,QueryMeetingScheduling):
+        self.all_ids = all_ids
+        # if isinstance(query,QueryMeetingScheduling):
         #    self.alternative_partial_assignment= query.alternative_partial_assignments[0]
-        #else:
-        self.alternative_partial_assignment= query.alternative_values
+        # else:
+        self.alternative_partial_assignment = query.alternative_values
         self.solution_cost = 0
         self.alternative_cost = 0
         self.NCLO_for_valid_solution = 0
 
         self.alternative_constraints_for_explanations = []
         self.alternative_constraints_inbox = []
-        #self.statues.append(AgentXStatues.wait_for_solution_value)
+        # self.statues.append(AgentXStatues.wait_for_solution_value)
         for v_q in self.query.variables_in_query:
             self.solution_constraints[v_q] = None
-            #self.alternative_constraints[v_q] = None
-    def is_termination_condition_met(self): return self.is_done
+            # self.alternative_constraints[v_q] = None
+
+    def is_termination_condition_met(self):
+        return self.is_done
+
     def calc_sum_of_solution_cost(self):
         NCLO = 0
         const_list = []
         self.solution_cost = 0
-        for id_,const_list_of_id in self.solution_constraints.items():
+        for id_, const_list_of_id in self.solution_constraints.items():
             for const in const_list_of_id:
                 if const not in const_list:
                     const_list.append(const)
 
-
         for const in const_list:
-            NCLO+=1
-            self.solution_cost+=const.cost
+            NCLO += 1
+            self.solution_cost += const.cost
         return NCLO
 
     def get_msgs_to_send_solution_request(self):
         msgs = []
         for n_id in self.query.variables_in_query:
-            if n_id!= self.id_:
+            if n_id != self.id_:
                 msgs.append(
-                    Msg(sender=self.id_, receiver=n_id, information=None, msg_type=MsgTypeX.solution_request, bandwidth=1,NCLO=self.local_clock))
+                    Msg(sender=self.id_, receiver=n_id, information=None, msg_type=MsgTypeX.solution_request,
+                        bandwidth=1, NCLO=self.local_clock))
         return msgs
 
     def get_alternative_cost(self):
         ans = 0
         for const in self.alternative_constraints_for_explanations:
-            ans+=const.cost
+            ans += const.cost
         return ans
 
-    def is_finish_going_for_alternatives(self,who_you_took_from):
+    def is_finish_going_for_alternatives(self, who_you_took_from):
         return True
+
     def initialize(self):
         self.statues.append(AgentXStatues.request_solution_values)
         msgs = []
@@ -443,42 +440,41 @@ class AgentX_Query(AgentX,ABC):
         self.statues.append(AgentXStatues.wait_for_solution_value)
 
     def add_dummy_to_front_alternative_constraints_cost_single_addition(self):
-        if len(self.alternative_delta_constraints_cost_per_addition)!=0:
+        if len(self.alternative_delta_constraints_cost_per_addition) != 0:
             list_size = len(self.alternative_delta_constraints_cost_per_addition)
-            what_to_add = self.alternative_delta_constraints_cost_per_addition[list_size-1]
+            what_to_add = self.alternative_delta_constraints_cost_per_addition[list_size - 1]
             how_many_time = self.delta_nclo
-            list_to_add = [what_to_add]*how_many_time
+            list_to_add = [what_to_add] * how_many_time
             self.alternative_delta_constraints_cost_per_addition.extend(list_to_add)
 
-    def add_dummy_to_back_alternative_constraints_cost_single_addition(self,what_to_add,how_many_time):
-        if len(self.alternative_delta_constraints_cost_per_addition)==0:
+    def add_dummy_to_back_alternative_constraints_cost_single_addition(self, what_to_add, how_many_time):
+        if len(self.alternative_delta_constraints_cost_per_addition) == 0:
             self.calc_sum_of_solution_cost()
-            list_to_add = [what_to_add - self.solution_cost]*how_many_time
+            list_to_add = [what_to_add - self.solution_cost] * how_many_time
             self.alternative_delta_constraints_cost_per_addition.extend(list_to_add)
+
 
 class AgentX_Query_BroadcastCentral(AgentX_Query):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids):
-        AgentX_Query.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids)
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,
+                              communication_type, bfs_representation, bfs_route, all_ids)
         self.alternative_constraints_min_valid_cost = 0
         self.alternative_constraints_max_measure = 0
-        if ( self.communication_type == CommunicationType.BFS or self.communication_type == CommunicationType.Broadcast) == False:
+        if (
+                self.communication_type == CommunicationType.BFS or self.communication_type == CommunicationType.Broadcast) == False:
             for agent_in_query in self.query.variables_in_query:
-                if agent_in_query not in self.neighbors_agents_id and agent_in_query!=self.id_:
+                if agent_in_query not in self.neighbors_agents_id and agent_in_query != self.id_:
                     self.neighbors_agents_id.append(agent_in_query)
 
-
-
-
-
-
-    def update_solution_constraints(self,msg):
+    def update_solution_constraints(self, msg):
         if msg.msg_type == MsgTypeX.solution_constraints_information:
             sender = msg.sender
             info = msg.information
             self.solution_constraints[sender] = info
             self.add_agent_privacy_information(msg)
 
-    def update_alternative_constraints(self,msg):
+    def update_alternative_constraints(self, msg):
         if msg.msg_type == MsgTypeX.alternative_constraints_information:
             sender = msg.sender
             info = msg.information
@@ -490,36 +486,34 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                     temp_list.append(const)
             self.alternative_constraints_inbox = temp_list
 
-
-    def update_msgs_in_context(self,msgs):
+    def update_msgs_in_context(self, msgs):
         for msg in msgs:
             self.update_solution_value_request_data(msg)
             self.update_solution_value_infrormation_in_local_view(msg)
             self.update_solution_constraints(msg)
             self.update_alternative_constraints(msg)
 
-
     def change_status_after_update_msgs_in_context(self, msgs):
-        if AgentXStatues.wait_for_solution_value in self.statues and self.local_view_has_nones()==False and self.query_only_ask_self() == False:
+        if AgentXStatues.wait_for_solution_value in self.statues and self.local_view_has_nones() == False and self.query_only_ask_self() == False:
             self.statues.remove(AgentXStatues.wait_for_solution_value)
             self.statues.append(AgentXStatues.request_solution_constraints)
         if AgentXStatues.wait_for_solution_value in self.statues and self.local_view_has_nones() == False \
-                and self.query_only_ask_self()  :
+                and self.query_only_ask_self():
             self.statues.remove(AgentXStatues.wait_for_solution_value)
             self.statues.append(AgentXStatues.request_self_solution_and_alternatives)
-        if len(self.who_asked_for_solution_value)!=0:
+        if len(self.who_asked_for_solution_value) != 0:
             self.statues.append(AgentXStatues.send_solution_value)
         if AgentXStatues.wait_for_solution_constraints in self.statues and self.solution_constraints_has_none() == False:
             self.statues.remove(AgentXStatues.wait_for_solution_constraints)
             self.statues.append(AgentXStatues.request_alternative_constraints)
-        if AgentXStatues.wait_for_alternative_constraints in self.statues : #and self.alternative_constraints_has_none()==False:
+        if AgentXStatues.wait_for_alternative_constraints in self.statues:  # and self.alternative_constraints_has_none()==False:
             if self.is_receive_all_alternative_constraints():
                 self.statues.remove(AgentXStatues.wait_for_alternative_constraints)
                 self.statues.append(AgentXStatues.check_if_explanation_is_complete)
 
-
     def is_receive_all_alternative_constraints(self):
         return len(self.alternative_constraints) == len(self.query.variables_in_query)
+
     def get_all_alternative_constraints_list(self):
         constraints_alternative_list = []
         for v in self.alternative_constraints.values():
@@ -528,26 +522,27 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         counter = CostComparisonCounter()
         sorted_constraints = sorted(constraints_alternative_list, key=cmp_to_key(counter.comparator))
         sorted_counter = counter.count
-        return sorted_constraints,sorted_counter
+        return sorted_constraints, sorted_counter
 
-    def compose_alternative_constraints_for_explanations(self,sorted_constraints,total_cost_solution):
+    def compose_alternative_constraints_for_explanations(self, sorted_constraints, total_cost_solution):
         counter_of_alt_constraint_valid = 0
         counter_of_alt_constraint_all = 0
 
         for constraint in sorted_constraints:
             if not self.is_done:
                 self.alternative_constraints_for_explanations.append(constraint)
-                self.alternative_constraints_cost_single_addition.append(self.alternative_cost+constraint.cost)
-                self.alternative_delta_constraints_cost_per_addition.append((self.alternative_cost+constraint.cost) - self.solution_cost)
+                self.alternative_constraints_cost_single_addition.append(self.alternative_cost + constraint.cost)
+                self.alternative_delta_constraints_cost_per_addition.append(
+                    (self.alternative_cost + constraint.cost) - self.solution_cost)
                 self.alternative_cost = self.alternative_cost + constraint.cost
-            counter_of_alt_constraint_all=  counter_of_alt_constraint_all+1
+            counter_of_alt_constraint_all = counter_of_alt_constraint_all + 1
 
-            if self.alternative_cost>= total_cost_solution and not self.is_done:
+            if self.alternative_cost >= total_cost_solution and not self.is_done:
                 counter_of_alt_constraint_valid = counter_of_alt_constraint_valid + 1
 
                 self.alternative_constraints_min_valid_cost = self.alternative_cost
                 self.is_done = True
-                #break
+                # break
         self.is_done = True
 
         self.alternative_constraints_max_measure = self.alternative_cost
@@ -594,7 +589,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             NCLO += self.calc_sum_of_solution_cost()
             self.get_self_alternative_constraints()
             self.alternative_constraints_inbox.extend(copy.deepcopy(self.alternative_constraints[self.id_]))
-            NCLO +=len(self.alternative_constraints[self.id_])
+            NCLO += len(self.alternative_constraints[self.id_])
 
         return NCLO
 
@@ -604,33 +599,34 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         NCLO = 0
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
             counter = CostComparisonCounter()
-            self.alternative_constraints_inbox = sorted(self.alternative_constraints_inbox, key=cmp_to_key(counter.comparator))
-            NCLO=NCLO+counter.count
+            self.alternative_constraints_inbox = sorted(self.alternative_constraints_inbox,
+                                                        key=cmp_to_key(counter.comparator))
+            NCLO = NCLO + counter.count
             who_you_took_from = list(self.alternative_constraints.keys())
-
 
             self.add_dummy_to_front_alternative_constraints_cost_single_addition()
             flag = False
-            while len(self.alternative_constraints_inbox)!=0:
-                NCLO =NCLO+1
+            while len(self.alternative_constraints_inbox) != 0:
+                NCLO = NCLO + 1
                 const = self.alternative_constraints_inbox.pop(0)
                 if not self.is_done and const not in self.alternative_constraints_for_explanations:
 
                     if not flag:
                         flag = True
-                        self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,self.local_clock+NCLO)
+                        self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,
+                                                                                            self.local_clock + NCLO)
 
                     self.alternative_cost += const.cost
                     self.calc_sum_of_solution_cost()
                     self.alternative_constraints_for_explanations.append(const)
                     self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
-                    self.alternative_delta_constraints_cost_per_addition.append(self.alternative_cost - self.solution_cost)
+                    self.alternative_delta_constraints_cost_per_addition.append(
+                        self.alternative_cost - self.solution_cost)
 
-
-                if self.alternative_cost>=self.solution_cost and not self.is_done:
-                    self.is_done=True
+                if self.alternative_cost >= self.solution_cost and not self.is_done:
+                    self.is_done = True
                     self.alternative_constraints_min_valid_cost = self.alternative_cost
-                    self.NCLO_for_valid_solution = self.local_clock+NCLO
+                    self.NCLO_for_valid_solution = self.local_clock + NCLO
             self.alternative_constraints_max_measure = self.alternative_cost
             if self.is_done == False:
                 self.alternative_constraints_min_valid_cost = self.alternative_cost
@@ -638,17 +634,13 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                 self.is_done = True
         return NCLO
 
-
-
-
-
     def compute(self):
         NCLO = 0
         NCLO += self.compute_request_solution_constraints()
         NCLO += self.compute_request_self_solution_and_alternatives()
         NCLO += self.compute_request_alternative_constraints()
         NCLO += self.compute_check_if_explanation_is_complete()
-        if AgentXStatues.check_if_explanation_is_complete in self.statues and self.is_done==False:
+        if AgentXStatues.check_if_explanation_is_complete in self.statues and self.is_done == False:
             self.statues.append(AgentXStatues.request_alternative_constraints)
             self.statues.remove(AgentXStatues.check_if_explanation_is_complete)
         return NCLO
@@ -659,10 +651,8 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         self.send_solution_constraint_request(msgs_to_send)
         self.send_termination_message(msgs_to_send)
         self.send_alternative_constraint_request(msgs_to_send)
-        if  len(msgs_to_send)!=0:
+        if len(msgs_to_send) != 0:
             self.outbox.insert(msgs_to_send)
-
-
 
     def change_status_after_send_msgs(self):
         if AgentXStatues.request_solution_constraints in self.statues:
@@ -673,9 +663,10 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
         if AgentXStatues.request_alternative_constraints in self.statues:
             self.statues.remove(AgentXStatues.request_alternative_constraints)
             self.statues.append(AgentXStatues.wait_for_alternative_constraints)
+
     def query_only_ask_self(self):
-        first_cond= len(self.query.variables_in_query) == 1
-        second_cond = list(self.query.variables_in_query)[0]==self.id_
+        first_cond = len(self.query.variables_in_query) == 1
+        second_cond = list(self.query.variables_in_query)[0] == self.id_
         return first_cond and second_cond
 
     def am_i_in_query(self):
@@ -683,8 +674,9 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
     def send_termination_message(self, msgs_to_send):
         if self.is_done:
-            msgs_to_send.append(Msg(sender=self.id_, receiver=None, information=None,msg_type =MsgTypeX.AgentXQTerminate,bandwidth=0,NCLO = self.local_clock))
-
+            msgs_to_send.append(
+                Msg(sender=self.id_, receiver=None, information=None, msg_type=MsgTypeX.AgentXQTerminate, bandwidth=0,
+                    NCLO=self.local_clock))
 
     def send_solution_constraint_request(self, msgs_to_send):
         if AgentXStatues.request_solution_constraints in self.statues:
@@ -697,7 +689,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                             who_to_send = final_destination
                         msgs_to_send.append(Msg(sender=self.id_, receiver=who_to_send, information=None,
                                                 msg_type=MsgTypeX.solution_constraint_request, bandwidth=0,
-                                                NCLO=self.local_clock,final_destination=final_destination))
+                                                NCLO=self.local_clock, final_destination=final_destination))
 
             if self.communication_type == CommunicationType.Broadcast:
                 for final_destination in self.all_ids:
@@ -708,10 +700,12 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
             if self.communication_type == CommunicationType.Direct:
                 for n_id in self.query.variables_in_query:
-                    if n_id!=self.id_:
-                        msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,msg_type=MsgTypeX.solution_constraint_request,bandwidth=0,NCLO = self.local_clock))
+                    if n_id != self.id_:
+                        msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information=None,
+                                                msg_type=MsgTypeX.solution_constraint_request, bandwidth=0,
+                                                NCLO=self.local_clock))
 
-    def send_alternative_constraint_request(self,msgs_to_send):
+    def send_alternative_constraint_request(self, msgs_to_send):
         if AgentXStatues.request_alternative_constraints in self.statues:
             if self.communication_type == CommunicationType.BFS:
 
@@ -721,19 +715,30 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
                             who_to_send = self.get_who_to_send_in_bfs(final_destination)
                         else:
                             who_to_send = final_destination
-                        msgs_to_send.append(Msg(sender=self.id_, receiver=who_to_send, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment),
-                                                NCLO=self.local_clock, final_destination=final_destination))
+                        msgs_to_send.append(
+                            Msg(sender=self.id_, receiver=who_to_send, information=self.alternative_partial_assignment,
+                                msg_type=MsgTypeX.alternative_constraints_request,
+                                bandwidth=len(self.alternative_partial_assignment),
+                                NCLO=self.local_clock, final_destination=final_destination))
             #    pass
-            #if self.communication_type == CommunicationType.broadcast:
+            # if self.communication_type == CommunicationType.broadcast:
             #    pass
-            #if self.communication_type == CommunicationType.Direct:
+            # if self.communication_type == CommunicationType.Direct:
             #    pass
             if self.communication_type == CommunicationType.Broadcast:
-                pass
+                for final_destination in self.all_ids:
+                    for who_to_send in self.query.variables_in_query:
+                        msgs_to_send.append(
+                            Msg(sender=self.id_, receiver=who_to_send, information=self.alternative_partial_assignment,
+                                msg_type=MsgTypeX.alternative_constraints_request, bandwidth=0,
+                                NCLO=self.local_clock, final_destination=final_destination))
             if self.communication_type == CommunicationType.Direct:
-                n_ids_to_send= self.get_n_ids_to_send()
+                n_ids_to_send = self.get_n_ids_to_send()
                 for n_id in n_ids_to_send:
-                    msgs_to_send.append(Msg(sender=self.id_, receiver=n_id, information = self.alternative_partial_assignment, msg_type=MsgTypeX.alternative_constraints_request, bandwidth=len(self.alternative_partial_assignment), NCLO = self.local_clock))
+                    msgs_to_send.append(
+                        Msg(sender=self.id_, receiver=n_id, information=self.alternative_partial_assignment,
+                            msg_type=MsgTypeX.alternative_constraints_request,
+                            bandwidth=len(self.alternative_partial_assignment), NCLO=self.local_clock))
 
     def get_n_ids_to_send(self):
         ans = list(self.alternative_partial_assignment.keys())
@@ -741,9 +746,12 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
             ans.remove(self.id_)
         return ans
 
+
 class AgentX_Query_BroadcastCentral_NoSort(AgentX_Query_BroadcastCentral):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids):
-        AgentX_Query_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation, bfs_route,all_ids)
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query_BroadcastCentral.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                               query, communication_type, bfs_representation, bfs_route, all_ids)
 
     def compute_check_if_explanation_is_complete(self):
         NCLO = 0
@@ -752,9 +760,9 @@ class AgentX_Query_BroadcastCentral_NoSort(AgentX_Query_BroadcastCentral):
             who_you_took_from = list(self.alternative_constraints.keys())
             self.add_dummy_to_front_alternative_constraints_cost_single_addition()
             flag = False
-            while len(self.alternative_constraints_inbox)!=0:
-                NCLO =NCLO+1
-                rnd_ = random.Random(NCLO + self.id_*17)
+            while len(self.alternative_constraints_inbox) != 0:
+                NCLO = NCLO + 1
+                rnd_ = random.Random(NCLO + self.id_ * 17)
                 rnd_.shuffle(self.alternative_constraints_inbox)
                 const = self.alternative_constraints_inbox.pop(0)
 
@@ -770,11 +778,11 @@ class AgentX_Query_BroadcastCentral_NoSort(AgentX_Query_BroadcastCentral):
                     self.alternative_constraints_for_explanations.append(const)
                     self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
                     self.alternative_delta_constraints_cost_per_addition.append(
-                    self.alternative_cost - self.solution_cost)
-                if self.alternative_cost>=self.solution_cost and not self.is_done:
-                    self.is_done=True
+                        self.alternative_cost - self.solution_cost)
+                if self.alternative_cost >= self.solution_cost and not self.is_done:
+                    self.is_done = True
                     self.alternative_constraints_min_valid_cost = self.alternative_cost
-                    self.NCLO_for_valid_solution = self.local_clock+NCLO
+                    self.NCLO_for_valid_solution = self.local_clock + NCLO
             self.alternative_constraints_max_measure = self.alternative_cost
             if self.is_done == False:
                 self.alternative_constraints_min_valid_cost = self.alternative_cost
@@ -783,25 +791,26 @@ class AgentX_Query_BroadcastCentral_NoSort(AgentX_Query_BroadcastCentral):
                 self.is_done = True
         return NCLO
 
+
 class AgentX_BroadcastCentral(AgentX):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation,bfs_route,a_q):
-        AgentX.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation,bfs_route)
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, communication_type,
+                 bfs_representation, bfs_route, a_q):
+        AgentX.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, communication_type,
+                        bfs_representation, bfs_route)
         self.a_q = a_q
         self.request_to_send_down_the_tree = []
 
         self.information_to_send_up_the_tree = []
 
-
     def initialize(self):
         pass  # do nothing, wait for solution request
 
-    def update_alternative_partial_assignment(self,msg):
+    def update_alternative_partial_assignment(self, msg):
         if msg.msg_type == MsgTypeX.alternative_constraints_request:
             info = msg.information
             self.alternative_partial_assignment = copy.deepcopy(info)
 
-
-    def update_send_down_the_tree(self,msg):
+    def update_send_down_the_tree(self, msg):
         if (msg.final_destination is None or msg.receiver != msg.final_destination) and (
                 msg.msg_type == MsgTypeX.solution_constraint_request or msg.msg_type == MsgTypeX.alternative_constraints_request):
             self.request_to_send_down_the_tree.append(msg)
@@ -814,36 +823,36 @@ class AgentX_BroadcastCentral(AgentX):
             if self.communication_type == CommunicationType.BFS:
                 self.update_send_down_the_tree(msg)
                 self.update_send_up_the_tree(msg)
-
+            if self.communication_type == CommunicationType.Broadcast and msg.final_destination != None and msg.receiver != msg.final_destination:
+                self.add_agent_privacy_request(msg)
 
     def change_status_after_update_msgs_in_context(self, msgs):
-        if len(self.who_asked_for_solution_value)!=0:
+        if len(self.who_asked_for_solution_value) != 0:
             self.statues.append(AgentXStatues.send_solution_value)
-            #if AgentXStatues.idle in self.statues:
+            # if AgentXStatues.idle in self.statues:
             #    self.statues.remove(AgentXStatues.idle)
-        if isinstance(msgs,Msg):
+        if isinstance(msgs, Msg):
             msgs = [msgs]
 
         for msg in msgs:
             if msg.final_destination is None or msg.receiver == msg.final_destination:
                 if msg.msg_type == MsgTypeX.solution_constraint_request:
-                    #self.a_q=msg.sender
+                    # self.a_q=msg.sender
                     self.statues.append(AgentXStatues.request_solution_values)
 
                 if msg.msg_type == MsgTypeX.alternative_constraints_request:
-                    #self.a_q=msg.sender
+                    # self.a_q=msg.sender
                     self.statues.append(AgentXStatues.send_alternative_constraints_to_a_q)
 
             elif msg.msg_type == MsgTypeX.solution_constraint_request or msg.msg_type == MsgTypeX.alternative_constraints_request:
-                if AgentXStatues.send_request_down_the_tree not in self.statues:
+                if AgentXStatues.send_request_down_the_tree not in self.statues and self.communication_type == CommunicationType.BFS:
                     self.statues.append(AgentXStatues.send_request_down_the_tree)
             elif msg.msg_type == MsgTypeX.solution_constraints_information or msg.msg_type == MsgTypeX.alternative_constraints_information:
-                if AgentXStatues.send_information_up_the_tree not in self.statues:
+                if AgentXStatues.send_information_up_the_tree not in self.statues and self.communication_type == CommunicationType.BFS:
                     self.statues.append(AgentXStatues.send_information_up_the_tree)
         if AgentXStatues.wait_for_solution_value_then_send_solution_constraints in self.statues and self.local_view_has_nones() == False:
             self.statues.remove(AgentXStatues.wait_for_solution_value_then_send_solution_constraints)
             self.statues.append(AgentXStatues.send_solution_constraints_to_a_q)
-
 
     def compute_send_solution_constraints_to_a_q(self):
         if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
@@ -854,12 +863,12 @@ class AgentX_BroadcastCentral(AgentX):
     def compute(self):
         NCLO = 0
         if AgentXStatues.send_solution_value in self.statues:
-            NCLO+= len(self.who_asked_for_solution_value)
-        NCLO+=self.compute_send_solution_constraints_to_a_q()
-        NCLO+=self.compute_send_alternative_constraints_to_a_q()
+            NCLO += len(self.who_asked_for_solution_value)
+        NCLO += self.compute_send_solution_constraints_to_a_q()
+        NCLO += self.compute_send_alternative_constraints_to_a_q()
         return NCLO
 
-    def send_to_bfs_child(self,msgs_to_send):
+    def send_to_bfs_child(self, msgs_to_send):
         if AgentXStatues.send_request_down_the_tree in self.statues:
             for msg_request_to_send in self.request_to_send_down_the_tree:
                 final_destination = msg_request_to_send.final_destination
@@ -868,11 +877,11 @@ class AgentX_BroadcastCentral(AgentX):
                 msgs_to_send.append(msg_request_to_send)
 
             for i in self.request_to_send_down_the_tree:
-                #self.requests_to_remember[i.sender] = i.information
+                # self.requests_to_remember[i.sender] = i.information
                 self.add_agent_privacy_request(i)
             self.request_to_send_down_the_tree = []
 
-    def send_to_bfs_parent(self,msgs_to_send):
+    def send_to_bfs_parent(self, msgs_to_send):
         if AgentXStatues.send_information_up_the_tree in self.statues:
             for msg_info_to_send in self.information_to_send_up_the_tree:
                 who_to_send = self.get_who_to_send_up_the_tree()
@@ -880,30 +889,28 @@ class AgentX_BroadcastCentral(AgentX):
                 msgs_to_send.append(msg_info_to_send)
 
             for i in self.information_to_send_up_the_tree:
-
                 self.add_agent_privacy_information(i)
-
 
             self.information_to_send_up_the_tree = []
 
     def send_msgs(self):
         msgs_to_send = []
-        if self.communication_type==CommunicationType.BFS:
+        if self.communication_type == CommunicationType.BFS:
             self.send_to_bfs_child(msgs_to_send)
             self.send_to_bfs_parent(msgs_to_send)
         self.send_solution_value_information(msgs_to_send)
         self.send_solution_value_request(msgs_to_send)
         self.send_solution_constraints(msgs_to_send)
         self.send_alternative_constraints(msgs_to_send)
-        if len(msgs_to_send)!=0:
+        if len(msgs_to_send) != 0:
             self.outbox.insert(msgs_to_send)
 
     def get_who_to_send_up_the_tree(self):
         my_route = self.bsf_route[self.id_]
         for i in range(len(my_route)):
             agent_id = my_route[i]
-            if agent_id==self.id_:
-                return my_route[i-1]
+            if agent_id == self.id_:
+                return my_route[i - 1]
 
     def get_who_to_send(self):
         if self.communication_type == CommunicationType.BFS:
@@ -911,25 +918,29 @@ class AgentX_BroadcastCentral(AgentX):
         else:
             return self.a_q
 
-    def send_solution_constraints(self,msgs_to_send):
-       if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
-           #if self.communication_type == CommunicationType.BFS:
-           #    pass
-           #if self.communication_type == CommunicationType.broadcast:
-           #    pass
-           #if self.communication_type == CommunicationType.Direct:
-           bandwidth = len(self.solution_constraints[self.id_])
-           who_to_send = self.get_who_to_send()
-           if who_to_send!=self.a_q:
-               msg = Msg( sender=self.id_, receiver=who_to_send, information=self.solution_constraints[self.id_],msg_type = MsgTypeX.solution_constraints_information,bandwidth=bandwidth,NCLO = self.local_clock,final_destination=self.a_q)
-           else:
-               msg = Msg( sender=self.id_, receiver=self.a_q, information=self.solution_constraints[self.id_],msg_type = MsgTypeX.solution_constraints_information,bandwidth=bandwidth,NCLO = self.local_clock)
-           msgs_to_send.append(msg)
+    def send_solution_constraints(self, msgs_to_send):
+        if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
+            # if self.communication_type == CommunicationType.BFS:
+            #    pass
+            # if self.communication_type == CommunicationType.broadcast:
+            #    pass
+            # if self.communication_type == CommunicationType.Direct:
+            bandwidth = len(self.solution_constraints[self.id_])
+            who_to_send = self.get_who_to_send()
+            if who_to_send != self.a_q:
+                msg = Msg(sender=self.id_, receiver=who_to_send, information=self.solution_constraints[self.id_],
+                          msg_type=MsgTypeX.solution_constraints_information, bandwidth=bandwidth,
+                          NCLO=self.local_clock, final_destination=self.a_q)
+            else:
+                msg = Msg(sender=self.id_, receiver=self.a_q, information=self.solution_constraints[self.id_],
+                          msg_type=MsgTypeX.solution_constraints_information, bandwidth=bandwidth,
+                          NCLO=self.local_clock)
+            msgs_to_send.append(msg)
 
     def change_status_after_send_msgs(self):
         if AgentXStatues.send_solution_value in self.statues:
             self.statues.remove(AgentXStatues.send_solution_value)
-            #self.statues.append(AgentXStatues.idle)
+            # self.statues.append(AgentXStatues.idle)
         if AgentXStatues.request_solution_values in self.statues:
             self.statues.remove(AgentXStatues.request_solution_values)
             self.statues.append(AgentXStatues.wait_for_solution_value_then_send_solution_constraints)
@@ -943,8 +954,6 @@ class AgentX_BroadcastCentral(AgentX):
         if AgentXStatues.send_information_up_the_tree in self.statues:
             self.statues.remove(AgentXStatues.send_information_up_the_tree)
 
-
-
     def compute_send_alternative_constraints_to_a_q(self):
         NCLO = 0
         if AgentXStatues.send_alternative_constraints_to_a_q in self.statues:
@@ -955,12 +964,12 @@ class AgentX_BroadcastCentral(AgentX):
 
     def send_alternative_constraints(self, msgs_to_send):
         if AgentXStatues.send_alternative_constraints_to_a_q in self.statues:
-            #if self.communication_type == CommunicationType.BFS:
+            # if self.communication_type == CommunicationType.BFS:
             #    pass
-            #if self.communication_type == CommunicationType.broadcast:
+            # if self.communication_type == CommunicationType.broadcast:
             #    pass
-            #if self.communication_type == CommunicationType.Direct:
-                #pass
+            # if self.communication_type == CommunicationType.Direct:
+            # pass
             bandwidth = len(self.alternative_constraints[self.id_])
             who_to_send = self.get_who_to_send()
 
@@ -981,10 +990,11 @@ class AgentX_BroadcastCentral(AgentX):
 
 
 class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids):
-        AgentX_Query_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids)
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query_BroadcastCentral.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                               query, communication_type, bfs_representation, bfs_route, all_ids)
         self.solution_total_cost_per_q_n = {}
-
 
     def update_solution_constraints(self, msg):
         if msg.msg_type == MsgTypeX.solution_constraints_information:
@@ -993,8 +1003,6 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
             self.solution_constraints[sender] = info[0]
             self.solution_total_cost_per_q_n[sender] = info[1]
 
-
-
     def compute_request_alternative_constraints(self):
         NCLO = 0
 
@@ -1002,10 +1010,11 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
             NCLO += self.calc_sum_of_solution_cost()
             self.get_self_alternative_constraints()
             counter = CostComparisonCounter()
-            self.alternative_constraints[self.id_] = sorted(self.alternative_constraints[self.id_], key=cmp_to_key(counter.comparator))
+            self.alternative_constraints[self.id_] = sorted(self.alternative_constraints[self.id_],
+                                                            key=cmp_to_key(counter.comparator))
             NCLO += counter.count
-            #self.alternative_constraints_dict_inbox[self.id_] = copy.deepcopy(sorted_constraints)
-            #self.alternative_constraints_inbox.extend(copy.deepcopy(self.alternative_constraints[self.id_]))
+            # self.alternative_constraints_dict_inbox[self.id_] = copy.deepcopy(sorted_constraints)
+            # self.alternative_constraints_inbox.extend(copy.deepcopy(self.alternative_constraints[self.id_]))
             NCLO += len(self.alternative_constraints[self.id_])
             return NCLO
         return 0
@@ -1015,30 +1024,27 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
 
         solution_total_cost = 0
         for constraint in self.solution_constraints[self.id_]:
-            NCLO+=1
+            NCLO += 1
             solution_total_cost += constraint.cost
 
         for id_, solution_cost_local in self.solution_total_cost_per_q_n.items():
             NCLO += 1
-            solution_total_cost+=solution_cost_local
-
-
+            solution_total_cost += solution_cost_local
 
         const_set = []
-        const_list=[]
-        for id_,const_list_of_id in self.solution_constraints.items():
+        const_list = []
+        for id_, const_list_of_id in self.solution_constraints.items():
             for const in const_list_of_id:
                 const_list.append(const)
                 if const not in const_set:
                     const_set.append(const)
         cost_of_diff = 0
         for const in const_set:
-            cost_of_diff+=const.cost
+            cost_of_diff += const.cost
 
-        cost_of_same = solution_total_cost-cost_of_diff
-        self.solution_cost=solution_total_cost-cost_of_same
-        NCLO = NCLO - (len(const_list)-len(const_set))
-
+        cost_of_same = solution_total_cost - cost_of_diff
+        self.solution_cost = solution_total_cost - cost_of_same
+        NCLO = NCLO - (len(const_list) - len(const_set))
 
         return NCLO
 
@@ -1048,14 +1054,14 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
         for constraints_list in self.alternative_constraints.values():
             constraints_to_check.append(constraints_list[0])
 
-        max_constraint = max(constraints_to_check,key= lambda x:x.cost)
+        max_constraint = max(constraints_to_check, key=lambda x: x.cost)
         for id_, constraints_list in self.alternative_constraints.items():
             if max_constraint in constraints_list:
                 constraints_list.remove(max_constraint)
 
         ids_to_remove = []
         for id_, constraints_list in self.alternative_constraints.items():
-            if len(constraints_list)==0:
+            if len(constraints_list) == 0:
                 ids_to_remove.append(id_)
         for id_ in ids_to_remove:
             del self.alternative_constraints[id_]
@@ -1083,19 +1089,20 @@ class AgentX_Query_BroadcastDistributed(AgentX_Query_BroadcastCentral):
                     self.alternative_constraints_for_explanations.append(constraints_max)
                     self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
                     self.alternative_delta_constraints_cost_per_addition.append(
-                    self.alternative_cost - self.solution_cost)
+                        self.alternative_cost - self.solution_cost)
                 if self.alternative_cost >= self.solution_cost and not self.is_done:
                     self.is_done = True
                     self.alternative_constraints_min_valid_cost = self.alternative_cost
-                    self.NCLO_for_valid_solution = self.local_clock+NCLO
+                    self.NCLO_for_valid_solution = self.local_clock + NCLO
 
             self.alternative_constraints_max_measure = self.alternative_cost
-            if self.is_done ==False:
+            if self.is_done == False:
                 self.alternative_constraints_min_valid_cost = self.alternative_cost
             if self.is_finish_going_for_alternatives(who_you_took_from):
                 self.is_done = True
 
         return NCLO
+
 
 class MaxHeap:
     def __init__(self, key=lambda x: x):
@@ -1163,9 +1170,10 @@ class MaxHeap:
 
 
 class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids):
-        AgentX_Query_BroadcastDistributed.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,query,communication_type,bfs_representation,bfs_route,all_ids)
-
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query_BroadcastDistributed.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                                   query, communication_type, bfs_representation, bfs_route, all_ids)
 
     def get_queue_of_constraints(self):
         queue_of_constraints = []
@@ -1175,7 +1183,7 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
 
             keys_list = list(self.alternative_constraints.keys())
             for i in keys_list:
-                #selected_var = self.alternative_constraints[i]
+                # selected_var = self.alternative_constraints[i]
                 constraint = self.alternative_constraints[i].pop(0)
                 if constraint not in queue_of_constraints:
                     queue_of_constraints.append(constraint)
@@ -1187,18 +1195,18 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                     vars_to_delete.append(var_name)
             for var_name in vars_to_delete:
                 del self.alternative_constraints[var_name]
-        return queue_of_constraints,NCLO
+        return queue_of_constraints, NCLO
 
     def create_max_heap(self):
         NCLO = 0
         mh = MaxHeap(key=lambda x: x.cost)
         for k, v in self.alternative_constraints.items():
-            if len(v)!=0:
+            if len(v) != 0:
                 constraint = v.pop(0)
                 constraint.who_created = k
                 if constraint not in self.alternative_constraints_for_explanations:
                     NCLO = NCLO + mh.insert(constraint)
-        return NCLO,mh
+        return NCLO, mh
 
     def compute_check_if_explanation_is_complete(self):
 
@@ -1206,13 +1214,13 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
             who_you_took_from = list(self.alternative_constraints.keys())
 
-            NCLO,max_heap = self.create_max_heap()
+            NCLO, max_heap = self.create_max_heap()
 
             self.add_dummy_to_front_alternative_constraints_cost_single_addition()
             flag = False
 
-            while not max_heap.is_empty() :
-                const,max_heap_NCLO = max_heap.extract_max()
+            while not max_heap.is_empty():
+                const, max_heap_NCLO = max_heap.extract_max()
                 if not flag:
                     flag = True
                     self.add_dummy_to_back_alternative_constraints_cost_single_addition(const.cost,
@@ -1220,16 +1228,16 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                 if not self.is_done and const not in self.alternative_constraints_for_explanations:
 
                     max_heap_NCLO
-                    NCLO = NCLO+max_heap_NCLO
+                    NCLO = NCLO + max_heap_NCLO
                     self.alternative_cost += const.cost
                     self.calc_sum_of_solution_cost()
 
                     self.alternative_constraints_for_explanations.append(const)
                     self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
 
-                    for _ in  range(max_heap_NCLO):
+                    for _ in range(max_heap_NCLO):
                         self.alternative_delta_constraints_cost_per_addition.append(
-                        self.alternative_cost - self.solution_cost)
+                            self.alternative_cost - self.solution_cost)
 
                 who_created = const.who_created
                 if len(self.alternative_constraints[who_created]) == 0:
@@ -1242,14 +1250,12 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
                         for _ in range(amount_to_insert):
                             self.alternative_delta_constraints_cost_per_addition.append(
                                 self.alternative_cost - self.solution_cost)
-                        NCLO = NCLO +amount_to_insert
+                        NCLO = NCLO + amount_to_insert
 
                 if self.alternative_cost >= self.solution_cost and not self.is_done:
                     self.is_done = True
                     self.alternative_constraints_min_valid_cost = self.alternative_cost
                     self.NCLO_for_valid_solution = self.local_clock + NCLO
-
-
 
             self.alternative_constraints_max_measure = self.alternative_cost
             if self.is_done == False:
@@ -1261,24 +1267,22 @@ class AgentX_Query_BroadcastDistributedV2(AgentX_Query_BroadcastDistributed):
 
 
 class AgentX_Query_BroadcastDistributedV3(AgentX_Query_BroadcastDistributedV2):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
-        AgentX_Query_BroadcastDistributedV2.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                   query,communication_type,bfs_representation,bfs_route,all_ids)
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query_BroadcastDistributedV2.__init__(self, id_, variable, domain, neighbors_agents_id,
+                                                     neighbors_obj_dict,
+                                                     query, communication_type, bfs_representation, bfs_route, all_ids)
 
     def compute_check_if_explanation_is_complete(self):
-
 
         NCLO = 0
         if AgentXStatues.check_if_explanation_is_complete in self.statues:
             who_you_took_from = list(self.alternative_constraints.keys())
 
-
-
-
-            queue_of_constraints,NCLO = self.get_queue_of_constraints()
+            queue_of_constraints, NCLO = self.get_queue_of_constraints()
             self.add_dummy_to_front_alternative_constraints_cost_single_addition()
 
-            flag=False
+            flag = False
             while len(queue_of_constraints) != 0:
                 NCLO = NCLO + 1
                 const = queue_of_constraints.pop(0)
@@ -1292,7 +1296,8 @@ class AgentX_Query_BroadcastDistributedV3(AgentX_Query_BroadcastDistributedV2):
 
                     self.alternative_constraints_for_explanations.append(const)
                     self.alternative_constraints_cost_single_addition.append(self.alternative_cost)
-                    self.alternative_delta_constraints_cost_per_addition.append(self.alternative_cost - self.solution_cost)
+                    self.alternative_delta_constraints_cost_per_addition.append(
+                        self.alternative_cost - self.solution_cost)
                 if self.alternative_cost >= self.solution_cost and not self.is_done:
                     self.is_done = True
                     self.alternative_constraints_min_valid_cost = self.alternative_cost
@@ -1303,12 +1308,14 @@ class AgentX_Query_BroadcastDistributedV3(AgentX_Query_BroadcastDistributedV2):
             if self.is_finish_going_for_alternatives(who_you_took_from):
                 self.is_done = True
 
-
         return NCLO
 
-class AgentX_BroadcastDistributed(AgentX_BroadcastCentral ):
-    def __init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation, bfs_route,a_q):
-        AgentX_BroadcastCentral.__init__(self,id_,variable,domain,neighbors_agents_id,neighbors_obj_dict,communication_type,bfs_representation, bfs_route,a_q)
+
+class AgentX_BroadcastDistributed(AgentX_BroadcastCentral):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, communication_type,
+                 bfs_representation, bfs_route, a_q):
+        AgentX_BroadcastCentral.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
+                                         communication_type, bfs_representation, bfs_route, a_q)
         self.total_local_cost_solution = 0
 
     def compute_send_solution_constraints_to_a_q(self):
@@ -1316,19 +1323,20 @@ class AgentX_BroadcastDistributed(AgentX_BroadcastCentral ):
             self.total_local_cost_solution = self.get_self_solution_constraints()
             return len(self.solution_constraints[self.id_])
         return 0
-    def send_solution_constraints(self,msgs_to_send):
+
+    def send_solution_constraints(self, msgs_to_send):
         if AgentXStatues.send_solution_constraints_to_a_q in self.statues:
-            #if self.communication_type == CommunicationType.BFS:
+            # if self.communication_type == CommunicationType.BFS:
             #    pass
-            #if self.communication_type == CommunicationType.broadcast:
+            # if self.communication_type == CommunicationType.broadcast:
             #    pass
-            #if self.communication_type == CommunicationType.Direct:
+            # if self.communication_type == CommunicationType.Direct:
             bandwidth = len(self.solution_constraints[self.id_])
-            msg = Msg(sender=self.id_, receiver=self.a_q, information=(self.solution_constraints[self.id_],self.total_local_cost_solution),
-                      msg_type=MsgTypeX.solution_constraints_information, bandwidth=bandwidth+1, NCLO=self.local_clock)
+            msg = Msg(sender=self.id_, receiver=self.a_q,
+                      information=(self.solution_constraints[self.id_], self.total_local_cost_solution),
+                      msg_type=MsgTypeX.solution_constraints_information, bandwidth=bandwidth + 1,
+                      NCLO=self.local_clock)
             msgs_to_send.append(msg)
-
-
 
     def compute_send_alternative_constraints_to_a_q(self):
         NCLO = 0
@@ -1339,17 +1347,23 @@ class AgentX_BroadcastDistributed(AgentX_BroadcastCentral ):
                                                             key=cmp_to_key(counter.comparator))
             NCLO += counter.count
         return NCLO
+
+
 from abc import ABC, abstractmethod
 
 
-class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_BroadcastDistributedV3,ABC):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
-        AgentX_Query_BroadcastDistributedV3.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                                     query,communication_type,bfs_representation,bfs_route,all_ids)
+class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_BroadcastDistributedV3, ABC):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query_BroadcastDistributedV3.__init__(self, id_, variable, domain, neighbors_agents_id,
+                                                     neighbors_obj_dict,
+                                                     query, communication_type, bfs_representation, bfs_route, all_ids)
         self.mean_constraints = self.calc_mean_constraints_of_agents_in_query()
         self.max_constraints = self.calc_max_constraints_of_agents_in_query()
         self.degree_of_query_agents_dict = self.get_degree_of_query_agents_dict()
-        self.query_agents_to_send_alternative_request =sorted(self.degree_of_query_agents_dict, key=lambda k: self.degree_of_query_agents_dict[k], reverse=True)
+        self.query_agents_to_send_alternative_request = sorted(self.degree_of_query_agents_dict,
+                                                               key=lambda k: self.degree_of_query_agents_dict[k],
+                                                               reverse=True)
         self.query_agents_to_send_alternative_request.remove(self.id_)
         self.who_i_wait_for = []
 
@@ -1363,10 +1377,11 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
             NCLO += self.calc_sum_of_solution_cost()
             self.get_self_alternative_constraints()
             counter = CostComparisonCounter()
-            self.alternative_constraints[self.id_] = sorted(self.alternative_constraints[self.id_], key=cmp_to_key(counter.comparator))
+            self.alternative_constraints[self.id_] = sorted(self.alternative_constraints[self.id_],
+                                                            key=cmp_to_key(counter.comparator))
             NCLO += counter.count
-            #self.alternative_constraints_dict_inbox[self.id_] = copy.deepcopy(sorted_constraints)
-            #self.alternative_constraints_inbox.extend(copy.deepcopy(self.alternative_constraints[self.id_]))
+            # self.alternative_constraints_dict_inbox[self.id_] = copy.deepcopy(sorted_constraints)
+            # self.alternative_constraints_inbox.extend(copy.deepcopy(self.alternative_constraints[self.id_]))
             NCLO += len(self.alternative_constraints[self.id_])
 
             self.statues.append(AgentXStatues.check_if_explanation_is_complete)
@@ -1379,31 +1394,32 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
             if not self.is_done:
                 self.statues.remove(AgentXStatues.check_if_explanation_is_complete)
 
-
             return NCLO
         return 0
 
     def get_list_of_all_costs_agents_in_query(self):
-        ans=[]
+        ans = []
         agents_in_query = self.query.variables_in_query.values()
         for a in agents_in_query:
             constraints = []
             for n in a.neighbors_obj:
                 constraints.append(n.cost_table)
             for val_assignment_cost_dict in constraints:
-                for val_assignment,cost in val_assignment_cost_dict.items():
+                for val_assignment, cost in val_assignment_cost_dict.items():
                     if cost != my_inf:
                         ans.append(cost)
             return ans
+
     def calc_mean_constraints_of_agents_in_query(self):
         all_costs_agents_in_query = self.get_list_of_all_costs_agents_in_query()
-        ans = sum(all_costs_agents_in_query)/len(all_costs_agents_in_query)
+        ans = sum(all_costs_agents_in_query) / len(all_costs_agents_in_query)
         return ans
 
     def calc_max_constraints_of_agents_in_query(self):
         all_costs_agents_in_query = self.get_list_of_all_costs_agents_in_query()
         ans = max(all_costs_agents_in_query)
         return ans
+
     def get_degree_of_query_agents_dict(self):
         ans = {}
         agents_in_query = self.query.variables_in_query.values()
@@ -1413,7 +1429,7 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
             ans[k] = v
         return ans
 
-    def is_finish_going_for_alternatives(self,who_you_took_from):
+    def is_finish_going_for_alternatives(self, who_you_took_from):
         if self.is_done:
             return True
         n_ids_to_send = self.get_n_ids_to_send()
@@ -1421,51 +1437,48 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
         for a_id in who_you_took_from:
             if a_id in ttt:
                 ttt.remove(a_id)
-        if len(ttt)==0:
+        if len(ttt) == 0:
             return True
         return False
 
-
-    def get_amount_of_constraints_potential_cost_in_ans(self,ans):
+    def get_amount_of_constraints_potential_cost_in_ans(self, ans):
         total_amount = 0
         for id_ in ans:
             amount_of_constraints = self.degree_of_query_agents_dict[id_]
-            heuristic_estimation_of_single_constraint_cost  = self.get_heuristic_estimation_of_cost()
-            total_amount = total_amount+heuristic_estimation_of_single_constraint_cost*amount_of_constraints
+            heuristic_estimation_of_single_constraint_cost = self.get_heuristic_estimation_of_cost()
+            total_amount = total_amount + heuristic_estimation_of_single_constraint_cost * amount_of_constraints
         return total_amount
 
-
-
-
     def get_n_ids_to_send(self):
-        if len(self.query_agents_to_send_alternative_request)==1:
+        if len(self.query_agents_to_send_alternative_request) == 1:
             return [self.query_agents_to_send_alternative_request[0]]
-
 
         ans = []
         for a_id in self.query_agents_to_send_alternative_request:
             amount_of_constraint = self.degree_of_query_agents_dict[a_id]
-            heuristic_estimation_of_single_constraint_cost  = self.get_heuristic_estimation_of_cost()
+            heuristic_estimation_of_single_constraint_cost = self.get_heuristic_estimation_of_cost()
             amount_of_potential_costs_in_ans = self.get_amount_of_constraints_potential_cost_in_ans(ans)
-            cost_missing = self.solution_cost-(self.alternative_cost+amount_of_potential_costs_in_ans)
+            cost_missing = self.solution_cost - (self.alternative_cost + amount_of_potential_costs_in_ans)
             ans.append(a_id)
-            iteration_contribution = amount_of_constraint*heuristic_estimation_of_single_constraint_cost
+            iteration_contribution = amount_of_constraint * heuristic_estimation_of_single_constraint_cost
             if cost_missing < iteration_contribution:
                 return ans
         return ans
-    @abstractmethod
-    def get_heuristic_estimation_of_cost(self):pass
 
-    def send_alternative_constraint_request(self,msgs_to_send):
+    @abstractmethod
+    def get_heuristic_estimation_of_cost(self):
+        pass
+
+    def send_alternative_constraint_request(self, msgs_to_send):
         if AgentXStatues.request_alternative_constraints in self.statues:
             n_ids_to_send = self.get_n_ids_to_send()
-            self.who_i_wait_for=  n_ids_to_send
+            self.who_i_wait_for = n_ids_to_send
 
-            #if self.communication_type == CommunicationType.BFS:
+            # if self.communication_type == CommunicationType.BFS:
             #    pass
-            #if self.communication_type == CommunicationType.broadcast:
+            # if self.communication_type == CommunicationType.broadcast:
             #    pass
-            #if self.communication_type == CommunicationType.Direct:
+            # if self.communication_type == CommunicationType.Direct:
             for n_id in n_ids_to_send:
                 msgs_to_send.append(
                     Msg(sender=self.id_, receiver=n_id, information=self.alternative_partial_assignment,
@@ -1476,20 +1489,27 @@ class AgentX_Query_BroadcastDistributed_communication_heurtsic(AgentX_Query_Broa
                 self.query_agents_to_send_alternative_request.remove(a_id)
 
 
-
-
-class AgentX_Query_BroadcastDistributed_communication_heurtsic_max(AgentX_Query_BroadcastDistributed_communication_heurtsic):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
-        AgentX_Query_BroadcastDistributed_communication_heurtsic.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                               query,communication_type,bfs_representation,bfs_route,all_ids)
+class AgentX_Query_BroadcastDistributed_communication_heurtsic_max(
+    AgentX_Query_BroadcastDistributed_communication_heurtsic):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query_BroadcastDistributed_communication_heurtsic.__init__(self, id_, variable, domain,
+                                                                          neighbors_agents_id, neighbors_obj_dict,
+                                                                          query, communication_type, bfs_representation,
+                                                                          bfs_route, all_ids)
 
     def get_heuristic_estimation_of_cost(self):
         return self.max_constraints
-class AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(AgentX_Query_BroadcastDistributed_communication_heurtsic):
-    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query,communication_type,bfs_representation,bfs_route,all_ids):
-        AgentX_Query_BroadcastDistributed_communication_heurtsic.__init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict,
-                                               query,communication_type,bfs_representation,bfs_route,all_ids)
+
+
+class AgentX_Query_BroadcastDistributed_communication_heurtsic_mean(
+    AgentX_Query_BroadcastDistributed_communication_heurtsic):
+    def __init__(self, id_, variable, domain, neighbors_agents_id, neighbors_obj_dict, query, communication_type,
+                 bfs_representation, bfs_route, all_ids):
+        AgentX_Query_BroadcastDistributed_communication_heurtsic.__init__(self, id_, variable, domain,
+                                                                          neighbors_agents_id, neighbors_obj_dict,
+                                                                          query, communication_type, bfs_representation,
+                                                                          bfs_route, all_ids)
 
     def get_heuristic_estimation_of_cost(self):
         return self.mean_constraints
-

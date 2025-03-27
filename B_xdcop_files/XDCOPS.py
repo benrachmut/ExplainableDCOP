@@ -48,6 +48,7 @@ class Explanation():
             routes[node] = path[::-1]  # Reverse to get the route from root to node
 
         return routes
+
     def bfs_representation_(self):
         bfs_tree = {}
         visited = set()
