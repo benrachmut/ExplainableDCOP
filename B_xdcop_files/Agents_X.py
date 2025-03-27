@@ -148,12 +148,9 @@ class AgentX(ABC):
                     self.agents_discovered.append(k)
 
     def add_agent_privacy_information(self, msg):
-        if self.communication_type == CommunicationType.BFS or self.communication_type == CommunicationType.Direct:
             self.agents_become_aware_of_information_bfs(msg)
             self.constraint_topology_become_aware_of_information_bfs(msg)
-        if self.communication_type == CommunicationType.Broadcast:
-            pass
-            #print("todo 4")
+
 
     def get_general_info_for_records(self):
         return {"Agent_id": self.id_, "local_clock": self.local_clock, "global_clock": self.global_clock}
@@ -390,6 +387,9 @@ class AgentX_Query(AgentX, ABC):
 
         self.alternative_constraints_for_explanations = []
         self.alternative_constraints_inbox = []
+        for var in self.query.variables_in_query.keys():
+            if var!=self.id_ and var not in self.neighbors_obj_dict.keys():
+                self.agents_discovered.append(var)
         # self.statues.append(AgentXStatues.wait_for_solution_value)
         for v_q in self.query.variables_in_query:
             self.solution_constraints[v_q] = None
@@ -476,6 +476,7 @@ class AgentX_Query_BroadcastCentral(AgentX_Query):
 
     def update_alternative_constraints(self, msg):
         if msg.msg_type == MsgTypeX.alternative_constraints_information:
+            self.add_agent_privacy_information(msg)
             sender = msg.sender
             info = msg.information
             self.alternative_constraints[sender] = copy.deepcopy(info)
@@ -823,7 +824,8 @@ class AgentX_BroadcastCentral(AgentX):
             if self.communication_type == CommunicationType.BFS:
                 self.update_send_down_the_tree(msg)
                 self.update_send_up_the_tree(msg)
-            if self.communication_type == CommunicationType.Broadcast and msg.final_destination != None and msg.receiver != msg.final_destination:
+            #if self.communication_type == CommunicationType.Broadcast and msg.final_destination != None and msg.receiver != msg.final_destination:
+            if msg.msg_type== MsgTypeX.alternative_constraints_request or msg.msg_type== MsgTypeX.solution_constraint_request:
                 self.add_agent_privacy_request(msg)
 
     def change_status_after_update_msgs_in_context(self, msgs):
@@ -875,10 +877,6 @@ class AgentX_BroadcastCentral(AgentX):
                 who_to_send = self.get_who_to_send_in_bfs(final_destination)
                 msg_request_to_send.receiver = who_to_send
                 msgs_to_send.append(msg_request_to_send)
-
-            for i in self.request_to_send_down_the_tree:
-                # self.requests_to_remember[i.sender] = i.information
-                self.add_agent_privacy_request(i)
             self.request_to_send_down_the_tree = []
 
     def send_to_bfs_parent(self, msgs_to_send):
@@ -888,8 +886,8 @@ class AgentX_BroadcastCentral(AgentX):
                 msg_info_to_send.receiver = who_to_send
                 msgs_to_send.append(msg_info_to_send)
 
-            for i in self.information_to_send_up_the_tree:
-                self.add_agent_privacy_information(i)
+            #for i in self.information_to_send_up_the_tree:
+                #self.add_agent_privacy_information(i)
 
             self.information_to_send_up_the_tree = []
 
@@ -986,6 +984,7 @@ class AgentX_BroadcastCentral(AgentX):
     def update_send_up_the_tree(self, msg):
         if (msg.final_destination is None or msg.receiver != msg.final_destination) and (
                 msg.msg_type == MsgTypeX.solution_constraints_information or msg.msg_type == MsgTypeX.alternative_constraints_information):
+            self.add_agent_privacy_information(msg)
             self.information_to_send_up_the_tree.append(msg)
 
 
