@@ -22,23 +22,24 @@ def create_explanations():
 
                     ans[density][amount_agents][query_type][algo] = {}
                     for vars_in_query, x_dcops_list in dict_4.items():
-                        print("vars_in_query", vars_in_query)
+                        if vars_in_query<21:
+                            print("vars_in_query", vars_in_query)
 
-                        ans[density][amount_agents][query_type][algo][vars_in_query] = {}
-                        for ex_type in explanation_types:
-                            #print("ex_type", ex_type)
+                            ans[density][amount_agents][query_type][algo][vars_in_query] = {}
+                            for ex_type in explanation_types:
+                                #print("ex_type", ex_type)
 
-                            ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name] = {}
-                            for communication_type in communication_types:
-                                ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name][communication_type.name] = []
+                                ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name] = {}
+                                for communication_type in communication_types:
+                                    ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name][communication_type.name] = []
 
-                                for x_dcop in x_dcops_list:
-                                    dcop = x_dcop.dcop
-                                    #print("dcop",dcop.dcop_id)
-                                    query = x_dcop.query
-                                    explanation = Explanation(dcop, query, ex_type, communication_type)
-                                    d_e = explanation.data_entry
-                                    ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name][communication_type.name].append(d_e)
+                                    for x_dcop in x_dcops_list:
+                                        dcop = x_dcop.dcop
+                                        #print("dcop",dcop.dcop_id)
+                                        query = x_dcop.query
+                                        explanation = Explanation(dcop, query, ex_type, communication_type)
+                                        d_e = explanation.data_entry
+                                        ans[density][amount_agents][query_type][algo][vars_in_query][ex_type.name][communication_type.name].append(d_e)
     return ans
 
 
@@ -55,8 +56,8 @@ def cut_for_privacy(x_dcops_dict):
 
 if __name__ == '__main__':
     folder_begin = "pickles_"
-    what_scale = "dcop_scale" #dcop_scale, query_scale
-    prob = "meeting_scheduling" #"random # meeting_scheduling
+    what_scale = "query_scale" #dcop_scale, query_scale
+    prob = "random" #"random # meeting_scheduling
     is_privacy = True
     if is_privacy:
         directory = folder_begin+what_scale+"_privacy/"+prob
