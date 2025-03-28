@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 
-from enums import QueryType
+from enums import QueryType, CommunicationType
 
 # Define line styles and colors for subkeys
 axes_titles_font = 10
@@ -23,6 +23,20 @@ selected_explanations_and_new_name = {
     "Varint_max": "CEDAR(V2)"
 }
 
+selected_communication_and_new_name = {
+    CommunicationType.BFS.name:"MHN-BFS",
+    CommunicationType.Broadcast_Total.name: "MHN-BB",
+    CommunicationType.Broadcast.name: "MHN-UB",
+}
+
+measure_names = {
+"agent_privacy_normalized", "topology_privacy_normalized", "constraint_privacy_normalized",
+                     "decision_privacy_with_send_sol_normalized",
+                     "decision_privacy_without_send_sol_constraint_normalized"]
+
+"agent_privacy", "topology_privacy", "constraint_privacy",
+                     "decision_privacy_with_send_sol_constraint", "decision_privacy_without_send_sol_constraint"]
+}
 
 colors_explanation_algos = {
     "CEDAR":"chocolate" ,
@@ -67,6 +81,21 @@ def get_folder_to_save_figure_name(graph_type, prob,selected_density):
 class ColorsInGraph:
     dcop_algorithms = 1
     explanation_algorithms = 2
+
+
+def create_privacy_graph(data,x_label,y_label,folder_to_save,figure_name):
+    plt.figure(figsize=(10, 6))
+
+    for comm_type, xy_values in data.items():
+        x_values = list(xy_values.keys())
+        y_values = list(xy_values.values())
+        plt.plot(x_values, y_values, marker='o', label=comm_type)
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.legend()
+    plt.savefig(f"{folder_to_save}/{figure_name}.pdf", format="pdf", bbox_inches='tight')
+    plt.clf()
 
 def create_single_graph(is_with_legend,data,colors_type,curve_widths,x_name,y_name,folder_to_save,figure_name,manipulate_y=False, x_min = None,x_max=None,y_min=None,y_max=None,is_highlight_horizontal=False,x_ticks = None,with_points = True,horizontal_width = 10, horizontal_alpha = 0.5,horizontal_location = 1,create_legend_image = False):
     plt.figure(figsize=(4, 3))

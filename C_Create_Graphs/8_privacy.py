@@ -11,14 +11,24 @@ from matplotlib.lines import Line2D
 
 def get_full_dict(densities,agent_amounts,query_type,algo,explanation_type,var_num):
     ans = {}
-    for density in densities:
-        ans[density] = {}
+    if scale =="query":
+        for density in densities:
 
-        for agent_amount in agent_amounts:
-            ans[density][agent_amount] = {}
+            ans[density] = {}
+            vars = list(exp_dict[density][50][query_type][algo].keys())
+            for var in vars:
+                ans[density][var] = {}
+                input_dict = exp_dict[density][50][query_type][algo][var][explanation_type]
+                ans[density][var] = input_dict
+    else:
+        for density in densities:
+            ans[density] = {}
 
-            input_dict = exp_dict[density][agent_amount][query_type][algo][var_num][explanation_type]
-            ans[density][agent_amount] = input_dict
+            for agent_amount in agent_amounts:
+                ans[density][agent_amount] = {}
+
+                input_dict = exp_dict[density][agent_amount][query_type][algo][var_num][explanation_type]
+                ans[density][agent_amount] = input_dict
 
 
     return ans
@@ -49,13 +59,16 @@ def get_avg_dict(measure_dict):
         for amount_agents, dict_2 in dict_1.items():
             ans[density][amount_agents] = {}
             for comm_type, dict_3 in dict_2.items():
-                ans[density][amount_agents][comm_type] = {}
-                for measure,data_to_avg in dict_3.items():
-                    ans[density][amount_agents][comm_type][measure] = sum(data_to_avg)/len(data_to_avg)
+                if comm_type!="Direct":
+                    comm_new_name  = selected_communication_and_new_name[comm_type]
+                    ans[density][amount_agents][comm_new_name] = {}
+                    for measure,data_to_avg in dict_3.items():
+                        ans[density][amount_agents][comm_new_name][measure] = sum(data_to_avg)/len(data_to_avg)
     return ans
 
 def get_measure_dict(full_dict):
     ans = {}
+
     for density, dict_1 in full_dict.items():
         ans[density] = {}
         for amount_agents, dict_2 in dict_1.items():
@@ -104,29 +117,15 @@ def transform_data(input_dict):
 
     return output_dict
 
-def plot_communication_curves(data,x_label,y_label):
-    plt.figure(figsize=(10, 6))
 
-    for comm_type, xy_values in data.items():
-        x_values = list(xy_values.keys())
-        y_values = list(xy_values.values())
-        plt.plot(x_values, y_values, marker='o', label=comm_type)
-
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.legend()
-    plt.savefig(f"{folder_to_save}/{figure_name}.pdf", format="pdf", bbox_inches='tight')
-
-    #plt.grid(True)
-    #plt.show()
 
 
 
 if __name__ == '__main__':
-    scale = "dcop" #
+    scale = "query" #
     probs =["meeting_scheduling"] #["meeting_scheduling","random"]
     for is_with_legend in [True]:
-        for is_with_normalized in [False]:
+        for is_with_normalized in [True]:
             for prob in probs:
                 graph_type = "8_privacy"
 
@@ -143,13 +142,17 @@ if __name__ == '__main__':
 
                 selected_vars_nums_list = range(1, 11)
                 selected_explanation_types = list(ExplanationType)
+                if scale == "query":
+                    x_name = r" $|var(\sigma_Q)|$"
+                else:
+                    x_name = "Amount of Agents"
+
+
                 for measure in measure_names:
+                    y_name = measure
                     if prob == "meeting_scheduling":
-                        y_name = measure
-                        x_name = "Amount of Agents"
                         selected_density = 0.5
                         data =avg_dict[selected_density][measure]
-                        folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type+"_"+measure, prob, selected_density)
-                        plot_communication_curves(data,x_name,y_name)
-
+                        folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type+"_"+measure+"_"+scale, prob, selected_density)
+                        create_privacy_graph(data,x_name,y_name,folder_to_save,figure_name)
 
