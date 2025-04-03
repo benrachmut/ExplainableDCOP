@@ -133,10 +133,10 @@ if __name__ == '__main__':
                 with open(file_name, "rb") as file:
                     exp_dict = pickle.load(file)
                 if is_with_normalized:
-                    measure_names =  [ "agent_privacy_normalized","topology_privacy_normalized","constraint_privacy_normalized","decision_privacy_with_send_sol_normalized","decision_privacy_without_send_sol_constraint_normalized"]
+                    measure_names =  [ "agent_privacy_normalized","topology_privacy_normalized","constraint_privacy_normalized","decision_privacy_with_send_sol_normalized"]
 
                 else:
-                    measure_names =  [ "agent_privacy","topology_privacy","constraint_privacy","decision_privacy_with_send_sol_constraint","decision_privacy_without_send_sol_constraint"]
+                    measure_names =  [ "agent_privacy","topology_privacy","constraint_privacy","decision_privacy_with_send_sol_constraint"]
                 avg_dict = get_all_avg_dict()
                 avg_dict = transform_data(avg_dict)
 
@@ -147,12 +147,26 @@ if __name__ == '__main__':
                 else:
                     x_name = "Amount of Agents"
 
+                titles = []
+                datas = []
+                if prob == "meeting_scheduling":
+                    selected_density = 0.5
 
                 for measure in measure_names:
-                    y_name = measure
-                    if prob == "meeting_scheduling":
-                        selected_density = 0.5
-                        data =avg_dict[selected_density][measure]
-                        folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type+"_"+measure+"_"+scale, prob, selected_density)
-                        create_privacy_graph(data,x_name,y_name,folder_to_save,figure_name)
+                    titles.append(measure_new_names[measure])
+                    datas.append(avg_dict[selected_density][measure])
+                datas[1], datas[3] = datas[3], datas[1]
+                titles[1], titles[3] = titles[3], titles[1]
+
+                folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type+"_"+scale, prob, selected_density)
+                create_combined_privacy_graph_with_first_legend_only(data_list=datas, titles_list=titles, x_label=r" $|var(\sigma_Q)|$",y_label="Privacy Loss", folder_to_save=folder_to_save,figure_name=figure_name)
+
+                for measure in measure_names:
+                    data = avg_dict[selected_density][measure]
+
+                    measure = measure_new_names[measure]
+                    folder_to_save, figure_name = get_folder_to_save_figure_name(graph_type + "_" + measure, prob,
+                                                                                 selected_density)
+
+                    create_privacy_graph(data =data,x_label =r" $|var(\sigma_Q)|$" ,y_label = measure,folder_to_save =folder_to_save ,figure_name=figure_name)
 

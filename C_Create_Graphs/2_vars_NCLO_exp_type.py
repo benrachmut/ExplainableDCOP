@@ -131,10 +131,10 @@ if __name__ == '__main__':
 
             curve_explanation_algos = {
                 "CEDAR": 3,
-                "CEDAR(O1)": 3,
-                "CEDAR(O2)": 3,
-                "CEDAR(V1)": 3,
-                "CEDAR(V2)": 3
+                r"CEDAR$(O_1)$": 3,
+                r"CEDAR$(O_2)$": 3,
+                r"CEDAR$(V_1)$": 3,
+                r"CEDAR$(V_2)$": 3
             }
 
             selected_density = 0.7

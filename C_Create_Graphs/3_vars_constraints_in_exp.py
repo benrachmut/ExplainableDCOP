@@ -122,10 +122,10 @@ if __name__ == '__main__':
 
             curve_explanation_algos = {
                 "CEDAR": 3,
-                "CEDAR(O1)": 5,
-                "CEDAR(O2)": 2,
-                "CEDAR(V1)": 3,
-                "CEDAR(V2)": 3
+                r"CEDAR$(O_1)$" : 5,
+                r"CEDAR$(O_2)$": 2,
+                r"CEDAR$(V_1)$": 3,
+                r"CEDAR$(V_2)$": 3
             }
             y_name = "Number of Constraints"
             x_name =  r" $|var(\sigma_Q)|$"
