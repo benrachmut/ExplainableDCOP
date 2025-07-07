@@ -109,7 +109,7 @@ if __name__ == '__main__':
     max_vars_below_eq_10 = 5
     vars_above_10_list = [1,5]
 
-    query_types_list = list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
+    query_types_list = [QueryType.educated]#list(QueryType)#[QueryType.semi_educated]#[QueryType.educated,QueryType.rnd]
     xdcops = create_xdcop()
 
 

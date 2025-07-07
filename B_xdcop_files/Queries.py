@@ -95,7 +95,7 @@ class QueryMeetingScheduling(Query):
         return ans
 
 class QueryGenerator:
-    def __init__(self, dcops_dict, amount_of_vars, query_type, with_connectivity_constraint=True):
+    def __init__(self, dcops_dict, amount_of_vars, query_type, with_connectivity_constraint=True, is_create_alternative = True):
         self.dcops_dict = dcops_dict
         self.first_dcop = list(dcops_dict.values())[0]
         first_id = self.first_dcop.dcop_id
@@ -135,7 +135,8 @@ class QueryGenerator:
                         if not flag:
                             raise Exception("connectivity but")
         self.solution_partial_assignment_dict = self.get_solution_partial_assignment_dict()
-        self.alternative_values = self.get_alternative_values()
+        if is_create_alternative:
+            self.alternative_values = self.get_alternative_values()
 
 
     def get_query(self,algo,dcop_id):
@@ -211,7 +212,7 @@ class QueryGenerator:
                 domain_of_agents = list(self.dcops_dict.values())[0].agents[0].domain
                 a = copy.deepcopy(domain_of_agents)
                 b = value
-                a.remove(b)
+                #a.remove(b)
                 #possible_alternatives =#[item for item in a if item not in b]
                 ans_temp[variable] = a
             ans[algo] = ans_temp
@@ -265,7 +266,7 @@ class QueryGenerator:
 
                 bnb = Bnb_central(agents_for_educated)
 
-                dcop_solution = bnb.UB
+                dcop_solution = bnb.second_best
                 dict_ = dcop_solution[0]
                 alternative_values = {}
                 for a_id,val in dict_.items():
@@ -276,10 +277,12 @@ class QueryGenerator:
 
     def get_agent_domain(self,domain_list,algo,solution_value,possible_alternatives_dict,id_):
         if id_ in self.variables_dict[algo].keys():
-            if self.query_type == QueryType.educated:
-                domain_list.remove(solution_value)
-            if self.query_type == QueryType.semi_educated:
-                domain_list = copy.deepcopy( possible_alternatives_dict[id_])
+            pass
+
+            #if self.query_type == QueryType.educated:
+            #    domain_list.remove(solution_value)
+            #if self.query_type == QueryType.semi_educated:
+            #    domain_list = copy.deepcopy( possible_alternatives_dict[id_])
 
         else:
             if self.query_type == QueryType.educated:

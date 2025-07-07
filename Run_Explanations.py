@@ -58,7 +58,7 @@ if __name__ == '__main__':
     folder_begin = "pickles_"
     what_scale = "query_scale" #dcop_scale, query_scale
     prob = "random" #"random # meeting_scheduling
-    is_privacy = True
+    is_privacy = False
     if is_privacy:
         directory = folder_begin+what_scale+"_privacy/"+prob
     else:

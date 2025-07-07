@@ -8,10 +8,6 @@ from enums import QueryType
 
 
 
-class ScaleType(Enum):
-    dcop_scale = 1
-    query_scale = 2
-
 
 def get_density_type_str(p1):
     if p1<0.5:
@@ -67,7 +63,7 @@ def create_dcops():
                 if dcop_type == DcopType.graph_coloring:
                     max_num = 20
                 if dcop_type == DcopType.meeting_scheduling_v2:
-                    max_num = 15
+                    max_num = 10
                 if dcop_type == DcopType.random_uniform and p1 < 0.3:
                     max_num = 15
                 if dcop_type == DcopType.random_uniform and p1 > 0.3:
@@ -211,9 +207,9 @@ def create_xdcop():
 
 if __name__ == '__main__':
     #####--------------------------------
-    is_privacy = True
-    scale_type = ScaleType.query_scale
-    dcop_type = DcopType.random_uniform
+    is_privacy = False
+    scale_type = ScaleType.dcop_scale
+    dcop_type = DcopType.meeting_scheduling_v2
     if dcop_type == DcopType.random_uniform:
         p1s = [0.7]
     if dcop_type == DcopType.graph_coloring:
@@ -224,11 +220,11 @@ if __name__ == '__main__':
     repetitions = 100
     if scale_type ==ScaleType.dcop_scale:
 
-        agents_amounts = [10,15,20,25,30,35,40,45,50]
+        agents_amounts = [5,10,15,20,25,30,35,40,45,50]
         if is_privacy:
             algos = [Algorithm.One_Opt]
         else:
-            algos = [Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]#, Algorithm.One_Opt]
+            algos = [Algorithm.BNB_Complete,Algorithm.One_Opt]#,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]#, Algorithm.One_Opt]
     else:
         if is_privacy:
             agents_amounts = [50]
@@ -238,18 +234,18 @@ if __name__ == '__main__':
 
 
             if dcop_type == DcopType.random_uniform and 0.7 in p1s:
-                agents_amounts = [ 10,5]
+                agents_amounts = [10]
             if dcop_type == DcopType.random_uniform and 0.2 in p1s:
-                agents_amounts = [10,5]
+                agents_amounts = [10]
             if dcop_type == DcopType.meeting_scheduling_v2 :
-                agents_amounts = [15,10,5]
+                agents_amounts = [10]
             if dcop_type == DcopType.graph_coloring:
                 agents_amounts = [20,15,10,5]
             if is_privacy:
                 algos = [Algorithm.One_Opt]
 
-            algos = [Algorithm.BNB_Complete, Algorithm.One_Opt, Algorithm.Two_Opt, Algorithm.Three_Opt,
-                     Algorithm.Four_Opt, Algorithm.Five_Opt]  #
+            algos = [Algorithm.BNB_Complete, Algorithm.One_Opt]#, Algorithm.Two_Opt, Algorithm.Three_Opt,
+                     #Algorithm.Four_Opt, Algorithm.Five_Opt]  #
     #algos = [Algorithm.BNB_Complete,Algorithm.Three_Opt, Algorithm.One_Opt, Algorithm.Two_Opt,Algorithm.Four_Opt]# ,Algorithm.Four_Opt,Algorithm.Five_Opt, [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
     dcops = create_dcops()
     #with open("test_k_opt.pkl", "wb") as file:
@@ -259,10 +255,10 @@ if __name__ == '__main__':
     #max_vars_below_eq_10 = 5
     if is_privacy:
         vars_DCOP_scale = [5, 10]
-        query_types_list = [QueryType.rnd]  # [QueryType.rnd,QueryType.educated]
+        query_types_list = [QueryType.educated]  # [QueryType.rnd,QueryType.educated]
     else:
-        vars_DCOP_scale = [5]
-        query_types_list =  [QueryType.rnd,QueryType.educated]
+        vars_DCOP_scale = [10]
+        query_types_list =  [QueryType.educated]
 
 
     xdcops = create_xdcop()

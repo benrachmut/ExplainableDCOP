@@ -51,3 +51,7 @@ class Algorithm(Enum):
     Four_Opt = 4
     Five_Opt = 5
     BNB_Complete = 6
+
+class ScaleType(Enum):
+    dcop_scale = 1
+    query_scale = 2
