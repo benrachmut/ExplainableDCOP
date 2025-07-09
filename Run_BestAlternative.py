@@ -1,4 +1,3 @@
-from Workspace_Run_Explanations import agent_amount
 from enums import *
 from Globals_ import *
 from A_dcop_files.problems import  *
@@ -155,11 +154,8 @@ def get_x_dcops_dict(dcops_for_different_configs):
 
                 ans[density][agents_amount][query_type.name] = {}
 
-                if scale_type == ScaleType.query_scale:
 
-                    amount_of_variables_list = range(1, agents_amount+ 1)
-                else:
-                    amount_of_variables_list = vars_DCOP_scale
+
 
                 for amount_of_vars in amount_of_variables_list:
                     print("%% amount_of_vars", amount_of_vars)
@@ -172,12 +168,11 @@ def get_x_dcops_dict(dcops_for_different_configs):
 
                         for algo,dcop in dcops_dict.items():
                             if algo not in ans[density][agents_amount][query_type.name][amount_of_vars]:
-                                ans[density][agents_amount][query_type.name][amount_of_vars][algo] = {}
-                            for k in ks:
-                                ans[density][agents_amount][query_type.name][amount_of_vars][algo][k] = []
-                                print()
-                            #query = query_generator.get_query(algo, dcop_id)
-                            #ans[density][agents_amount][query_type.name][amount_of_vars][algo].append(XDCOP(dcop,query))
+                                ans[density][agents_amount][query_type.name][amount_of_vars][algo] = []
+                            #for k in ks:
+                                #ans[density][agents_amount][query_type.name][amount_of_vars][algo][k] = []
+                            query = query_generator.get_query(algo, dcop_id)
+                            ans[density][agents_amount][query_type.name][amount_of_vars][algo].append(query)
     return ans
 
 def get_organized_dcop(x_dcop_to_re_organize):
@@ -202,18 +197,17 @@ def create_xdcop():
 
 if __name__ == '__main__':
     #####--------------------------------
-    is_privacy = False
     scale_type = ScaleType.query_scale
-    dcop_type = DcopType.random_uniform
+    dcop_type = DcopType.meeting_scheduling_v2
     p1s  = get_p1s()
     repetitions = 2
     algos = [Algorithm.Five_Opt]
+
     agent_amounts = [50]
     ks = [5]
     dcops = create_dcops()
     seeds_xdcop = [1]
-    min_vars = 1
     # max_vars_below_eq_10 = 5
 
-    vars_DCOP_scale = [10]
+    amount_of_variables_list = [5]
     xdcops = create_xdcop()
