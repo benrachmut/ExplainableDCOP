@@ -1,3 +1,6 @@
+import pickle
+from collections.abc import Set
+from best_alternative_helper import *
 from enums import *
 from Globals_ import *
 from A_dcop_files.problems import  *
@@ -6,7 +9,7 @@ from B_xdcop_files.XDCOPS import  *
 
 def get_p1s():
     if dcop_type == DcopType.random_uniform:
-        return [0.7]
+        return [0.7,0.2]
     if dcop_type == DcopType.graph_coloring:
         return [0.1]
     if dcop_type == DcopType.meeting_scheduling_v2:
@@ -78,37 +81,38 @@ def create_dcops():
         for A in agent_amounts:
             ans[p1][A] = {}
             for algo in algos:
-                ans[p1][A][algo.name] = {}
+                if (algo == Algorithm.BNB_Complete and A<11) or algo !=Algorithm.BNB_Complete:
+                    ans[p1][A][algo.name] = {}
 
 
-                i = 0
-                while len(ans[p1][A][algo.name])<repetitions:
+                    i = 0
+                    while len(ans[p1][A][algo.name])<repetitions:
 
-                    try:
-                        dcop = get_DCOP(i, algo, dcop_type, A,p1)
-                        print(algo.name, "start:", i, dcop.create_summary())
+                        try:
+                            dcop = get_DCOP(i, algo, dcop_type, A,p1)
+                            print(algo.name, "start:", i, dcop.create_summary())
 
-                        if algo == Algorithm.BNB_Complete:
-                            dcop.execute_bnb_center()
-                        if algo == Algorithm.One_Opt:
-                            dcop.execute_k_opt(1)
-                        if algo == Algorithm.Two_Opt:
-                            dcop.execute_k_opt(2)
-                        if algo == Algorithm.Three_Opt:
-                            dcop.execute_k_opt(3)
-                        if algo == Algorithm.Four_Opt:
-                            dcop.execute_k_opt(4)
-                        if algo == Algorithm.Five_Opt:
-                            dcop.execute_k_opt(5)
+                            if algo == Algorithm.BNB_Complete:
+                                dcop.execute_bnb_center()
+                            if algo == Algorithm.One_Opt:
+                                dcop.execute_k_opt(1)
+                            if algo == Algorithm.Two_Opt:
+                                dcop.execute_k_opt(2)
+                            if algo == Algorithm.Three_Opt:
+                                dcop.execute_k_opt(3)
+                            if algo == Algorithm.Four_Opt:
+                                dcop.execute_k_opt(4)
+                            if algo == Algorithm.Five_Opt:
+                                dcop.execute_k_opt(5)
 
-                        #else:
-                        #    dcop.execute_distributed()
-                        ans[p1][A][algo.name][i] = (dcop)
-                        i = i+1
-                    #with open("test_k_opt.pkl", "wb") as file:
-                    #    pickle.dump(ans, file)
-                    except NoNeigException:
-                        i = i+1
+                            #else:
+                            #    dcop.execute_distributed()
+                            ans[p1][A][algo.name][i] = (dcop)
+                            i = i+1
+                        #with open("test_k_opt.pkl", "wb") as file:
+                        #    pickle.dump(ans, file)
+                        except NoNeigException:
+                            i = i+1
 
 
     return ans
@@ -141,38 +145,42 @@ def get_dcops_for_different_configs():
 
 def get_x_dcops_dict(dcops_for_different_configs):
     ans = {}
+
     for density, dict_1 in dcops_for_different_configs.items():
-        print("################ density",density)
+        print("################ density", density)
         ans[density] = {}
 
         for agents_amount, dict_2 in dict_1.items():
             print("------ agents_amount", agents_amount)
-
             ans[density][agents_amount] = {}
-            for query_type in [QueryType.educated]:
-                print("**** query_type", query_type)
 
-                ans[density][agents_amount][query_type.name] = {}
+            for amount_of_vars in amount_of_variables_list:
+                print("%% amount_of_vars", amount_of_vars)
+                ans[density][agents_amount][amount_of_vars] = {}
 
+                # Initialize all algos for this var count
+                for algo in algos:
+                    ans[density][agents_amount][amount_of_vars][algo.name] = []
 
+                # Now generate info for each DCOP in this config
+                for dcop_id, dcops_dict in dict_2.items():
+                    query_generator = QueryGenerator(
+                        dcops_dict,
+                        amount_of_vars,
+                        QueryType.educated,
+                        is_create_alternative=False
+                    )
 
+                    for algo_obj, complete_asgn in query_generator.complete_assignments_dict.items():
+                        algo_name = algo_obj  # Make sure to use the same key you used earlier
+                        info = {
+                            "dcop": query_generator.dcops_dict[algo_obj],
+                            "complete_asgn": complete_asgn,
+                            "query_vars": set(query_generator.variables_dict[algo_obj].keys()),
+                            "h_id": query_generator.a_q_dict[algo_obj].id_
+                        }
 
-                for amount_of_vars in amount_of_variables_list:
-                    print("%% amount_of_vars", amount_of_vars)
-
-                    ans[density][agents_amount][query_type.name][amount_of_vars] = {}
-                    for dcop_id, dcops_dict in dict_2.items():
-
-                        query_generator = QueryGenerator(dcops_dict, amount_of_vars, query_type,is_create_alternative=False)
-                        #                      query_type).get_query()
-
-                        for algo,dcop in dcops_dict.items():
-                            if algo not in ans[density][agents_amount][query_type.name][amount_of_vars]:
-                                ans[density][agents_amount][query_type.name][amount_of_vars][algo] = []
-                            #for k in ks:
-                                #ans[density][agents_amount][query_type.name][amount_of_vars][algo][k] = []
-                            query = query_generator.get_query(algo, dcop_id)
-                            ans[density][agents_amount][query_type.name][amount_of_vars][algo].append(query)
+                        ans[density][agents_amount][amount_of_vars][algo_name].append(info)
     return ans
 
 def get_organized_dcop(x_dcop_to_re_organize):
@@ -190,24 +198,47 @@ def get_organized_dcop(x_dcop_to_re_organize):
                         ans[density][amount_vars][q_type][algo][dcop_id] = x_dcop
     return ans
 
-def create_xdcop():
+def create_info():
     dcops_for_different_configs = get_dcops_for_different_configs()
-    x_dcop_to_re_organize = get_x_dcops_dict(dcops_for_different_configs)
-    x_dcop = get_organized_dcop(x_dcop_to_re_organize)
+    return get_x_dcops_dict(dcops_for_different_configs)
+    #x_dcop = get_organized_dcop(x_dcop_to_re_organize)
 
 if __name__ == '__main__':
     #####--------------------------------
-    scale_type = ScaleType.query_scale
+    scale_type = ScaleType.dcop_scale
     dcop_type = DcopType.meeting_scheduling_v2
     p1s  = get_p1s()
     repetitions = 2
-    algos = [Algorithm.Five_Opt]
+    algos = [Algorithm.BNB_Complete,Algorithm.Three_Opt]
 
-    agent_amounts = [50]
-    ks = [5]
+    agent_amounts = [10, 50]
+
+
     dcops = create_dcops()
-    seeds_xdcop = [1]
-    # max_vars_below_eq_10 = 5
 
-    amount_of_variables_list = [5]
-    xdcops = create_xdcop()
+    amount_of_variables_list = [5,10]
+    info = create_info()
+    k_for_explanation_list = [1,2,3]
+    ans = {}
+    for dens,dict1 in info.items():
+        ans[dens] = {}
+        for agents_in_prob, dict2 in dict1.items():
+            ans[dens][agents_in_prob] = {}
+            for query_size, dict3 in dict2.items():
+                ans[dens][agents_in_prob][query_size] = {}
+                k_for_explanation_list.append(query_size)
+                for algo,all_info_list in dict3.items():
+                    ans[dens][agents_in_prob][query_size][algo]={}
+                    for single_info in all_info_list:
+                        for k_exp in k_for_explanation_list:
+                            dcop = single_info["dcop"]
+                            complete_asgn= single_info["complete_asgn"]
+                            query_vars = single_info["query_vars"]
+                            h_id = single_info["h_id"]
+                            k_algo = k_exp
+                            output_ = best_alternative_full_scope( dcop=dcop,complete_asgn=complete_asgn , query_vars=query_vars ,h_id=h_id ,k_alg=k_algo )
+                            print()
+
+    name = dcop_type.name+"_info.pkl"
+    with open(name, 'wb') as f:
+        pickle.dump(info, f)

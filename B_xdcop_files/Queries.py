@@ -8,6 +8,9 @@ from enums import *
 
 class Query:
     def __init__(self,id_,dcop_id,agent,variables_in_query,solution_complete_assignment,alternative_values,solution_partial_assignment ):
+
+
+
         self.id_number = id_
         self.id_str= "dcop:"+str(dcop_id)+",seed:"+str(self.id_number)
         self.agent = agent
@@ -15,7 +18,7 @@ class Query:
         self.solution_complete_assignment = solution_complete_assignment
         self.solution_partial_assignment = solution_partial_assignment
         self.alternative_values = alternative_values
-        #self.alternative_partial_assignments = self.get_alternative_values_combinations(alternative_values)
+        self.alternative_partial_assignments = self.get_alternative_values_combinations(alternative_values)
 
 
     def get_alternative_values_combinations(self, alternative_values):
@@ -140,8 +143,9 @@ class QueryGenerator:
 
 
     def get_query(self,algo,dcop_id):
+
         return Query( id_=self.id_,dcop_id=dcop_id,agent=self.a_q_dict[algo], variables_in_query=self.variables_dict[algo], solution_complete_assignment=self.complete_assignments_dict[algo],
-            alternative_values = self.alternative_values[algo], solution_partial_assignment=self.solution_partial_assignment_dict[algo])
+                alternative_values = self.alternative_values[algo], solution_partial_assignment=self.solution_partial_assignment_dict[algo])
 
     def get_random_neighbor_id_from_list(self, agent_dict):
         neighbors_set = set()
@@ -211,9 +215,11 @@ class QueryGenerator:
             for variable, value in complete_ass.items():
                 domain_of_agents = list(self.dcops_dict.values())[0].agents[0].domain
                 a = copy.deepcopy(domain_of_agents)
-                b = value
-                #a.remove(b)
-                #possible_alternatives =#[item for item in a if item not in b]
+                if self.query_type == QueryType.educated:
+                    pass
+                if self.query_type ==QueryType.semi_educated:
+                    b = value
+                    a.remove(b)
                 ans_temp[variable] = a
             ans[algo] = ans_temp
         return ans
@@ -265,8 +271,11 @@ class QueryGenerator:
             for algo, agents_for_educated in agents_for_educated_dict.items():
 
                 bnb = Bnb_central(agents_for_educated)
+                if self.query_type == QueryType.educated :
+                    dcop_solution = bnb.second_best
+                elif self.query_type == QueryType.semi_educated :
+                    dcop_solution = bnb.UB
 
-                dcop_solution = bnb.second_best
                 dict_ = dcop_solution[0]
                 alternative_values = {}
                 for a_id,val in dict_.items():
@@ -277,15 +286,19 @@ class QueryGenerator:
 
     def get_agent_domain(self,domain_list,algo,solution_value,possible_alternatives_dict,id_):
         if id_ in self.variables_dict[algo].keys():
-            pass
 
-            #if self.query_type == QueryType.educated:
-            #    domain_list.remove(solution_value)
-            #if self.query_type == QueryType.semi_educated:
-            #    domain_list = copy.deepcopy( possible_alternatives_dict[id_])
+
+            if self.query_type == QueryType.semi_educated:
+                domain_list.remove(solution_value)
+            if self.query_type == QueryType.educated:
+                try:
+                    domain_list = copy.deepcopy( possible_alternatives_dict[id_])
+                except:
+                    domain_list = copy.deepcopy( possible_alternatives_dict["BNB_Complete"][id_])
+
 
         else:
-            if self.query_type == QueryType.educated:
+            if self.query_type == QueryType.educated or self.query_type == QueryType.semi_educated:
                 domain_list = copy.deepcopy([solution_value])
             else:
                 ttt = []

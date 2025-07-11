@@ -1,8 +1,7 @@
-from Agents import Agent
+#from A_dcop_files.Agents import ag
 from enums import DcopType, Algorithm
-from Globals_ import (repetitions, REQUIRE_H_IN_GROUP, IMPROVED_ORDER, PROPAGATE_GLOBAL_UB,
-                      LARGE, K_EXP, T_EXP,REQUIRE_H_IN_QUERY)
-from main_multiple_expirements import create_selected_dcop
+
+#from main_multiple_expirements import create_selected_dcop
 from collections import deque
 from typing import Dict, List, Set, Union, Tuple, Optional, Any, TypedDict
 import itertools
@@ -10,8 +9,19 @@ import itertools
 # דברים להחזיר בשביל הדוגמת הרצה עם RODA
 #    if dcop_type == DcopType.dense_random_uniform: (צריך להחזיק לדומיין בגודל 10 ול10 סוכנים)
 
-from problems import DCOP
+from A_dcop_files.problems import DCOP
 
+
+
+# ======== Best-Alternative global knobs ========
+REQUIRE_H_IN_QUERY  : bool = False  # if True –  every Query must include h_id
+REQUIRE_H_IN_GROUP  : bool = False   # if True – every enumerated group must include h_id
+IMPROVED_ORDER      : bool = True  # if True – push current value to front of domain
+PROPAGATE_GLOBAL_UB : bool = True   # if True – pass best_delta as UB to next group
+LARGE = 10**30
+K_EXP : int   = 7                # max group size for the explanation
+T_EXP : int   = 1000        # max hop distance (∞ = no distance limit)
+# ===============================================
 SEARCH_VISITS: int = 0      # NCLO Counter
 
 
@@ -181,7 +191,7 @@ def best_alternative_full_scope(
     query_vars: Set[int],
     h_id: int,
     k_alg: int,
-    t_alg: int,
+    t_alg: int = T_EXP,
 )-> BestAlternativeResult:
 
     """
@@ -453,56 +463,4 @@ def _edge_cost(
     SEARCH_VISITS += 1
     return tbl.get(_key, 0)
 
-
-def timed_run(label, **knobs):
-    # apply flags
-    for k, v in knobs.items():
-        globals()[k] = v
-    globals()['SEARCH_VISITS'] = 0   # reset
-
-    import time
-    t0 = time.perf_counter()
-    dict = best_alternative_full_scope(
-        dcop, {1:2,2:2,3:1}, {1,2,3}, h_id=2, k_alg=5, t_alg=10
-    )
-
-    alternative_assignment = dict["alternative_assignment"]
-    alternative_cost = dict["alternative_cost"]
-    chosen_group = dict["chosen_group"]
-    best_delta = dict["best_delta"]
-    NCLO = dict["NCLO"]
-    dt = time.perf_counter() - t0
-    print(f"{label:20} visits={SEARCH_VISITS:4}   NCLO={NCLO:4}   time={dt*1e6:.0f} µs   best_delta={best_delta}")
-
-
-if __name__ == "__main__":
-    # ─── CONFIGURE TEST ───────────────────────────────────────────────────────
-    dcop_type = DcopType.dense_random_uniform
-    algorithm = Algorithm.branch_and_bound
-    # ────────────────────────────────────────────────────────────────────────────
-
-    for run_id in range(repetitions):
-        print(f"\n=== RODA TEST RUN #{run_id} ===\n")
-        # build DCOP with RODA agents
-        dcop = create_selected_dcop(run_id, dcop_type, algorithm)
-        result = build_region(dcop,2,2,1)
-        for key, value in result.items():
-            if "agent_info_store" == key:
-                print(key)
-                for key1, value1 in value.items():
-                    print(f"{key1}: {value1}")
-            else:
-                print(f"{key}: {value}")
-
-        timed_run("baseline",
-                  IMPROVED_ORDER=False, PROPAGATE_GLOBAL_UB=False)
-
-        timed_run("improved-order",
-                  IMPROVED_ORDER=True, PROPAGATE_GLOBAL_UB=False)
-
-        timed_run("propagated UB",
-                  IMPROVED_ORDER=False, PROPAGATE_GLOBAL_UB=True)
-
-        timed_run("both flags",
-                  IMPROVED_ORDER=True, PROPAGATE_GLOBAL_UB=True)
 

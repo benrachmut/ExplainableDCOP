@@ -1,12 +1,7 @@
 import pickle
-import matplotlib.pyplot as plt
-
-import numpy as np
-from matplotlib import pyplot as plt
 
 from C_Create_Graphs.Graph_functions import *
 from enums import ExplanationType, QueryType
-from matplotlib.lines import Line2D
 
 
 def get_full_dict(densities,agent_amounts,query_type,algo,explanation_type,var_num):

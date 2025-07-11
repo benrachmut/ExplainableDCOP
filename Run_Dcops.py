@@ -209,9 +209,9 @@ if __name__ == '__main__':
     #####--------------------------------
     is_privacy = False
     scale_type = ScaleType.dcop_scale
-    dcop_type = DcopType.meeting_scheduling_v2
+    dcop_type = DcopType.random_uniform
     if dcop_type == DcopType.random_uniform:
-        p1s = [0.7]
+        p1s = [0.2]
     if dcop_type == DcopType.graph_coloring:
         p1s = [0.1]
     if dcop_type == DcopType.meeting_scheduling_v2:
@@ -220,11 +220,11 @@ if __name__ == '__main__':
     repetitions = 100
     if scale_type ==ScaleType.dcop_scale:
 
-        agents_amounts = [5,10,15,20,25,30,35,40,45,50]
+        agents_amounts = [10,20,30,40,50]
         if is_privacy:
             algos = [Algorithm.One_Opt]
         else:
-            algos = [Algorithm.BNB_Complete,Algorithm.One_Opt]#,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]#, Algorithm.One_Opt]
+            algos = [Algorithm.BNB_Complete,Algorithm.One_Opt,Algorithm.Two_Opt,Algorithm.Three_Opt]#,Algorithm.Two_Opt,Algorithm.Three_Opt,Algorithm.Four_Opt,Algorithm.Five_Opt]#, Algorithm.One_Opt]
     else:
         if is_privacy:
             agents_amounts = [50]
@@ -244,7 +244,7 @@ if __name__ == '__main__':
             if is_privacy:
                 algos = [Algorithm.One_Opt]
 
-            algos = [Algorithm.BNB_Complete, Algorithm.One_Opt]#, Algorithm.Two_Opt, Algorithm.Three_Opt,
+            algos = [Algorithm.BNB_Complete]#, Algorithm.Two_Opt, Algorithm.Three_Opt,
                      #Algorithm.Four_Opt, Algorithm.Five_Opt]  #
     #algos = [Algorithm.BNB_Complete,Algorithm.Three_Opt, Algorithm.One_Opt, Algorithm.Two_Opt,Algorithm.Four_Opt]# ,Algorithm.Four_Opt,Algorithm.Five_Opt, [Algorithm.Three_Opt,Algorithm.One_Opt, Algorithm.BNB_Complete]
     dcops = create_dcops()
@@ -255,10 +255,10 @@ if __name__ == '__main__':
     #max_vars_below_eq_10 = 5
     if is_privacy:
         vars_DCOP_scale = [5, 10]
-        query_types_list = [QueryType.educated]  # [QueryType.rnd,QueryType.educated]
+        query_types_list = [QueryType.educated, QueryType.semi_educated]  # [QueryType.rnd,QueryType.educated]
     else:
-        vars_DCOP_scale = [10]
-        query_types_list =  [QueryType.educated]
+        vars_DCOP_scale = [5, 10]
+        query_types_list =  [QueryType.educated,QueryType.semi_educated]
 
 
     xdcops = create_xdcop()

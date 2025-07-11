@@ -57,12 +57,12 @@ def cut_for_privacy(x_dcops_dict):
 if __name__ == '__main__':
     folder_begin = "pickles_"
     what_scale = "query_scale" #dcop_scale, query_scale
-    prob = "random" #"random # meeting_scheduling
+    prob = "meeting_scheduling" #"random # meeting_scheduling
     is_privacy = False
     if is_privacy:
-        directory = folder_begin+what_scale+"_privacy/"+prob
+        directory = folder_begin+what_scale+"_privacy/"+prob+"_aaai"
     else:
-        directory = folder_begin+what_scale+"/"+prob
+        directory = folder_begin+what_scale+"/"+prob+"_aaai"
 
     import os
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         with open("C_Create_Graphs/explanations_"+what_scale+"_"+prob+"_privacy.pkl", "wb") as file:
             pickle.dump(ans, file)
     else:
-        with open("C_Create_Graphs/explanations_" + what_scale + "_" + prob + ".pkl", "wb") as file:
+        with open("C_Create_Graphs/explanations_" + what_scale + "_" + prob + "_aaai.pkl", "wb") as file:
             pickle.dump(ans, file)
 
 
