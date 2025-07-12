@@ -294,7 +294,7 @@ class QueryGenerator:
                 try:
                     domain_list = copy.deepcopy( possible_alternatives_dict[id_])
                 except:
-                    domain_list = copy.deepcopy( possible_alternatives_dict["BNB_Complete"][id_])
+                    domain_list = copy.deepcopy( possible_alternatives_dict[algo][id_])
 
 
         else:

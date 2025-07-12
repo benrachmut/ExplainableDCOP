@@ -203,6 +203,15 @@ def create_info():
     return get_x_dcops_dict(dcops_for_different_configs)
     #x_dcop = get_organized_dcop(x_dcop_to_re_organize)
 
+def get_algo_k(algo_str, query_size):
+    algo_dict={Algorithm.BNB_Complete.name:query_size,
+               Algorithm.One_Opt.name:1,
+               Algorithm.Two_Opt.name:2,
+               Algorithm.Three_Opt.name:3,
+               Algorithm.Four_Opt.name:4,
+               Algorithm.Five_Opt.name:5
+               }
+    return algo_dict[algo_str]
 if __name__ == '__main__':
     #####--------------------------------
     scale_type = ScaleType.dcop_scale
@@ -235,8 +244,9 @@ if __name__ == '__main__':
                             complete_asgn= single_info["complete_asgn"]
                             query_vars = single_info["query_vars"]
                             h_id = single_info["h_id"]
-                            k_algo = k_exp
-                            output_ = best_alternative_full_scope( dcop=dcop,complete_asgn=complete_asgn , query_vars=query_vars ,h_id=h_id ,k_alg=k_algo )
+                            k_algo = get_algo_k(algo,query_size)#k_exp
+
+                            output_ = best_alternative_full_scope( dcop=dcop,complete_asgn=complete_asgn , query_vars=query_vars ,h_id=h_id ,k_alg=k_algo,k_exp_input= k_exp)
                             print()
 
     name = dcop_type.name+"_info.pkl"

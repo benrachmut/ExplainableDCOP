@@ -209,9 +209,9 @@ if __name__ == '__main__':
     #####--------------------------------
     is_privacy = False
     scale_type = ScaleType.dcop_scale
-    dcop_type = DcopType.random_uniform
+    dcop_type = DcopType.meeting_scheduling_v2
     if dcop_type == DcopType.random_uniform:
-        p1s = [0.2]
+        p1s = [0.7]
     if dcop_type == DcopType.graph_coloring:
         p1s = [0.1]
     if dcop_type == DcopType.meeting_scheduling_v2:
@@ -254,10 +254,10 @@ if __name__ == '__main__':
     min_vars = 1
     #max_vars_below_eq_10 = 5
     if is_privacy:
-        vars_DCOP_scale = [5, 10]
+        vars_DCOP_scale = [5, 7]
         query_types_list = [QueryType.educated, QueryType.semi_educated]  # [QueryType.rnd,QueryType.educated]
     else:
-        vars_DCOP_scale = [5, 10]
+        vars_DCOP_scale = [5, 7]
         query_types_list =  [QueryType.educated,QueryType.semi_educated]
 
 

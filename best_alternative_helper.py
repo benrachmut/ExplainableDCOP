@@ -19,7 +19,7 @@ REQUIRE_H_IN_GROUP  : bool = False   # if True – every enumerated group must i
 IMPROVED_ORDER      : bool = True  # if True – push current value to front of domain
 PROPAGATE_GLOBAL_UB : bool = True   # if True – pass best_delta as UB to next group
 LARGE = 10**30
-K_EXP : int   = 7                # max group size for the explanation
+#K_EXP : int   = 7                # max group size for the explanation
 T_EXP : int   = 1000        # max hop distance (∞ = no distance limit)
 # ===============================================
 SEARCH_VISITS: int = 0      # NCLO Counter
@@ -191,7 +191,9 @@ def best_alternative_full_scope(
     query_vars: Set[int],
     h_id: int,
     k_alg: int,
+    k_exp_input,
     t_alg: int = T_EXP,
+
 )-> BestAlternativeResult:
 
     """
@@ -244,7 +246,7 @@ def best_alternative_full_scope(
             raise ValueError("No queried agent is within T_EXP hops of the mediator")
 
     # Enumerate candidate groups using K_EXP and T_EXP *explanation* limits
-    candidate_groups = _enumerate_query_groups(qset, h_id)
+    candidate_groups = _enumerate_query_groups(qset, h_id,k_exp_input)
 
     best_delta = LARGE
     best_alt_asgn: Optional[Dict[int, int]] = None
@@ -285,7 +287,7 @@ def best_alternative_full_scope(
 
 def _enumerate_query_groups(
     qset: Set[int],
-    h_id: int,
+    h_id: int,k_exp_input
 ) -> List[Set[int]]:
     """
     Enumerate all **maximal-size** subsets of `qset`
@@ -295,7 +297,7 @@ def _enumerate_query_groups(
     • Otherwise – no such constraint.
     """
 
-    target_size = min(K_EXP, len(qset))  # maximal size required
+    target_size = min(k_exp_input, len(qset))  # maximal size required
 
     # --- Case 1: each subset must include h_id ------------------------
     if REQUIRE_H_IN_GROUP:
