@@ -192,7 +192,7 @@ def best_alternative_full_scope(
     h_id: int,
     k_alg: int,
     k_exp_input,
-    t_alg: int = T_EXP,
+    t_alg: int = LARGE,
 
 )-> BestAlternativeResult:
 
